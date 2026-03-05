@@ -120,17 +120,18 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
         {
             Name = "Total Balance",
             Values = projections.Select(p => new DateTimePoint(p.Date, (double)p.Balance)).ToArray(),
-            Stroke = new SolidColorPaint(SKColors.Blue, 3),
+            Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
             Fill = null,
             GeometrySize = 0,
-            LineSmoothness = 0
+            LineSmoothness = 0,
+            GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 3)
         });
 
         // Individual Account Series
         foreach (var acc in accounts)
         {
             SKColor color;
-            var hex = acc.HexColor;
+            var hex =  acc.HexColor;
             if (string.IsNullOrWhiteSpace(hex)) hex = "#FF808080";
             if (!hex.StartsWith("#")) hex = "#" + hex;
 
@@ -148,7 +149,9 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
                 Stroke = paint,
                 Fill = null,
                 GeometrySize = 0,
-                LineSmoothness = 0
+                LineSmoothness = 0,
+                GeometryStroke = paint
+               // GeometryFill = paint
             });
         }
 

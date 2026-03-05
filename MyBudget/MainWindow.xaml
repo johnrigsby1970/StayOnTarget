@@ -255,6 +255,8 @@
                                                          Text="{Binding EditingTransactionClone.Description}"
                                                          Margin="5" />
 
+                                                
+                                                
                                                 <Label Grid.Column="0" Grid.Row="1" Content="Amount:" />
                                                 <TextBox Grid.Column="1" Grid.Row="1"
                                                          Text="{Binding EditingTransactionClone.Amount, StringFormat=F2}"
@@ -265,6 +267,8 @@
                                                           SelectedValue="{Binding EditingTransactionClone.AccountId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
+                                                
+                                                
                                                 <Label Grid.Column="0" Grid.Row="2" Content="To Account:" />
                                                 <ComboBox Grid.Column="1" Grid.Row="2" x:Name="ToAccountComboBox"
                                                           ItemsSource="{Binding Accounts}"
@@ -282,6 +286,8 @@
                                                           SelectedValue="{Binding EditingTransactionClone.BucketId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
+                                                
+                                                
                                                 <Label Grid.Column="0" Grid.Row="4" Content="Paycheck:"
                                                        Visibility="{Binding EditingTransactionClone.ToAccountId, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" />
                                                 <ComboBox Grid.Column="1" Grid.Row="4"
@@ -297,6 +303,8 @@
                                                             Margin="5"
                                                             Visibility="{Binding EditingTransactionClone.ToAccountId, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" />
 
+                                                
+                                                
                                                 <StackPanel Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="4"
                                                             Orientation="Horizontal" Margin="5">
                                                     <CheckBox Content="Principal Only (Mortgage/Loan Extra)"
@@ -677,6 +685,7 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
                                     <Label Grid.Column="0" Grid.Row="0" Content="Name:" />
@@ -688,6 +697,8 @@
                                     <TextBox Grid.Column="3" Grid.Row="0"
                                              Text="{Binding EditingAccountClone.BankName, UpdateSourceTrigger=PropertyChanged}"
                                              Margin="5" />
+                                    
+                                    
 
                                     <Label Grid.Column="0" Grid.Row="1" Content="Type:" />
                                     <ComboBox Grid.Column="1" Grid.Row="1" ItemsSource="{Binding AccountTypes}"
@@ -697,6 +708,8 @@
                                     <TextBox Grid.Column="3" Grid.Row="1"
                                              Text="{Binding EditingAccountClone.Balance, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                                              Margin="5" />
+                                    
+                                    
 
                                     <Label Grid.Column="0" Grid.Row="2" Content="As Of:" />
                                     <DatePicker Grid.Column="1" Grid.Row="2"
@@ -706,6 +719,8 @@
                                     <TextBox Grid.Column="3" Grid.Row="2"
                                              Text="{Binding EditingAccountClone.AnnualGrowthRate, UpdateSourceTrigger=PropertyChanged}"
                                              Margin="5" />
+                                    
+                                    
 
                                     <Label Grid.Column="0" Grid.Row="3" Content="Color (Hex):" />
                                     <TextBox Grid.Column="1" Grid.Row="3"

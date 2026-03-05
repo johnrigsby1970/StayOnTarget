@@ -853,10 +853,14 @@ public class MainViewModel : ViewModelBase {
 
     private void AddAccount() {
         EditingAccountClone = new Account {
-            Name = "New Account", Type = AccountType.Checking, Balance = 0, BalanceAsOf = DateTime.Today,
+            Name = "New Account", 
+            Type = AccountType.Checking, 
+            Balance = 0, 
+            BalanceAsOf = DateTime.Today,
             IncludeInTotal = true,
             MortgageDetails = new MortgageDetails(),
-            CreditCardDetails = new CreditCardDetails()
+            CreditCardDetails = new CreditCardDetails(),
+            HexColor = "#FF808080"
         };
         SelectedAccount = null;
         IsEditingAccount = true;
@@ -865,10 +869,15 @@ public class MainViewModel : ViewModelBase {
     private void EditAccount() {
         if (SelectedAccount != null) {
             EditingAccountClone = new Account {
-                Id = SelectedAccount.Id, Name = SelectedAccount.Name, BankName = SelectedAccount.BankName,
-                Balance = SelectedAccount.Balance, BalanceAsOf = SelectedAccount.BalanceAsOf,
-                AnnualGrowthRate = SelectedAccount.AnnualGrowthRate, IncludeInTotal = SelectedAccount.IncludeInTotal,
-                Type = SelectedAccount.Type
+                Id = SelectedAccount.Id, 
+                Name = SelectedAccount.Name, 
+                BankName = SelectedAccount.BankName,
+                Balance = SelectedAccount.Balance, 
+                BalanceAsOf = SelectedAccount.BalanceAsOf,
+                AnnualGrowthRate = SelectedAccount.AnnualGrowthRate, 
+                IncludeInTotal = SelectedAccount.IncludeInTotal,
+                Type = SelectedAccount.Type, 
+                HexColor = SelectedAccount.HexColor
             };
             if (SelectedAccount.MortgageDetails != null) {
                 EditingAccountClone.MortgageDetails = new MortgageDetails {
