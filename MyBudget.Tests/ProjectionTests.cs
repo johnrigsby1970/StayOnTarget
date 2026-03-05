@@ -203,6 +203,217 @@ namespace MyBudget.Tests
         }
 
         [TestMethod]
+        public void TestCreditCard_InterestAccrual_AverageDailyBalance()
+        {
+            // Arrange
+            var accounts = new List<Account>
+            {
+                new Account 
+                { 
+                    Id = 1, 
+                    Name = "CreditCard", 
+                    Balance = 1000, 
+                    Type = AccountType.CreditCard, 
+                    IncludeInTotal = true, 
+                    BalanceAsOf = new DateTime(2026, 2, 1),
+                    CreditCardDetails = new CreditCardDetails
+                    {
+                        Apr = 36.5m, // 0.1% daily
+                        StatementDay = 15,
+                        PayPreviousMonthBalanceInFull = false // No grace period
+                    }
+                }
+            };
+
+            // 1000 balance for 14 days (Feb 1 to Feb 14)
+            // Statement on Feb 15
+            var startDate = new DateTime(2026, 2, 1);
+            var endDate = new DateTime(2026, 2, 16);
+
+            // Act
+            var results = _engine.CalculateProjections(startDate, endDate, accounts, new List<Paycheck>(), new List<Bill>(), new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), new List<Transaction>()).ToList();
+
+            // Assert
+            var interestEntry = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest"));
+            Assert.IsNotNull(interestEntry, "Should have a credit card interest entry");
+            
+            // ADB = 1000
+            // DPR = 0.365 / 365 = 0.001
+            // Days = 14 (Feb 1 to Feb 14)
+            // Interest = 1000 * 0.001 * 14 = 14
+            Assert.AreEqual(14m, interestEntry.Amount);
+            Assert.AreEqual(1014m, interestEntry.AccountBalances["CreditCard"]);
+            // Debt increases, so running balance decreases
+            // Initial running balance was -1000. Now -1014.
+            Assert.AreEqual(-1014m, interestEntry.Balance);
+        }
+
+        [TestMethod]
+        public void TestCreditCard_UserScenario_InterestAfterGracePeriod()
+        {
+            // Arrange
+            // 0 balance on 2/5/2026.
+            // Transaction of $14.40 on 3/4/2026.
+            // Statement day 5.
+            // APR 17.74%.
+            // PayPreviousMonthBalanceInFull = true.
+
+            var accounts = new List<Account>
+            {
+                new Account 
+                { 
+                    Id = 1, 
+                    Name = "CreditCard", 
+                    Balance = 0, 
+                    Type = AccountType.CreditCard, 
+                    IncludeInTotal = true, 
+                    BalanceAsOf = new DateTime(2026, 2, 5),
+                    CreditCardDetails = new CreditCardDetails
+                    {
+                        Apr = 17.74m,
+                        StatementDay = 5,
+                        PayPreviousMonthBalanceInFull = true
+                    }
+                }
+            };
+
+            var transactions = new List<Transaction>
+            {
+                new Transaction { Date = new DateTime(2026, 3, 4), Amount = 14.40m, AccountId = 1, Description = "Small Purchase" }
+            };
+
+            var startDate = new DateTime(2026, 2, 5);
+            var endDate = new DateTime(2027, 2, 5); // A full year
+
+            // Act
+            var results = _engine.CalculateProjections(startDate, endDate, accounts, new List<Paycheck>(), new List<Bill>(), new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), transactions).ToList();
+
+            // Assert
+            // 2/5 statement: balance 0. PaidInFull = true.
+            // 3/4: Transaction 14.40. Balance 14.40.
+            // 3/5 statement: interest 0 because 2/5 balance was 0 (grace period).
+            //               balance remains 14.40. PaidInFull = false.
+            // 4/5 statement: interest SHOULD accrue on 14.40 (ADB = 14.40).
+            
+            var marchStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 3, 5));
+            Assert.IsNotNull(marchStatement, "March statement (3/5) should exist");
+            Assert.AreEqual(0m, marchStatement.Amount, "Interest on 3/5 should be 0 due to grace period");
+            Assert.AreEqual(14.40m, marchStatement.AccountBalances["CreditCard"]);
+
+            var aprilStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 4, 5));
+            Assert.IsNotNull(aprilStatement, "April statement (4/5) should exist");
+            
+            // Expected interest for April:
+            // 14.40 * (0.1774 / 365) * 31 days (March 5 to April 4) = 0.217... (roughly $0.22)
+            Assert.IsTrue(aprilStatement.Amount > 0, $"April interest (4/5) should be > 0, but was {aprilStatement.Amount}");
+
+            var mayStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 5, 5));
+            Assert.IsNotNull(mayStatement, "May statement (5/5) should exist");
+            Assert.IsTrue(mayStatement.Amount > 0, $"May interest (5/5) should be > 0, but was {mayStatement.Amount}");
+            Assert.IsTrue(mayStatement.AccountBalances["CreditCard"] > aprilStatement.AccountBalances["CreditCard"], "Balance should increase due to interest");
+
+            var octStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 10, 5));
+            Assert.IsNotNull(octStatement, "October statement (10/5) should exist");
+
+            var novStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 11, 5));
+            Assert.IsNotNull(novStatement, "November statement (11/5) should exist");
+            Assert.IsTrue(novStatement.AccountBalances["CreditCard"] > octStatement.AccountBalances["CreditCard"], "Balance should continue to increase month over month");
+        }
+
+        [TestMethod]
+        public void TestCreditCard_GracePeriod_NoInterestWhenPaidInFull()
+        {
+            // Arrange
+            var accounts = new List<Account>
+            {
+                new Account 
+                { 
+                    Id = 1, 
+                    Name = "CreditCard", 
+                    Balance = 0, // Paid in full
+                    Type = AccountType.CreditCard, 
+                    IncludeInTotal = true, 
+                    BalanceAsOf = new DateTime(2026, 2, 1),
+                    CreditCardDetails = new CreditCardDetails
+                    {
+                        Apr = 36.5m,
+                        StatementDay = 15,
+                        PayPreviousMonthBalanceInFull = true
+                    }
+                }
+            };
+            
+            // New purchase on Feb 5
+            var transactions = new List<Transaction>
+            {
+                new Transaction { Date = new DateTime(2026, 2, 5), Amount = 500, AccountId = 1, Description = "Purchase" }
+            };
+
+            var startDate = new DateTime(2026, 2, 1);
+            var endDate = new DateTime(2026, 2, 16);
+
+            // Act
+            var results = _engine.CalculateProjections(startDate, endDate, accounts, new List<Paycheck>(), new List<Bill>(), new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), transactions).ToList();
+
+            // Assert
+            var interestEntry = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest"));
+            Assert.IsNotNull(interestEntry);
+            Assert.AreEqual(0m, interestEntry.Amount, "Interest should be 0 due to grace period");
+        }
+
+        [TestMethod]
+        public void TestCreditCard_InterestAdjustment_OverridesProjectedInterest()
+        {
+            // Arrange
+            var accounts = new List<Account>
+            {
+                new Account 
+                { 
+                    Id = 1, 
+                    Name = "CreditCard", 
+                    Balance = 1000, 
+                    Type = AccountType.CreditCard, 
+                    IncludeInTotal = true, 
+                    BalanceAsOf = new DateTime(2026, 2, 1),
+                    CreditCardDetails = new CreditCardDetails
+                    {
+                        Apr = 36.5m,
+                        StatementDay = 15,
+                        PayPreviousMonthBalanceInFull = false
+                    }
+                }
+            };
+            
+            // Actual interest transaction
+            var transactions = new List<Transaction>
+            {
+                new Transaction 
+                { 
+                    Date = new DateTime(2026, 2, 10), 
+                    Amount = 25, 
+                    AccountId = 1, 
+                    IsInterestAdjustment = true,
+                    Description = "Actual Interest" 
+                }
+            };
+
+            var startDate = new DateTime(2026, 2, 1);
+            var endDate = new DateTime(2026, 2, 16);
+
+            // Act
+            var results = _engine.CalculateProjections(startDate, endDate, accounts, new List<Paycheck>(), new List<Bill>(), new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), transactions).ToList();
+
+            // Assert
+            var projectedInterest = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest"));
+            Assert.IsNull(projectedInterest, "Projected interest should be suppressed by interest adjustment transaction");
+            
+            var actualInterest = results.FirstOrDefault(r => r.Description == "Actual Interest");
+            Assert.IsNotNull(actualInterest);
+            Assert.AreEqual(25m, actualInterest.Amount);
+            Assert.AreEqual(1025m, actualInterest.AccountBalances["CreditCard"]);
+        }
+
+        [TestMethod]
         public void TestPeriodNet_CalculatedCorrected()
         {
             // Arrange
@@ -296,6 +507,57 @@ namespace MyBudget.Tests
             Assert.AreEqual(200950m, interestEntries[0].AccountBalances["Mortgage"]);
             // Debts are subtracted from total balance
             Assert.AreEqual(-200950m, interestEntries[0].Balance);
+        }
+
+        [TestMethod]
+        public void TestTransactionInterestAdjustment_Mortgage_IncreasesBalance()
+        {
+            // Arrange
+            var accounts = new List<Account>
+            {
+                new Account 
+                { 
+                    Id = 1, 
+                    Name = "Mortgage", 
+                    Balance = 200000, 
+                    Type = AccountType.Mortgage, 
+                    IncludeInTotal = true, 
+                    BalanceAsOf = new DateTime(2026, 2, 1),
+                    MortgageDetails = new MortgageDetails
+                    {
+                        InterestRate = 6.0m,
+                        PaymentDate = new DateTime(2026, 2, 15)
+                    }
+                }
+            };
+
+            // Transaction with IsInterestAdjustment = true
+            var transactions = new List<Transaction>
+            {
+                new Transaction
+                {
+                    Id = 101,
+                    Description = "Manual Interest",
+                    Amount = 1000,
+                    Date = new DateTime(2026, 2, 10),
+                    ToAccountId = 1,
+                    IsInterestAdjustment = true
+                }
+            };
+
+            var startDate = new DateTime(2026, 2, 1);
+            var endDate = new DateTime(2026, 3, 1);
+
+            // Act
+            var results = _engine.CalculateProjections(startDate, endDate, accounts, new List<Paycheck>(), new List<Bill>(), new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), transactions).ToList();
+
+            // Assert
+            var manualInterest = results.FirstOrDefault(r => r.Description == "Manual Interest");
+            Assert.IsNotNull(manualInterest);
+            Assert.AreEqual(1000m, manualInterest.Amount);
+            // It should INCREASE the debt balance
+            Assert.AreEqual(201000m, manualInterest.AccountBalances["Mortgage"]);
+            Assert.AreEqual(-201000m, manualInterest.Balance);
         }
 
         [TestMethod]
@@ -431,7 +693,9 @@ namespace MyBudget.Tests
             // Bucket Grayson on 2/19 should be reduced by transaction on 2/20 (same period).
             // Since 500 > 50, Grayson bucket on 2/19 should be 0.
             
-            var graysonBucketEntry = results.FirstOrDefault(r => r.Description.Contains("Bucket: Grayson") && r.Date == new DateTime(2026, 2, 19));
+            // The bucket event is projected at the END of the period.
+            // Bi-weekly from 2/19 means period end is 2/19 + 14 days - 1 day = 3/4.
+            var graysonBucketEntry = results.FirstOrDefault(r => r.Description.Contains("Bucket: Grayson") && r.Date == new DateTime(2026, 3, 4));
             Assert.IsNotNull(graysonBucketEntry, "Grayson bucket entry should exist");
             Assert.AreEqual(0m, graysonBucketEntry.Amount, "Grayson bucket amount should be reduced to 0 because transaction exceeds it");
         }

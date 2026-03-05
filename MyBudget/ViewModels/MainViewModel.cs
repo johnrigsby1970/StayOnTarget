@@ -854,7 +854,9 @@ public class MainViewModel : ViewModelBase {
     private void AddAccount() {
         EditingAccountClone = new Account {
             Name = "New Account", Type = AccountType.Checking, Balance = 0, BalanceAsOf = DateTime.Today,
-            IncludeInTotal = true
+            IncludeInTotal = true,
+            MortgageDetails = new MortgageDetails(),
+            CreditCardDetails = new CreditCardDetails()
         };
         SelectedAccount = null;
         IsEditingAccount = true;
@@ -868,6 +870,34 @@ public class MainViewModel : ViewModelBase {
                 AnnualGrowthRate = SelectedAccount.AnnualGrowthRate, IncludeInTotal = SelectedAccount.IncludeInTotal,
                 Type = SelectedAccount.Type
             };
+            if (SelectedAccount.MortgageDetails != null) {
+                EditingAccountClone.MortgageDetails = new MortgageDetails {
+                    Id = SelectedAccount.MortgageDetails.Id,
+                    AccountId = SelectedAccount.MortgageDetails.AccountId,
+                    InterestRate = SelectedAccount.MortgageDetails.InterestRate,
+                    Escrow = SelectedAccount.MortgageDetails.Escrow,
+                    MortgageInsurance = SelectedAccount.MortgageDetails.MortgageInsurance,
+                    LoanPayment = SelectedAccount.MortgageDetails.LoanPayment,
+                    PaymentDate = SelectedAccount.MortgageDetails.PaymentDate
+                };
+            }
+            else {
+                EditingAccountClone.MortgageDetails = new MortgageDetails();
+            }
+
+            if (SelectedAccount.CreditCardDetails != null) {
+                EditingAccountClone.CreditCardDetails = new CreditCardDetails {
+                    Id = SelectedAccount.CreditCardDetails.Id,
+                    AccountId = SelectedAccount.CreditCardDetails.AccountId,
+                    Apr = SelectedAccount.CreditCardDetails.Apr,
+                    StatementDay = SelectedAccount.CreditCardDetails.StatementDay,
+                    PayPreviousMonthBalanceInFull = SelectedAccount.CreditCardDetails.PayPreviousMonthBalanceInFull
+                };
+            }
+            else {
+                EditingAccountClone.CreditCardDetails = new CreditCardDetails();
+            }
+
             IsEditingAccount = true;
         }
     }
@@ -897,6 +927,22 @@ public class MainViewModel : ViewModelBase {
         target.AnnualGrowthRate = clone.AnnualGrowthRate;
         target.IncludeInTotal = clone.IncludeInTotal;
         target.Type = clone.Type;
+
+        if (clone.Type == AccountType.Mortgage && clone.MortgageDetails != null) {
+            if (target.MortgageDetails == null) target.MortgageDetails = new MortgageDetails();
+            target.MortgageDetails.InterestRate = clone.MortgageDetails.InterestRate;
+            target.MortgageDetails.Escrow = clone.MortgageDetails.Escrow;
+            target.MortgageDetails.MortgageInsurance = clone.MortgageDetails.MortgageInsurance;
+            target.MortgageDetails.LoanPayment = clone.MortgageDetails.LoanPayment;
+            target.MortgageDetails.PaymentDate = clone.MortgageDetails.PaymentDate;
+        }
+
+        if (clone.Type == AccountType.CreditCard && clone.CreditCardDetails != null) {
+            if (target.CreditCardDetails == null) target.CreditCardDetails = new CreditCardDetails();
+            target.CreditCardDetails.Apr = clone.CreditCardDetails.Apr;
+            target.CreditCardDetails.StatementDay = clone.CreditCardDetails.StatementDay;
+            target.CreditCardDetails.PayPreviousMonthBalanceInFull = clone.CreditCardDetails.PayPreviousMonthBalanceInFull;
+        }
     }
 
     private void CancelAccount() {

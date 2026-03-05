@@ -16,6 +16,9 @@ public class Transaction : ViewModelBase
     private DateTime _periodDate;
     private bool _isPrincipalOnly;
     private bool _isRebalance;
+    private bool _isCashAdvance;
+    private bool _isBalanceTransfer;
+    private bool _isInterestAdjustment;
 
     public int Id { get; set; }
     public Guid FitId { get; set; } = Guid.NewGuid();
@@ -90,6 +93,24 @@ public class Transaction : ViewModelBase
     {
         get => _isRebalance;
         set => SetProperty(ref _isRebalance, value);
+    }
+
+    public bool IsCashAdvance
+    {
+        get => _isCashAdvance;
+        set => SetProperty(ref _isCashAdvance, value);
+    }
+
+    public bool IsBalanceTransfer
+    {
+        get => _isBalanceTransfer;
+        set => SetProperty(ref _isBalanceTransfer, value);
+    }
+
+    public bool IsInterestAdjustment
+    {
+        get => _isInterestAdjustment;
+        set => SetProperty(ref _isInterestAdjustment, value);
     }
 
     // Helper for UI

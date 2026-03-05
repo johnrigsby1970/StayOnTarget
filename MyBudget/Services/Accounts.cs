@@ -15,6 +15,10 @@ public partial class BudgetService
             {
                 acc.MortgageDetails = conn.QueryFirstOrDefault<MortgageDetails>("SELECT * FROM MortgageDetails WHERE AccountId = @Id", new { acc.Id });
             }
+            if (acc.Type == AccountType.CreditCard)
+            {
+                acc.CreditCardDetails = conn.QueryFirstOrDefault<CreditCardDetails>("SELECT * FROM CreditCardDetails WHERE AccountId = @Id", new { acc.Id });
+            }
         }
         return accounts;
     }
@@ -70,11 +74,36 @@ public partial class BudgetService
                                MortgageInsurance=@MortgageInsurance, LoanPayment=@LoanPayment, PaymentDate=@PaymentDate WHERE Id=@Id", mdParam);
             }
         }
+
+        if (account.Type == AccountType.CreditCard && account.CreditCardDetails != null)
+        {
+            account.CreditCardDetails.AccountId = account.Id;
+            var ccdParam = new
+            {
+                account.CreditCardDetails.Id,
+                account.CreditCardDetails.AccountId,
+                account.CreditCardDetails.Apr,
+                account.CreditCardDetails.StatementDay,
+                PayPreviousMonthBalanceInFull = account.CreditCardDetails.PayPreviousMonthBalanceInFull ? 1 : 0
+            };
+            if (account.CreditCardDetails.Id == 0)
+            {
+                conn.Execute(@"INSERT INTO CreditCardDetails (AccountId, Apr, StatementDay, PayPreviousMonthBalanceInFull) 
+                               VALUES (@AccountId, @Apr, @StatementDay, @PayPreviousMonthBalanceInFull)", ccdParam);
+            }
+            else
+            {
+                conn.Execute(@"UPDATE CreditCardDetails SET Apr=@Apr, StatementDay=@StatementDay, 
+                               PayPreviousMonthBalanceInFull=@PayPreviousMonthBalanceInFull WHERE Id=@Id", ccdParam);
+            }
+        }
     }
     
     public void DeleteAccount(int id)
     {
         using var conn = _db.GetConnection();
+        conn.Execute("DELETE FROM MortgageDetails WHERE AccountId = @id", new { id });
+        conn.Execute("DELETE FROM CreditCardDetails WHERE AccountId = @id", new { id });
         conn.Execute("DELETE FROM Accounts WHERE Id = @id", new { id });
     }
 

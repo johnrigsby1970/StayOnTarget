@@ -735,6 +735,23 @@
                                             SelectedDate="{Binding EditingAccountClone.MortgageDetails.PaymentDate, UpdateSourceTrigger=PropertyChanged}"
                                             Width="100" Margin="2,5" />
                                     </StackPanel>
+
+                                    <!-- Credit Card Specific Details -->
+                                    <StackPanel Grid.Row="4" Grid.ColumnSpan="4" Orientation="Horizontal"
+                                                Visibility="{Binding EditingAccountClone.Type, ConverterParameter=CreditCard, Converter={StaticResource AccountTypeToVisibilityConverter}}">
+                                        <Label Content="APR %:" />
+                                        <TextBox
+                                            Text="{Binding EditingAccountClone.CreditCardDetails.Apr, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="50" Margin="2,5" />
+                                        <Label Content="Statement Day:" />
+                                        <TextBox
+                                            Text="{Binding EditingAccountClone.CreditCardDetails.StatementDay, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="30" Margin="2,5" />
+                                        <CheckBox Content="Grace Period"
+                                                  IsChecked="{Binding EditingAccountClone.CreditCardDetails.PayPreviousMonthBalanceInFull, UpdateSourceTrigger=PropertyChanged}"
+                                                  VerticalAlignment="Center" Margin="10,0,0,0"
+                                                  ToolTip="Interest is not charged if previous month's balance is paid in full" />
+                                    </StackPanel>
                                 </Grid>
                             </StackPanel>
                         </Grid>

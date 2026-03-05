@@ -107,6 +107,15 @@ public class DatabaseContext
                 FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
             );
 
+            CREATE TABLE IF NOT EXISTS CreditCardDetails (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                AccountId INTEGER NOT NULL,
+                Apr DECIMAL NOT NULL,
+                StatementDay INTEGER NOT NULL,
+                PayPreviousMonthBalanceInFull INTEGER NOT NULL,
+                FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
+            );
+
             CREATE TABLE IF NOT EXISTS Bills (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Name TEXT NOT NULL,
@@ -405,5 +414,22 @@ public class DatabaseContext
         //         connection.Execute("ALTER TABLE Transactions ADD COLUMN PaycheckOccurrenceDate TEXT");
         //     }
         // }
+
+        // Check if CreditCardDetails table exists
+        var ccDetailsTableExists = connection.ExecuteScalar<int>(@"
+            SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='CreditCardDetails'");
+        
+        if (ccDetailsTableExists == 0)
+        {
+            connection.Execute(@"
+                CREATE TABLE CreditCardDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    AccountId INTEGER NOT NULL,
+                    Apr DECIMAL NOT NULL,
+                    StatementDay INTEGER NOT NULL,
+                    PayPreviousMonthBalanceInFull INTEGER NOT NULL,
+                    FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
+                )");
+        }
     }
 }

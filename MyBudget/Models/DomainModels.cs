@@ -26,5 +26,6 @@ public enum AccountType
     Retirement401k,
     Brokerage,
     Mortgage,
-    PersonalLoan
+    PersonalLoan,
+    CreditCard
 }

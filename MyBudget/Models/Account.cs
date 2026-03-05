@@ -12,6 +12,7 @@ public class Account : ViewModelBase
     private bool _includeInTotal = true;
     private AccountType _type = AccountType.Checking;
     private MortgageDetails? _mortgageDetails;
+    private CreditCardDetails? _creditCardDetails;
 
     public int Id { get; set; }
 
@@ -61,5 +62,11 @@ public class Account : ViewModelBase
     {
         get => _mortgageDetails;
         set => SetProperty(ref _mortgageDetails, value);
+    }
+
+    public CreditCardDetails? CreditCardDetails
+    {
+        get => _creditCardDetails;
+        set => SetProperty(ref _creditCardDetails, value);
     }
 }

@@ -57,7 +57,7 @@ public class ProjectionEngine : IProjectionEngine {
         var events =
             new List<(DateTime Date, decimal Amount, string Description, int? FromAccountId, int? ToAccountId, int?
                 BucketId, int? PaycheckId, DateTime? PaycheckOccurrenceDate, ProjectionEventType Type, bool
-                IsPrincipalOnly, bool IsRebalance, bool IsReconciled)>();
+                IsPrincipalOnly, bool IsRebalance, bool IsInterestAdjustment, bool IsReconciled)>();
 
         // 1. Paychecks
         var cashAccount = accounts.FirstOrDefault(a => a.Name == "Household Cash");
@@ -81,7 +81,7 @@ public class ProjectionEngine : IProjectionEngine {
                     if (transactionOverride == null) {
                         int? toAccountId = pay.AccountId ?? cashAccount?.Id;
                         events.Add((nextPay, pay.ExpectedAmount, $"Expected Pay: {pay.Name}", null, toAccountId, null,
-                            pay.Id, nextPay, ProjectionEventType.Paycheck, false, false, false));
+                            pay.Id, nextPay, ProjectionEventType.Paycheck, false, false, false, false));
                     }
                 }
 
@@ -115,14 +115,9 @@ public class ProjectionEngine : IProjectionEngine {
             while (nextDue < endDate) {
                 //It is possible for the actual bill date to be different from the expected. If someone changes it in the period bill, we want to use the actual date
                 var pb = periodBills.FirstOrDefault(p => p.BillId == bill.Id && (p.DueDate.Date == nextDue.Date || (p.DueDate.Date >= new DateTime(nextDue.Year, nextDue.Month, 1) && p.DueDate.Date <= new DateTime(nextDue.Year, nextDue.Month, DateTime.DaysInMonth(nextDue.Year, nextDue.Month)))));
-                if (pb?.BillName=="WJCT") {
-                    var s = "";
-                }
                 var isPaid = pb != null && transactions.Any(t =>
                         t.BillId == bill.Id && (t.Date >= nextDue || (Math.Abs((t.Date - nextDue).TotalDays) <= 14) ) && t.Date >= pb.PeriodDate && t.Date <= pb.PeriodDate.AddDays(28));//some arbitrary thresholds
-                if (isPaid) {
-                    var s = "";
-                }
+
                 if (!isPaid) {
                     //bill has been paid by a logged transaction. We will use the logged transaction instead of the expected bill or paid period bill entry.
                     decimal amountToUse = (pb != null) ? pb.ActualAmount : bill.ExpectedAmount;
@@ -132,14 +127,13 @@ public class ProjectionEngine : IProjectionEngine {
                     int? fromAccId = bill.AccountId ?? primaryChecking;
                     if (bill.ToAccountId.HasValue) {
                         events.Add((dueDate, amountToUse, $"Transfer: {bill.Name}{paidSuffix}", fromAccId,
-                            bill.ToAccountId.Value, null, null, null, ProjectionEventType.Transfer, false, false, false));
+                            bill.ToAccountId.Value, null, null, null, ProjectionEventType.Transfer, false, false, false, false));
                     }
                     else {
                         events.Add((dueDate, -amountToUse, $"Bill: {bill.Name}{paidSuffix}", fromAccId, null, null, null,
-                            null, ProjectionEventType.Bill, false, false, false));
+                            null, ProjectionEventType.Bill, false, false, false, false));
                     }
                 }
-                
 
                 nextDue = bill.Frequency switch {
                     Frequency.Monthly => nextDue.AddMonths(1),
@@ -151,42 +145,80 @@ public class ProjectionEngine : IProjectionEngine {
             }
         }
 
-        var monthlyBuckets = new List<(int, DateTime)>();
-        // 3. Buckets that are specific to a pay check and thus pay period
-        foreach (var bucket in buckets.Where(x=>x.PaycheckId.HasValue)) {
-            foreach (var pay in paychecks) {
-                DateTime nextPay = pay.StartDate;
-                while (nextPay < endDate) {
-                    var payPeriodEndDate = (pay.Frequency switch {
-                        Frequency.Weekly => nextPay.AddDays(7),
-                        Frequency.BiWeekly => nextPay.AddDays(14),
-                        Frequency.Monthly => nextPay.AddMonths(1),
-                        _ => nextPay.AddYears(100)
-                    }).AddDays(-1);
+        // 3. Buckets
+        foreach (var bucket in buckets) {
+            if (bucket.PaycheckId.HasValue) {
+                // If the bucket is associated with a specific paycheck, project it for each occurrence of THAT paycheck.
+                foreach (var pay in paychecks.Where(p => p.Id == bucket.PaycheckId)) {
+                    DateTime nextPay = pay.StartDate;
+                    while (nextPay < endDate) {
+                        var payPeriodEndDate = (pay.Frequency switch {
+                            Frequency.Weekly => nextPay.AddDays(7),
+                            Frequency.BiWeekly => nextPay.AddDays(14),
+                            Frequency.Monthly => nextPay.AddMonths(1),
+                            _ => nextPay.AddYears(100)
+                        }).AddDays(-1);
+                            
+                        if (nextPay >= current && (pay.EndDate == null || nextPay <= pay.EndDate)) {
+                            PeriodBucket?  pb = periodBuckets.FirstOrDefault(p =>
+                                    p.BucketId == bucket.Id && (p.PeriodDate.Date == nextPay.Date));
+                            
+                            decimal amountToUse = (pb != null) ? pb.ActualAmount : bucket.ExpectedAmount;
+                            string paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
+
+                            int? fromAccId = bucket.AccountId ?? primaryChecking;
+                            events.Add((payPeriodEndDate, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
+                                bucket.Id, null, null, ProjectionEventType.Bucket, false, false, false, false));
+                        }
+
+                        nextPay = pay.Frequency switch {
+                            Frequency.Weekly => nextPay.AddDays(7),
+                            Frequency.BiWeekly => nextPay.AddDays(14),
+                            Frequency.Monthly => nextPay.AddMonths(1),
+                            _ => nextPay.AddYears(100)
+                        };
+                    }
+                }
+            }
+            else {
+                // If NOT associated with a paycheck, project it for each period (based on ALL paychecks).
+                // Find all unique paycheck occurrences across all paychecks.
+                var occurrences = new List<(DateTime Start, DateTime End)>();
+                foreach (var pay in paychecks) {
+                    DateTime nextPay = pay.StartDate;
+                    while (nextPay < endDate) {
+                        var payPeriodEndDate = (pay.Frequency switch {
+                            Frequency.Weekly => nextPay.AddDays(7),
+                            Frequency.BiWeekly => nextPay.AddDays(14),
+                            Frequency.Monthly => nextPay.AddMonths(1),
+                            _ => nextPay.AddYears(100)
+                        }).AddDays(-1);
                         
-                    if (nextPay >= current && (pay.EndDate == null || nextPay <= pay.EndDate)) {
+                        occurrences.Add((nextPay, payPeriodEndDate));
+                        
+                        nextPay = pay.Frequency switch {
+                            Frequency.Weekly => nextPay.AddDays(7),
+                            Frequency.BiWeekly => nextPay.AddDays(14),
+                            Frequency.Monthly => nextPay.AddMonths(1),
+                            _ => nextPay.AddYears(100)
+                        };
+                    }
+                }
+                
+                // Group by start date to avoid double-projecting if two paychecks start on the same day.
+                foreach (var group in occurrences.GroupBy(o => o.Start)) {
+                    var occurrence = group.First();
+                    if (occurrence.Start >= current) {
                         PeriodBucket?  pb = periodBuckets.FirstOrDefault(p =>
-                                p.BucketId == bucket.Id && (p.PeriodDate.Date == nextPay.Date));
+                                p.BucketId == bucket.Id && (p.PeriodDate.Date == occurrence.Start.Date));
                         
                         decimal amountToUse = (pb != null) ? pb.ActualAmount : bucket.ExpectedAmount;
                         string paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
 
                         int? fromAccId = bucket.AccountId ?? primaryChecking;
-                        //events.Add((nextPay, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
-                        //    bucket.Id, null, null, ProjectionEventType.Bucket, false, false));
-                        
-                        //Because bucket money is expected money, not real transactions, we should apply them as late in the 
-                        //period as possible so that the user can watch their account balance reflect actual transactions.
-                        events.Add((payPeriodEndDate, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
-                            bucket.Id, null, null, ProjectionEventType.Bucket, false, false, false));
+                        events.Add((occurrence.End, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
+                            bucket.Id, null, null, ProjectionEventType.Bucket, false, false, false, false));
                     }
-
-                    nextPay = pay.Frequency switch {
-                        Frequency.Weekly => nextPay.AddDays(7),
-                        Frequency.BiWeekly => nextPay.AddDays(14),
-                        Frequency.Monthly => nextPay.AddMonths(1),
-                        _ => nextPay.AddYears(100)
-                    };
                 }
             }
         }
@@ -196,10 +228,10 @@ public class ProjectionEngine : IProjectionEngine {
             // We need to collect ALL transactions that could affect balances from the earliest BalanceAsOf
             events.Add((transaction.Date, transaction.Amount, transaction.Description, transaction.AccountId, transaction.ToAccountId, transaction.BucketId,
                 transaction.PaycheckId, transaction.PaycheckOccurrenceDate, ProjectionEventType.Transaction, transaction.IsPrincipalOnly,
-                transaction.IsRebalance, false));
+                transaction.IsRebalance, transaction.IsInterestAdjustment, false));
         }
 
-        // 5. Interest & Growth
+        // 5. Interest & Growth Setup
         foreach (var acc in accounts) {
             if (acc.Type == AccountType.Mortgage && acc.MortgageDetails != null) {
                 DateTime nextInterest = acc.MortgageDetails.PaymentDate;
@@ -207,18 +239,36 @@ public class ProjectionEngine : IProjectionEngine {
                 while (nextInterest < startDate) nextInterest = nextInterest.AddMonths(1);
 
                 while (nextInterest < endDate) {
-                    // Check if there is a transaction to this account on this date
-                    // The user said: "If a transaction has a toaccountifd that is an interest accruing account, 
-                    // then the record is either interest or a rebalance of the account and should be treated as the interest for that period."
                     var hasInterestTransaction =
                         transactions.Any(a => a.ToAccountId == acc.Id && a.Date.Date == nextInterest.Date);
 
                     if (!hasInterestTransaction) {
                         events.Add((nextInterest, 0, $"Interest: {acc.Name}", acc.Id, null, null, null, null,
-                            ProjectionEventType.Interest, false, false, false));
+                            ProjectionEventType.Interest, false, false, false, false));
                     }
-
                     nextInterest = nextInterest.AddMonths(1);
+                }
+            }
+            
+            if (acc.Type == AccountType.CreditCard && acc.CreditCardDetails != null) {
+                DateTime nextStatement = new DateTime(startDate.Year, startDate.Month, Math.Min(acc.CreditCardDetails.StatementDay, DateTime.DaysInMonth(startDate.Year, startDate.Month)));
+                if (nextStatement <= startDate) nextStatement = nextStatement.AddMonths(1);
+                
+                while (nextStatement <= endDate) {
+                    if (nextStatement.Day != acc.CreditCardDetails.StatementDay) {
+                        nextStatement = new DateTime(nextStatement.Year, nextStatement.Month, Math.Min(acc.CreditCardDetails.StatementDay, DateTime.DaysInMonth(nextStatement.Year, nextStatement.Month)));
+                    }
+                    
+                    var statementMonthStart = new DateTime(nextStatement.Year, nextStatement.Month, 1);
+                    var statementMonthEnd = new DateTime(nextStatement.Year, nextStatement.Month, DateTime.DaysInMonth(nextStatement.Year, nextStatement.Month));
+                    var hasInterestAdjustment = transactions.Any(t => t.AccountId == acc.Id && t.IsInterestAdjustment && t.Date >= statementMonthStart && t.Date <= statementMonthEnd);
+                    
+                    if (!hasInterestAdjustment) {
+                        events.Add((nextStatement, 0, $"Credit Card Interest: {acc.Name}", acc.Id, null, null, null, null,
+                            ProjectionEventType.Interest, false, false, false, false));
+                    }
+                    
+                    nextStatement = nextStatement.AddMonths(1);
                 }
             }
         }
@@ -226,21 +276,20 @@ public class ProjectionEngine : IProjectionEngine {
         var sortedEvents = events.OrderBy(e => e.Date).ThenByDescending(e => e.Type == ProjectionEventType.Paycheck)
             .ToList();
 
-        // 6. Growth tracking
+        // 6. Tracking variables
         var accountBalanceDates = accounts.ToDictionary(a => a.Id, a => a.BalanceAsOf);
         var accumulatedGrowth = accounts.ToDictionary(a => a.Id, a => 0m);
+        var ccDailyBalances = accounts.Where(a => a.Type == AccountType.CreditCard).ToDictionary(a => a.Id, a => new List<(DateTime Date, decimal Balance, decimal InterestAccruingBalance)>());
+        var ccPreviousMonthPaidInFull = accounts.Where(a => a.Type == AccountType.CreditCard).ToDictionary(a => a.Id, a => a.Balance <= 0);
 
         // Recalculate accountBalances based on BalanceAsOf and events before 'current'
         foreach (var acc in accounts) {
-            // Reset to DB balance
             accountBalances[acc.Id] = acc.Balance;
-
-            // Apply events that happened between acc.BalanceAsOf and current
             var priorEvents = sortedEvents.Where(e => e.Date >= acc.BalanceAsOf && e.Date < current).ToList();
             foreach (var e in priorEvents) {
                 decimal amountChange = Math.Abs(e.Amount);
                 if (e.FromAccountId == acc.Id) {
-                    if (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan) {
+                    if (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan || acc.Type == AccountType.CreditCard) {
                         accountBalances[acc.Id] += amountChange;
                     }
                     else {
@@ -251,13 +300,11 @@ public class ProjectionEngine : IProjectionEngine {
                 if (e.ToAccountId == acc.Id) {
                     bool isMortgage = acc.Type == AccountType.Mortgage;
                     bool isPersonalLoan = acc.Type == AccountType.PersonalLoan;
+                    bool isCreditCard = acc.Type == AccountType.CreditCard;
                     bool isPrincipalOnly = e.IsPrincipalOnly;
                     bool isRebalance = e.IsRebalance;
-
-                    // Robust interest/rebalance detection as per requirements:
-                    // "If a transaction has a toaccountifd that is an interest accruing account, 
-                    // then the record is either interest or a rebalance of the account and should be treated as the interest for that period."
-                    bool isInterestOrRebalance = isMortgage && (e.Type == ProjectionEventType.Transaction && isRebalance);
+                    bool isInterestAdjustment = (e.Type == ProjectionEventType.Transaction && e.IsInterestAdjustment);
+                    bool isInterestOrRebalance = (isMortgage || isCreditCard) && (isRebalance || isInterestAdjustment);
 
                     if (isInterestOrRebalance) {
                         accountBalances[acc.Id] += amountChange;
@@ -265,23 +312,22 @@ public class ProjectionEngine : IProjectionEngine {
                     else if (isMortgage) {
                         decimal principal = amountChange;
                         if (!isPrincipalOnly && acc.MortgageDetails != null) {
-                            principal = amountChange - acc.MortgageDetails.Escrow -
-                                        acc.MortgageDetails.MortgageInsurance;
+                            principal = amountChange - acc.MortgageDetails.Escrow - acc.MortgageDetails.MortgageInsurance;
                             if (principal < 0) principal = 0;
                         }
-
                         accountBalances[acc.Id] -= principal;
                     }
                     else if (isPersonalLoan && (e.Type == ProjectionEventType.Transaction && isPrincipalOnly)) {
                         accountBalances[acc.Id] -= amountChange;
                     }
                     else if (isPersonalLoan && (e.Type == ProjectionEventType.Transaction && isRebalance)) {
-                        // Explicit rebalance for personal loan increases debt
                         accountBalances[acc.Id] += amountChange;
                     }
                     else if (isPersonalLoan) {
-                        // Standard personal loan payment (treated as transfer for now unless amortization is added)
                         accountBalances[acc.Id] += amountChange;
+                    }
+                    else if (isCreditCard) {
+                        accountBalances[acc.Id] -= amountChange;
                     }
                     else {
                         accountBalances[acc.Id] += amountChange;
@@ -292,27 +338,23 @@ public class ProjectionEngine : IProjectionEngine {
 
         decimal runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id)).Sum(a => {
             var bal = accountBalances[a.Id];
-            return (a.Type == AccountType.Mortgage || a.Type == AccountType.PersonalLoan) ? -bal : bal;
+            return (a.Type == AccountType.Mortgage || a.Type == AccountType.PersonalLoan || a.Type == AccountType.CreditCard) ? -bal : bal;
         });
 
         DateTime lastDate = current;
-
         var futureEvents = sortedEvents.Where(e => e.Date >= current).ToList();
         var paycheckDates = futureEvents
             .Where(e => e.Type == ProjectionEventType.Paycheck ||
                         (e.Type == ProjectionEventType.Transaction && e.PaycheckId.HasValue)).Select(e => e.Date).Distinct()
             .OrderBy(d => d).ToList();
 
-        // Ensure the projection start date is considered a period boundary if no paycheck falls on it
         if (!paycheckDates.Any() || paycheckDates[0] > current) {
             paycheckDates.Insert(0, current);
         }
 
-        // Track bucket spending per period
         var bucketSpending = new Dictionary<(DateTime PeriodDate, int BucketId), decimal>();
         foreach (var transaction in transactions) {
             if (transaction.BucketId.HasValue) {
-                // Find which period this transaction falls into
                 DateTime periodDate = paycheckDates.LastOrDefault(d => d <= transaction.Date);
                 if (periodDate != DateTime.MinValue) {
                     var key = (periodDate, transaction.BucketId.Value);
@@ -321,36 +363,21 @@ public class ProjectionEngine : IProjectionEngine {
                 }
             }
         }
-
+        
         foreach (var e in futureEvents) {
-            // Process each day between projection events to account for daily value growth
-            int days = (e.Date - lastDate).Days; // Number of whole days to bridge from previous event to current event
+            int days = (e.Date - lastDate).Days;
             if (days > 0) {
-                for (int d = 0; d < days; d++) // Simulate day-by-day to compound growth and handle balance start dates
-                {
-                    DateTime dayDate = lastDate.AddDays(d); // The specific simulated day
-
-                    // Consider only accounts that accrue growth; mortgages are excluded (handled in a dedicated section)
-                    foreach (var acc in accounts.Where(a => a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage)) {
-                        // Do not accrue before the account’s known starting balance date
+                for (int d = 0; d < days; d++) {
+                    DateTime dayDate = lastDate.AddDays(d);
+                    foreach (var acc in accounts.Where(a => a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage && a.Type != AccountType.CreditCard)) {
                         if (dayDate < accountBalanceDates[acc.Id]) continue;
-
-                        // Compute one-day growth using simple daily rate from annual percentage
-                        decimal dailyRate = acc.AnnualGrowthRate / 100m / 365m; // e.g., 5% → 0.05/365 per day
-                        decimal growth = accountBalances[acc.Id] * dailyRate; // Compound on current balance
-
-                        // Accumulate sub-cent growth to avoid rounding on every day
+                        decimal dailyRate = acc.AnnualGrowthRate / 100m / 365m;
+                        decimal growth = accountBalances[acc.Id] * dailyRate;
                         accumulatedGrowth[acc.Id] += growth;
-
-                        // When at least ±$0.01 has accumulated, post it to the account balance
                         if (accumulatedGrowth[acc.Id] >= 0.01m || accumulatedGrowth[acc.Id] <= -0.01m) {
-                            decimal toAdd = Math.Round(accumulatedGrowth[acc.Id],
-                                2); // Round to cents (banker’s rounding)
-                            accountBalances[acc.Id] += toAdd; // Apply the posted cents to the balance
-
-                            // Keep the global running total in sync for accounts included in overall totals
+                            decimal toAdd = Math.Round(accumulatedGrowth[acc.Id], 2);
+                            accountBalances[acc.Id] += toAdd;
                             if (includedTotalAccounts.Contains(acc.Id)) {
-                                // For debt accounts, a positive "growth" increases what you owe → decreases net total
                                 if (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan) {
                                     runningBalance -= toAdd;
                                 }
@@ -358,17 +385,18 @@ public class ProjectionEngine : IProjectionEngine {
                                     runningBalance += toAdd;
                                 }
                             }
-
-                            // Remove what was posted; leave any remaining fractional cents in the accumulator
                             accumulatedGrowth[acc.Id] -= toAdd;
                         }
+                    }
+                    foreach (var acc in accounts.Where(a => a.Type == AccountType.CreditCard)) {
+                         ccDailyBalances[acc.Id].Add((dayDate, accountBalances[acc.Id], accountBalances[acc.Id])); 
                     }
                 }
             }
 
-            lastDate = e.Date; // Advance the timeline to the current event date
-
-            // Apply Interest for Mortgage
+            lastDate = e.Date;
+            
+            // Apply Interest
             if (e.Type == ProjectionEventType.Interest && e.FromAccountId.HasValue) {
                 var acc = accounts.FirstOrDefault(a => a.Id == e.FromAccountId.Value);
                 if (acc != null && acc.Type == AccountType.Mortgage && acc.MortgageDetails != null) {
@@ -379,7 +407,6 @@ public class ProjectionEngine : IProjectionEngine {
                         runningBalance -= interest;
                     }
 
-                    // Create a projection item for the interest added
                     list.Add(new ProjectionItem {
                         Date = e.Date,
                         Description = e.Description,
@@ -387,39 +414,45 @@ public class ProjectionEngine : IProjectionEngine {
                         Balance = runningBalance,
                         AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value)
                     });
-                    continue; // Already added projection item
+                    continue;
                 }
-            }
+                
+                if (acc != null && acc.Type == AccountType.CreditCard && acc.CreditCardDetails != null) {
+                    var dailyBalances = ccDailyBalances[acc.Id];
+                    if (dailyBalances.Any()) {
+                        decimal dailyPeriodicRate = (acc.CreditCardDetails.Apr / 100m) / 365m;
+                        decimal totalInterest = 0;
+                        bool gracePeriodApplies = acc.CreditCardDetails.PayPreviousMonthBalanceInFull && ccPreviousMonthPaidInFull[acc.Id];
+                        
+                        if (!gracePeriodApplies) {
+                            decimal sumBalances = dailyBalances.Sum(db => db.Balance);
+                            decimal avgDailyBalance = sumBalances / dailyBalances.Count;
+                            totalInterest = Math.Round(avgDailyBalance * dailyPeriodicRate * dailyBalances.Count, 2);
+                        }
+                        
+                        if (totalInterest > 0) {
+                            accountBalances[acc.Id] += totalInterest;
+                            if (includedTotalAccounts.Contains(acc.Id)) {
+                                runningBalance -= totalInterest;
+                            }
+                        }
+                        // Check if previous balance (before interest) was paid in full to determine grace period for NEXT month
+                        ccPreviousMonthPaidInFull[acc.Id] = (accountBalances[acc.Id] - totalInterest) <= 0.01m;
+                        dailyBalances.Clear();
 
-            // Check if this is an transaction interest/rebalance for an interest-accruing account
-            // As per requirements: "If a transaction has a toaccountifd that is an interest accruing account, 
-            // then the record is either interest or a rebalance of the account and should be treated as the interest for that period."
-            if (e.ToAccountId.HasValue && e.Type == ProjectionEventType.Transaction) {
-                var toAcc = accounts.FirstOrDefault(a => a.Id == e.ToAccountId.Value);
-                if (toAcc != null && toAcc.Type == AccountType.Mortgage) {
-                    // This transaction will be processed by the generic balance application below (as a deposit to the mortgage account, which increases the debt).
-                    // We don't need to do anything special here, just ensuring we don't accidentally treat it as a regular transfer.
+                        list.Add(new ProjectionItem {
+                            Date = e.Date,
+                            Description = e.Description,
+                            Amount = totalInterest,
+                            Balance = runningBalance,
+                            AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value)
+                        });
+                        continue;
+                    }
                 }
             }
 
             // Apply balances
-            if (e.Type == ProjectionEventType.Bucket && e.BucketId.HasValue) {
-                // Find how much has been spent from this bucket in this period so far
-                DateTime periodDate = paycheckDates.LastOrDefault(d => d <= e.Date);
-                if (periodDate != DateTime.MinValue) {
-                    var key = (periodDate, e.BucketId.Value);
-                    decimal spent = bucketSpending.ContainsKey(key) ? bucketSpending[key] : 0;
-                    // The projected amount is negative, spent is positive.
-                    // We reduce the absolute value of the projected amount.
-                    decimal projectedAmount = Math.Abs(e.Amount);
-                    decimal remainingToProject = Math.Max(0, projectedAmount - spent);
-
-                    // We need to update the balance application.
-                    // Let's adjust e.Amount for the following logic.
-                    // Note: e is a tuple, we can't modify it easily. We'll use a local variable.
-                }
-            }
-
             decimal currentEventAmount = e.Amount;
             if (e.Type == ProjectionEventType.Bucket && e.BucketId.HasValue) {
                 DateTime periodDate = paycheckDates.LastOrDefault(d => d <= e.Date);
@@ -434,11 +467,7 @@ public class ProjectionEngine : IProjectionEngine {
             if (e.FromAccountId.HasValue && accountBalances.ContainsKey(e.FromAccountId.Value)) {
                 var fromAcc = accounts.FirstOrDefault(a => a.Id == e.FromAccountId.Value);
                 decimal amountChange = Math.Abs(currentEventAmount);
-
-                // For Mortgage/PersonalLoan, we normally shouldn't be pulling FROM them unless it's a rebalance or something.
-                // But if we do, it increases the debt balance.
-                if (fromAcc != null &&
-                    (fromAcc.Type == AccountType.Mortgage || fromAcc.Type == AccountType.PersonalLoan)) {
+                if (fromAcc != null && (fromAcc.Type == AccountType.Mortgage || fromAcc.Type == AccountType.PersonalLoan || fromAcc.Type == AccountType.CreditCard)) {
                     accountBalances[e.FromAccountId.Value] += amountChange;
                     if (includedTotalAccounts.Contains(e.FromAccountId.Value)) {
                         runningBalance -= amountChange;
@@ -455,71 +484,62 @@ public class ProjectionEngine : IProjectionEngine {
             if (e.ToAccountId.HasValue && accountBalances.ContainsKey(e.ToAccountId.Value)) {
                 var toAcc = accounts.FirstOrDefault(a => a.Id == e.ToAccountId.Value);
                 decimal amountChange = Math.Abs(currentEventAmount);
-
                 bool isMortgagePayment = toAcc != null && toAcc.Type == AccountType.Mortgage;
                 bool isPersonalLoanPayment = toAcc != null && toAcc.Type == AccountType.PersonalLoan;
+                bool isCreditCardPayment = toAcc != null && toAcc.Type == AccountType.CreditCard;
                 bool isPrincipalOnly = e.IsPrincipalOnly;
                 bool isRebalance = e.IsRebalance;
-
-                // As per requirements: "If a transaction has a toaccountifd that is an interest accruing account, 
-                // then the record is either interest or a rebalance of the account and should be treated as the interest for that period."
-                bool isInterestOrRebalance = isMortgagePayment && (e.Type == ProjectionEventType.Transaction && isRebalance);
+                bool isInterestAdjustment = (e.Type == ProjectionEventType.Transaction && e.IsInterestAdjustment);
+                bool isInterestOrRebalance = (isMortgagePayment || isCreditCardPayment) && (isRebalance || isInterestAdjustment);
 
                 if (isInterestOrRebalance) {
-                    // Increases the debt
                     accountBalances[e.ToAccountId.Value] += amountChange;
                     if (includedTotalAccounts.Contains(e.ToAccountId.Value)) {
                         runningBalance -= amountChange;
                     }
                 }
                 else if (isMortgagePayment) {
-                    // Reduces the debt
                     decimal principal = amountChange;
                     if (!isPrincipalOnly && toAcc!.MortgageDetails != null) {
-                        principal = amountChange - toAcc.MortgageDetails.Escrow -
-                                    toAcc.MortgageDetails.MortgageInsurance;
+                        principal = amountChange - toAcc.MortgageDetails.Escrow - toAcc.MortgageDetails.MortgageInsurance;
                         if (principal < 0) principal = 0;
                     }
-
                     accountBalances[e.ToAccountId.Value] -= principal;
                     if (includedTotalAccounts.Contains(e.ToAccountId.Value)) {
                         runningBalance += principal;
                     }
                 }
                 else if (isPersonalLoanPayment && (e.Type == ProjectionEventType.Transaction && isPrincipalOnly)) {
-                    // Transaction principal only payment to a personal loan
                     accountBalances[e.ToAccountId.Value] -= amountChange;
                     if (includedTotalAccounts.Contains(e.ToAccountId.Value)) {
                         runningBalance += amountChange;
                     }
                 }
                 else if (isPersonalLoanPayment && (e.Type == ProjectionEventType.Transaction && isRebalance)) {
-                    // Transaction rebalance increases debt
                     accountBalances[e.ToAccountId.Value] += amountChange;
                     if (includedTotalAccounts.Contains(e.ToAccountId.Value)) {
                         runningBalance -= amountChange;
                     }
                 }
-                else if (toAcc != null &&
-                         (toAcc.Type == AccountType.Mortgage || toAcc.Type == AccountType.PersonalLoan)) {
-                    // Standard payment/transfer to debt increases balance (deposits) unless it's a payment.
+                else if (isCreditCardPayment) {
+                    accountBalances[e.ToAccountId.Value] -= amountChange;
+                    if (includedTotalAccounts.Contains(e.ToAccountId.Value)) {
+                        runningBalance += amountChange;
+                    }
+                }
+                else if (toAcc != null && (toAcc.Type == AccountType.Mortgage || toAcc.Type == AccountType.PersonalLoan)) {
                     accountBalances[e.ToAccountId.Value] += amountChange;
                     if (includedTotalAccounts.Contains(e.ToAccountId.Value)) {
                         runningBalance -= amountChange;
                     }
                 }
                 else {
-                    // Regular account, increase balance
                     accountBalances[e.ToAccountId.Value] += amountChange;
                     if (includedTotalAccounts.Contains(e.ToAccountId.Value)) {
                         runningBalance += amountChange;
                     }
                 }
             }
-
-            // If neither is set but amount is positive, assume it's income to primary? No, better be robust.
-            // If it's a bill/bucket and no AccountId, it already used primaryChecking.
-            // If it's a transaction and no accounts, it might just be a note or something, but usually it should have an account.
 
             var item = new ProjectionItem {
                 Date = e.Date,
@@ -529,32 +549,24 @@ public class ProjectionEngine : IProjectionEngine {
                 Balance = runningBalance,
                 AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value)
             };
-
             list.Add(item);
         }
 
-        // Net per period
         for (int i = 0; i < paycheckDates.Count; i++) {
             DateTime start = paycheckDates[i];
             DateTime next = (i + 1 < paycheckDates.Count) ? paycheckDates[i + 1] : endDate;
-
-            // Find ALL items in this period
             var periodItems = list.Where(item => item.Date >= start && item.Date < next).ToList();
             if (periodItems.Any()) {
-                // Assign PeriodNet to the VERY FIRST item in the period
-                // This might not be a paycheck if other events happen on the same date before the paycheck
-                // but sortedEvents handles paychecks first on same date.
                 periodItems.First().PeriodNet = periodItems.Sum(item => item.Amount);
             }
         }
 
-        // Add a final item if there's remaining growth or just to show the final state
         if (lastDate < endDate) {
             int remainingDays = (endDate - lastDate).Days;
             if (remainingDays > 0) {
                 for (int d = 0; d < remainingDays; d++) {
                     DateTime dayDate = lastDate.AddDays(d);
-                    foreach (var acc in accounts.Where(a => a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage)) {
+                    foreach (var acc in accounts.Where(a => a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage && a.Type != AccountType.CreditCard)) {
                         if (dayDate < accountBalanceDates[acc.Id]) continue;
                         decimal dailyRate = acc.AnnualGrowthRate / 100m / 365m;
                         decimal growth = accountBalances[acc.Id] * dailyRate;
@@ -570,7 +582,6 @@ public class ProjectionEngine : IProjectionEngine {
                                     runningBalance += toAdd;
                                 }
                             }
-
                             accumulatedGrowth[acc.Id] -= toAdd;
                         }
                     }
@@ -585,7 +596,6 @@ public class ProjectionEngine : IProjectionEngine {
                 AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value)
             });
         }
-
         return list;
     }
 }
