@@ -795,9 +795,17 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}"
                                                 IsReadOnly="True" Width="80" />
-                            <DataGridCheckBoxColumn Header="Reconciled"
-                                                    Binding="{Binding Reconciled, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="40" />
+                            
+                            <DataGridTemplateColumn Header="Reconciled" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox 
+                                            IsChecked="{Binding IsReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                            HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="True"
                                                 Width="150" />
                             <DataGridTextColumn Header="Amount"

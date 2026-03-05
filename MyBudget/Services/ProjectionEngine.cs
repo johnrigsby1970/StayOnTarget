@@ -55,9 +55,7 @@ public class ProjectionEngine : IProjectionEngine {
         }
 
         var events =
-            new List<(DateTime Date, decimal Amount, string Description, int? FromAccountId, int? ToAccountId, int?
-                BucketId, int? PaycheckId, DateTime? PaycheckOccurrenceDate, ProjectionEventType Type, bool
-                IsPrincipalOnly, bool IsRebalance, bool IsInterestAdjustment, bool IsReconciled)>();
+            new List<ProjectionGridItem>();
 
         // 1. Paychecks
         var cashAccount = accounts.FirstOrDefault(a => a.Name == "Household Cash");
@@ -80,7 +78,8 @@ public class ProjectionEngine : IProjectionEngine {
 
                     if (transactionOverride == null) {
                         int? toAccountId = pay.AccountId ?? cashAccount?.Id;
-                        events.Add((nextPay, pay.ExpectedAmount, $"Expected Pay: {pay.Name}", null, toAccountId, null,
+                        events.Add(
+                            new ProjectionGridItem (nextPay, pay.ExpectedAmount, $"Expected Pay: {pay.Name}", null, toAccountId, null,
                             pay.Id, nextPay, ProjectionEventType.Paycheck, false, false, false, false));
                     }
                 }
@@ -126,11 +125,11 @@ public class ProjectionEngine : IProjectionEngine {
 
                     int? fromAccId = bill.AccountId ?? primaryChecking;
                     if (bill.ToAccountId.HasValue) {
-                        events.Add((dueDate, amountToUse, $"Transfer: {bill.Name}{paidSuffix}", fromAccId,
+                        events.Add(new ProjectionGridItem (dueDate, amountToUse, $"Transfer: {bill.Name}{paidSuffix}", fromAccId,
                             bill.ToAccountId.Value, null, null, null, ProjectionEventType.Transfer, false, false, false, false));
                     }
                     else {
-                        events.Add((dueDate, -amountToUse, $"Bill: {bill.Name}{paidSuffix}", fromAccId, null, null, null,
+                        events.Add(new ProjectionGridItem (dueDate, -amountToUse, $"Bill: {bill.Name}{paidSuffix}", fromAccId, null, null, null,
                             null, ProjectionEventType.Bill, false, false, false, false));
                     }
                 }
@@ -167,7 +166,7 @@ public class ProjectionEngine : IProjectionEngine {
                             string paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
 
                             int? fromAccId = bucket.AccountId ?? primaryChecking;
-                            events.Add((payPeriodEndDate, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
+                            events.Add(new ProjectionGridItem (payPeriodEndDate, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
                                 bucket.Id, null, null, ProjectionEventType.Bucket, false, false, false, false));
                         }
 
@@ -216,7 +215,7 @@ public class ProjectionEngine : IProjectionEngine {
                         string paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
 
                         int? fromAccId = bucket.AccountId ?? primaryChecking;
-                        events.Add((occurrence.End, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
+                        events.Add(new ProjectionGridItem (occurrence.End, -amountToUse, $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
                             bucket.Id, null, null, ProjectionEventType.Bucket, false, false, false, false));
                     }
                 }
@@ -226,7 +225,7 @@ public class ProjectionEngine : IProjectionEngine {
         // 4. Transactions
         foreach (var transaction in transactions) {
             // We need to collect ALL transactions that could affect balances from the earliest BalanceAsOf
-            events.Add((transaction.Date, transaction.Amount, transaction.Description, transaction.AccountId, transaction.ToAccountId, transaction.BucketId,
+            events.Add(new ProjectionGridItem (transaction.Date, transaction.Amount, transaction.Description, transaction.AccountId, transaction.ToAccountId, transaction.BucketId,
                 transaction.PaycheckId, transaction.PaycheckOccurrenceDate, ProjectionEventType.Transaction, transaction.IsPrincipalOnly,
                 transaction.IsRebalance, transaction.IsInterestAdjustment, false));
         }
@@ -243,7 +242,7 @@ public class ProjectionEngine : IProjectionEngine {
                         transactions.Any(a => a.ToAccountId == acc.Id && a.Date.Date == nextInterest.Date);
 
                     if (!hasInterestTransaction) {
-                        events.Add((nextInterest, 0, $"Interest: {acc.Name}", acc.Id, null, null, null, null,
+                        events.Add(new ProjectionGridItem (nextInterest, 0, $"Interest: {acc.Name}", acc.Id, null, null, null, null,
                             ProjectionEventType.Interest, false, false, false, false));
                     }
                     nextInterest = nextInterest.AddMonths(1);
@@ -264,7 +263,7 @@ public class ProjectionEngine : IProjectionEngine {
                     var hasInterestAdjustment = transactions.Any(t => t.AccountId == acc.Id && t.IsInterestAdjustment && t.Date >= statementMonthStart && t.Date <= statementMonthEnd);
                     
                     if (!hasInterestAdjustment) {
-                        events.Add((nextStatement, 0, $"Credit Card Interest: {acc.Name}", acc.Id, null, null, null, null,
+                        events.Add(new ProjectionGridItem (nextStatement, 0, $"Credit Card Interest: {acc.Name}", acc.Id, null, null, null, null,
                             ProjectionEventType.Interest, false, false, false, false));
                     }
                     

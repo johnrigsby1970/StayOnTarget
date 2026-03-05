@@ -74,4 +74,16 @@ public class ProjectionItem : ViewModelBase
     {
         return _accountBalances.TryGetValue(accountName, out var bal) ? bal : 0;
     }
+    private bool _isReconciled;
+    public bool IsReconciled
+    {
+        get { return _isReconciled; }
+        set
+        {
+            if (_isReconciled != value) {
+                _isReconciled = value;
+                OnPropertyChanged("IsReconciled");
+            }
+        }
+    }
 }
