@@ -19,16 +19,19 @@ public class MainViewModel : ViewModelBase {
     private ObservableCollection<Transaction> _currentPeriodTransactions = new();
     private Bill? _selectedBill;
     private BudgetBucket? _selectedBucket;
+    private PeriodBill? _selectedPeriodBill;
     private PeriodBucket? _selectedPeriodBucket;
     private Account? _selectedAccount;
     private Transaction? _selectedTransaction;
     private bool _isEditingBill;
     private bool _isEditingBucket;
     private bool _isEditingPeriodBucket;
+    private bool _isEditingPeriodBill;
     private bool _isEditingAccount;
     private bool _isEditingTransaction;
     private bool _isCalculatingProjections;
     private Bill? _editingBillClone;
+    private PeriodBill? _editingPeriodBillClone;
     private BudgetBucket? _editingBucketClone;
     private PeriodBucket? _editingPeriodBucketClone;
     private Account? _editingAccountClone;
@@ -149,6 +152,15 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
+    
+    public PeriodBill? SelectedPeriodBill {
+        get => _selectedPeriodBill;
+        set {
+            if (SetProperty(ref _selectedPeriodBill, value)) {
+                OnPropertyChanged(nameof(CanEditPeriodBill));
+            }
+        } 
+    }
 
     public BudgetBucket? SelectedBucket {
         get => _selectedBucket;
@@ -248,6 +260,20 @@ public class MainViewModel : ViewModelBase {
     
     public bool CanEditBucket => SelectedBucket != null && !IsEditingBucket;
     
+    public bool IsNotEditingPeriodBill => !IsEditingPeriodBill;
+    
+    public bool IsEditingPeriodBill {
+        get => _isEditingPeriodBill;
+        set {
+            if (SetProperty(ref _isEditingPeriodBill, value)) {
+                OnPropertyChanged(nameof(IsNotEditingPeriodBill));
+                OnPropertyChanged(nameof(CanEditPeriodBill));
+            }
+        }
+    }
+        
+    public bool CanEditPeriodBill => SelectedPeriodBill != null && !IsEditingPeriodBill;
+    
     public bool IsNotEditingPeriodBucket => !IsEditingPeriodBucket;
     
     public bool CanEditPeriodBucket => SelectedPeriodBucket != null && !IsEditingPeriodBucket;
@@ -283,7 +309,12 @@ public class MainViewModel : ViewModelBase {
         get => _editingBillClone;
         set => SetProperty(ref _editingBillClone, value);
     }
-
+    
+    public PeriodBill? EditingPeriodBillClone {
+        get => _editingPeriodBillClone;
+        set => SetProperty(ref _editingPeriodBillClone, value);
+    }
+    
     public BudgetBucket? EditingBucketClone {
         get => _editingBucketClone;
         set => SetProperty(ref _editingBucketClone, value);
@@ -314,6 +345,10 @@ public class MainViewModel : ViewModelBase {
     public ICommand EditBillCommand => new RelayCommand(_ => EditBill(), _ => CanEditBill);
     public ICommand SaveBillCommand => new RelayCommand(_ => SaveBill(), _ => IsEditingBill);
     public ICommand CancelBillCommand => new RelayCommand(_ => CancelBill(), _ => IsEditingBill);
+    
+    public ICommand EditPeriodBillCommand => new RelayCommand(_ => EditPeriodBill(), _ => CanEditPeriodBill);
+    public ICommand SavePeriodBillCommand => new RelayCommand(_ => SavePeriodBill(), _ => IsEditingPeriodBill);
+    public ICommand CancelPeriodBillCommand => new RelayCommand(_ => CancelPeriodBill(), _ => IsEditingPeriodBill);
     public ICommand DeletePeriodBillCommand => new RelayCommand(pb => DeletePeriodBill(pb as PeriodBill));
     
     public ICommand AddBucketCommand => new RelayCommand(_ => AddBucket(), _ => IsNotEditingBucket);
@@ -491,6 +526,51 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
+    
+    
+    
+    private void EditPeriodBill() {
+        //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
+        if (SelectedPeriodBill != null) {
+            EditingPeriodBillClone = new PeriodBill {
+                Id = SelectedPeriodBill.Id, 
+                BillName = SelectedPeriodBill.BillName,
+                ActualAmount = SelectedPeriodBill.ActualAmount,
+                BillId = SelectedPeriodBill.BillId,
+                FitId = SelectedPeriodBill.FitId,
+                DueDate = SelectedPeriodBill.DueDate,
+                PeriodDate = SelectedPeriodBill.PeriodDate,
+                IsPaid = SelectedPeriodBill.IsPaid
+            };
+            
+            IsEditingPeriodBill = true;
+        }
+    }
+    
+    private void SavePeriodBill() {
+        //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
+        if (EditingPeriodBillClone != null) {
+            if (SelectedPeriodBill != null) {
+                UpdatePeriodBillFromClone(SelectedPeriodBill, EditingPeriodBillClone);
+            }
+            else {
+                _budgetService.UpsertPeriodBill(EditingPeriodBillClone);
+            }
+
+            LoadPeriodData();
+            IsEditingPeriodBill = false;
+            EditingPeriodBillClone = null;
+            CalculateProjections();
+        }
+    }
+    
+
+    private void CancelPeriodBill() {
+        IsEditingPeriodBill = false;
+        EditingPeriodBillClone = null;
+    }
+    
+    
     
     private void UpdatePeriodBillFromClone(PeriodBill target, PeriodBill clone) {
         target.Id = clone.Id;

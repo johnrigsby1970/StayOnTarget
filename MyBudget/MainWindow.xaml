@@ -77,119 +77,168 @@
                         </StackPanel>
                         <TabControl>
                             <TabItem Header="Bills">
-                                <DataGrid ItemsSource="{Binding CurrentPeriodBills}" AutoGenerateColumns="False"
-                                          CanUserAddRows="False">
-                                    <DataGrid.Columns>
-                                        <DataGridCheckBoxColumn Header="Paid"
-                                                                Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}"
-                                                                Width="40" />
-                                        <DataGridTextColumn Header="Bill" Binding="{Binding BillName}"
-                                                            IsReadOnly="True" Width="*" />
-                                        <DataGridTextColumn Header="Due Date"
-                                                            Binding="{Binding DueDate, StringFormat=d, UpdateSourceTrigger=PropertyChanged, Delay=500}"
-                                                            IsReadOnly="False" Width="80" />
-                                        <DataGridTextColumn Header="Actual Amount"
-                                                            Binding="{Binding ActualAmount, StringFormat=C, UpdateSourceTrigger=PropertyChanged, Delay=500}"
-                                                            Width="100" />
-                                        <DataGridTemplateColumn Width="80">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Content="Remove"
-                                                            Command="{Binding DataContext.DeletePeriodBillCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                            CommandParameter="{Binding}"
-                                                            Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                                        <Button Content="Edit" Command="{Binding EditPeriodBillCommand}"
+                                                Visibility="{Binding CanEditPeriodBill, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Margin="2" />
+                                        <Button Content="Save" Command="{Binding SavePeriodBillCommand}"
+                                                Width="80" Margin="2" 
+                                                Visibility="{Binding IsEditingPeriodBill, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        <Button Content="Cancel"
+                                                Command="{Binding CancelPeriodBillCommand}" Width="80"
+                                                Margin="2" 
+                                                Visibility="{Binding IsEditingPeriodBill, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </StackPanel>
+
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <DataGrid ItemsSource="{Binding CurrentPeriodBills}"
+                                                  SelectedItem="{Binding SelectedPeriodBill}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False">
+                                            <DataGrid.Columns>
+                                                <DataGridCheckBoxColumn Header="Paid"
+                                                                        Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}"
+                                                                        Width="40" />
+                                                <DataGridTextColumn Header="Bill" Binding="{Binding BillName}"
+                                                                    IsReadOnly="True" Width="*" />
+                                                <DataGridTextColumn Header="Due Date"
+                                                                    Binding="{Binding DueDate, StringFormat=d, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                                                                    IsReadOnly="False" Width="80" />
+                                                <DataGridTextColumn Header="Actual Amount"
+                                                                    Binding="{Binding ActualAmount, StringFormat=C, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                                                                    Width="100" />
+                                                <DataGridTemplateColumn Width="80">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Content="Remove"
+                                                                    Command="{Binding DataContext.DeletePeriodBillCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <StackPanel Grid.Row="1" Margin="10"
+                                                    Visibility="{Binding IsEditingPeriodBill, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock Text="Edit Period Bill" FontWeight="Bold" Margin="0,0,0,5" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <Label Grid.Column="0" Content="Name:" />
+                                                <TextBox Grid.Column="1"
+                                                         Text="{Binding EditingPeriodBillClone.BillName, UpdateSourceTrigger=PropertyChanged}"
+                                                         IsEnabled="False"
+                                                         Margin="5" />
+
+                                                <Label Grid.Column="2" Content="Budgeted:" />
+                                                <TextBox Grid.Column="3"
+                                                         Text="{Binding EditingPeriodBillClone.ActualAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                                         Margin="5" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
+                                </DockPanel>
                             </TabItem>
                             <TabItem Header="Envelopes">
                                 <DockPanel>
-                                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5">
+                                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
                                         <Button Content="Edit" Command="{Binding EditPeriodBucketCommand}"
                                                 Visibility="{Binding CanEditPeriodBucket, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                 Margin="2" />
                                     </StackPanel>
-                                    
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <DataGrid ItemsSource="{Binding CurrentPeriodBuckets}" 
-                                              SelectedItem="{Binding SelectedPeriodBucket}"
-                                              AutoGenerateColumns="False"
-                                              CanUserAddRows="False">
-                                    <DataGrid.Columns>
-                                        <DataGridCheckBoxColumn Header="Paid"
-                                                                Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}"
-                                                                Width="40" />
-                                        <DataGridTextColumn Header="Envelope" Binding="{Binding BucketName}"
-                                                            IsReadOnly="True" Width="*" />
-                                        <DataGridTextColumn Header="Actual Amount"
-                                                            Binding="{Binding ActualAmount, StringFormat=C, UpdateSourceTrigger=PropertyChanged, Delay=500}"
-                                                            Width="100" />
-                                        <DataGridTemplateColumn Width="80">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Content="Remove"
-                                                            Command="{Binding DataContext.DeletePeriodBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                            CommandParameter="{Binding}"
-                                                            Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                                    
-                                     <StackPanel Grid.Row="1" Margin="10"
-                                        Visibility="{Binding IsEditingPeriodBucket, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock Text="Edit Period Bucket" FontWeight="Bold" Margin="0,0,0,5" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
 
-                                    <Label Grid.Column="0" Content="Name:" />
-                                    <TextBox Grid.Column="1"
-                                             Text="{Binding EditingPeriodBucketClone.BucketName, UpdateSourceTrigger=PropertyChanged}"
-                                             IsEnabled="False"
-                                             Margin="5" />
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <DataGrid ItemsSource="{Binding CurrentPeriodBuckets}"
+                                                  SelectedItem="{Binding SelectedPeriodBucket}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False">
+                                            <DataGrid.Columns>
+                                                <DataGridCheckBoxColumn Header="Paid"
+                                                                        Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}"
+                                                                        Width="40" />
+                                                <DataGridTextColumn Header="Envelope" Binding="{Binding BucketName}"
+                                                                    IsReadOnly="True" Width="*" />
+                                                <DataGridTextColumn Header="Actual Amount"
+                                                                    Binding="{Binding ActualAmount, StringFormat=C, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                                                                    Width="100" />
+                                                <DataGridTemplateColumn Width="80">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Content="Remove"
+                                                                    Command="{Binding DataContext.DeletePeriodBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
 
-                                    <Label Grid.Column="2" Content="Budgeted:" />
-                                    <TextBox Grid.Column="3"
-                                             Text="{Binding EditingPeriodBucketClone.ActualAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                             Margin="5" />
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
-                                            Margin="0,5,0,0">
-                                    <Button Content="Save" Command="{Binding SavePeriodBucketCommand}"
-                                            Width="80" Margin="2" />
-                                    <Button Content="Cancel"
-                                            Command="{Binding CancelPeriodBucketCommand}" Width="80"
-                                            Margin="2" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Grid>
-                    </DockPanel>
+                                        <StackPanel Grid.Row="1" Margin="10"
+                                                    Visibility="{Binding IsEditingPeriodBucket, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock Text="Edit Period Bucket" FontWeight="Bold" Margin="0,0,0,5" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <Label Grid.Column="0" Content="Name:" />
+                                                <TextBox Grid.Column="1"
+                                                         Text="{Binding EditingPeriodBucketClone.BucketName, UpdateSourceTrigger=PropertyChanged}"
+                                                         IsEnabled="False"
+                                                         Margin="5" />
+
+                                                <Label Grid.Column="2" Content="Budgeted:" />
+                                                <TextBox Grid.Column="3"
+                                                         Text="{Binding EditingPeriodBucketClone.ActualAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                                         Margin="5" />
+                                            </Grid>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                                        Margin="0,5,0,0">
+                                                <Button Content="Save" Command="{Binding SavePeriodBucketCommand}"
+                                                        Width="80" Margin="2" />
+                                                <Button Content="Cancel"
+                                                        Command="{Binding CancelPeriodBucketCommand}" Width="80"
+                                                        Margin="2" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </DockPanel>
                             </TabItem>
                             <TabItem Header="Transaction">
                                 <DockPanel>
-                                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5">
-                                        <Button Content="Add Transaction" Command="{Binding AddTransactionCommand}"
-                                                Visibility="{Binding IsNotEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                Margin="2" />
-                                        <Button Content="Edit" Command="{Binding EditTransactionCommand}"
-                                                Visibility="{Binding CanEditTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                Margin="2" />
-                                    </StackPanel>
+                                    <!-- <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="5"> -->
+                                    <!--     <Button Content="Add Transaction" Command="{Binding AddTransactionCommand}" -->
+                                    <!--             Visibility="{Binding IsNotEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" -->
+                                    <!--             Margin="2" /> -->
+                                    <!--     <Button Content="Edit" Command="{Binding EditTransactionCommand}" -->
+                                    <!--             Visibility="{Binding CanEditTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" -->
+                                    <!--             Margin="2" /> -->
+                                    <!-- </StackPanel> -->
 
                                     <Grid>
                                         <Grid.RowDefinitions>
@@ -226,10 +275,11 @@
                                             </DataGrid.Columns>
                                         </DataGrid>
 
-                                        <StackPanel Grid.Row="1" Margin="5"
-                                                    Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="Edit Transaction Item" FontWeight="Bold" Margin="0,5" />
-                                            <Grid>
+                                        <StackPanel Grid.Row="1" Margin="5">
+                                            <TextBlock Text="Edit Transaction Item" FontWeight="Bold" Margin="0,5"
+                                                       Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <Grid
+                                                Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
@@ -255,11 +305,9 @@
                                                          Text="{Binding EditingTransactionClone.Description}"
                                                          Margin="5" />
 
-                                                
-                                                
                                                 <Label Grid.Column="0" Grid.Row="1" Content="Amount:" />
                                                 <TextBox Grid.Column="1" Grid.Row="1"
-                                                         Text="{Binding EditingTransactionClone.Amount, StringFormat=F2}"
+                                                         Text="{Binding EditingTransactionClone.Amount, StringFormat={}{0:0.00;-0.00;''}}"
                                                          Margin="5" />
 
                                                 <Label Grid.Column="2" Grid.Row="1" Content="From Account:" />
@@ -267,8 +315,6 @@
                                                           SelectedValue="{Binding EditingTransactionClone.AccountId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
-                                                
-                                                
                                                 <Label Grid.Column="0" Grid.Row="2" Content="To Account:" />
                                                 <ComboBox Grid.Column="1" Grid.Row="2" x:Name="ToAccountComboBox"
                                                           ItemsSource="{Binding Accounts}"
@@ -280,14 +326,12 @@
                                                           ItemsSource="{Binding Source={StaticResource SortedBills}}"
                                                           SelectedValue="{Binding EditingTransactionClone.BillId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
-                                                
+
                                                 <Label Grid.Column="2" Grid.Row="3" Content="Bucket:" />
                                                 <ComboBox Grid.Column="3" Grid.Row="3" ItemsSource="{Binding Buckets}"
                                                           SelectedValue="{Binding EditingTransactionClone.BucketId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
-                                                
-                                                
                                                 <Label Grid.Column="0" Grid.Row="4" Content="Paycheck:"
                                                        Visibility="{Binding EditingTransactionClone.ToAccountId, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" />
                                                 <ComboBox Grid.Column="1" Grid.Row="4"
@@ -303,8 +347,6 @@
                                                             Margin="5"
                                                             Visibility="{Binding EditingTransactionClone.ToAccountId, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}" />
 
-                                                
-                                                
                                                 <StackPanel Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="4"
                                                             Orientation="Horizontal" Margin="5">
                                                     <CheckBox Content="Principal Only (Mortgage/Loan Extra)"
@@ -319,11 +361,20 @@
                                             </Grid>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                                                         Margin="0,5,0,0">
+                                                <Button Content="Add Transaction"
+                                                        Command="{Binding AddTransactionCommand}"
+                                                        Visibility="{Binding IsNotEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                        Margin="2" />
+                                                <Button Content="Edit" Command="{Binding EditTransactionCommand}"
+                                                        Visibility="{Binding CanEditTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                        Margin="2" />
                                                 <Button Content="Save" Command="{Binding SaveTransactionCommand}"
-                                                        Width="80" Margin="2" />
+                                                        Width="80" Margin="2"
+                                                        Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                 <Button Content="Cancel"
                                                         Command="{Binding CancelTransactionCommand}" Width="80"
-                                                        Margin="2" />
+                                                        Margin="2"
+                                                        Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Grid>
@@ -335,14 +386,14 @@
                 <TabItem Header="Envelopes">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Add Envelope" Command="{Binding AddBucketCommand}" Margin="5"  Width="80"
+                            <Button Content="Add Envelope" Command="{Binding AddBucketCommand}" Margin="5" Width="80"
                                     Visibility="{Binding IsNotEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            <Button Content="Edit" Command="{Binding EditBucketCommand}" Margin="5"  Width="80"
+                            <Button Content="Edit" Command="{Binding EditBucketCommand}" Margin="5" Width="80"
                                     Visibility="{Binding CanEditBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            <Button Content="Save" Command="{Binding SaveBucketCommand}" Margin="5" Width="80" 
-                                    Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                            <Button Content="Cancel" Command="{Binding CancelBucketCommand}" Margin="5" Width="80"  
-                                    Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            <Button Content="Save" Command="{Binding SaveBucketCommand}" Margin="5" Width="80"
+                                    Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Button Content="Cancel" Command="{Binding CancelBucketCommand}" Margin="5" Width="80"
+                                    Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
                         </StackPanel>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -419,19 +470,14 @@
                 <TabItem Header="Bills">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right">
-                            
-                            <Button Content="Add Bill" Command="{Binding AddBillCommand}" Margin="5"  Width="80"
+                            <Button Content="Add Bill" Command="{Binding AddBillCommand}" Margin="5" Width="80"
                                     Visibility="{Binding IsNotEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            <Button Content="Edit" Command="{Binding EditBillCommand}" Margin="5"  Width="80"
+                            <Button Content="Edit" Command="{Binding EditBillCommand}" Margin="5" Width="80"
                                     Visibility="{Binding CanEditBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            
-                            
-                            <!-- <Button Content="Add Bill" Command="{Binding AddBillCommand}" Margin="5" Width="80" /> -->
-                            <!-- <Button Content="Edit" Command="{Binding EditBillCommand}" Margin="5" Width="80" /> -->
                             <Button Content="Save" Command="{Binding SaveBillCommand}" Margin="5" Width="80"
-                                    Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                            <Button Content="Cancel" Command="{Binding CancelBillCommand}" Margin="5" Width="80" 
-                                    Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Button Content="Cancel" Command="{Binding CancelBillCommand}" Margin="5" Width="80"
+                                    Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
                         </StackPanel>
 
                         <Grid>
@@ -482,7 +528,7 @@
 
                                     <Label Grid.Column="2" Grid.Row="0" Content="Budgeted:" />
                                     <TextBox Grid.Column="3" Grid.Row="0"
-                                             Text="{Binding EditingBillClone.ExpectedAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                             Text="{Binding EditingBillClone.ExpectedAmount, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.00;-0.00;''}}"
                                              Margin="5" />
 
                                     <Label Grid.Column="0" Grid.Row="1" Content="Due Day:" />
@@ -598,7 +644,7 @@
                                     <ComboBox Grid.Column="1" Grid.Row="1"
                                               ItemsSource="{Binding Source={StaticResource EnumFrequency}}"
                                               SelectedItem="{Binding EditingPaycheckClone.Frequency}" Margin="5" />
-                                    
+
                                     <Label Grid.Column="0" Grid.Row="2" Content="Start date:" />
                                     <DatePicker Grid.Column="1" Grid.Row="2"
                                                 SelectedDate="{Binding EditingPaycheckClone.StartDate}" Margin="5" />
@@ -697,8 +743,7 @@
                                     <TextBox Grid.Column="3" Grid.Row="0"
                                              Text="{Binding EditingAccountClone.BankName, UpdateSourceTrigger=PropertyChanged}"
                                              Margin="5" />
-                                    
-                                    
+
 
                                     <Label Grid.Column="0" Grid.Row="1" Content="Type:" />
                                     <ComboBox Grid.Column="1" Grid.Row="1" ItemsSource="{Binding AccountTypes}"
@@ -708,8 +753,7 @@
                                     <TextBox Grid.Column="3" Grid.Row="1"
                                              Text="{Binding EditingAccountClone.Balance, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                                              Margin="5" />
-                                    
-                                    
+
 
                                     <Label Grid.Column="0" Grid.Row="2" Content="As Of:" />
                                     <DatePicker Grid.Column="1" Grid.Row="2"
@@ -719,8 +763,7 @@
                                     <TextBox Grid.Column="3" Grid.Row="2"
                                              Text="{Binding EditingAccountClone.AnnualGrowthRate, UpdateSourceTrigger=PropertyChanged}"
                                              Margin="5" />
-                                    
-                                    
+
 
                                     <Label Grid.Column="0" Grid.Row="3" Content="Color (Hex):" />
                                     <TextBox Grid.Column="1" Grid.Row="3"
@@ -795,14 +838,14 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}"
                                                 IsReadOnly="True" Width="80" />
-                            
+
                             <DataGridTemplateColumn Header="Reconciled" Width="70">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <CheckBox 
-                                            IsChecked="{Binding IsReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                            HorizontalAlignment="Center" 
-                                            VerticalAlignment="Center"/>
+                                        <CheckBox
+                                            IsChecked="{Binding IsReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -857,7 +900,7 @@
                     </DataGrid>
 
                     <local:ProjectionLiveChartControl Grid.Row="1" Projections="{Binding Projections}"
-                                                  Accounts="{Binding Accounts}" Margin="0,5,0,0" />
+                                                      Accounts="{Binding Accounts}" Margin="0,5,0,0" />
                 </Grid>
             </DockPanel>
         </Grid>
