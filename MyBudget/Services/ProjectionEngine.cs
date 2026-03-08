@@ -272,9 +272,12 @@ public class ProjectionEngine : IProjectionEngine {
             }
         }
 
-        var sortedEvents = events.OrderBy(e => e.Date).ThenByDescending(e => e.Type == ProjectionEventType.Paycheck)
+        var sortedEvents = events
+            .OrderBy(e => e.Date)
+            .ThenByDescending(e => e.Type == ProjectionEventType.Paycheck || (e.PaycheckId.HasValue && e.ToAccountId.HasValue))
+            .ThenByDescending(e => e.Type == ProjectionEventType.Paycheck)
             .ToList();
-
+        
         // 6. Tracking variables
         var accountBalanceDates = accounts.ToDictionary(a => a.Id, a => a.BalanceAsOf);
         var accumulatedGrowth = accounts.ToDictionary(a => a.Id, a => 0m);

@@ -14,6 +14,7 @@ public class ProjectionItem : ViewModelBase
     public DateTime Date { get => _date; set => SetProperty(ref _date, value); }
     public string Description { get => _description; set => SetProperty(ref _description, value); }
     public int? PaycheckId { get => _paycheckId; set => SetProperty(ref _paycheckId, value); }
+    public bool NeedsAttention { get => _paycheckId.HasValue;  }
     public decimal Amount 
     { 
         get => _amount; 

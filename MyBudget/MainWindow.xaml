@@ -835,6 +835,19 @@
 
                     <DataGrid x:Name="ProjectionGrid" Grid.Row="0" ItemsSource="{Binding Projections}"
                               AutoGenerateColumns="False">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="{x:Type DataGridRow}">
+                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="BorderBrush" Value="LightGray"/> <!-- Default bottom border -->
+                                <Style.Triggers>
+                                    <!-- Trigger for when the 'NeedsAttention' property is true -->
+                                    <DataTrigger Binding="{Binding NeedsAttention}" Value="True">
+                                        <Setter Property="BorderThickness" Value="0,2,0,0"/> <!-- Set a thicker top border -->
+                                        <Setter Property="BorderBrush" Value="black"/> <!-- Color the top border red -->
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}"
                                                 IsReadOnly="True" Width="80" />
