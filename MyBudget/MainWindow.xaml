@@ -136,23 +136,23 @@
                                                 <DataGridTextColumn Header="Bill" Binding="{Binding BillName}"
                                                                     IsReadOnly="True" Width="*" />
                                                 <DataGridTextColumn Header="Due Date"
-                                                                    Binding="{Binding DueDate, StringFormat=d, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                                                                    Binding="{Binding DueDate, StringFormat=d}"
                                                                     IsReadOnly="False" Width="80" />
                                                 <DataGridTextColumn Header="Actual Amount"
-                                                                    Binding="{Binding ActualAmount, StringFormat=C, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                                                                    Binding="{Binding ActualAmount, StringFormat=C}"
                                                                     Width="100" />
-                                                <DataGridTemplateColumn Width="80">
-                                                    <DataGridTemplateColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <Button Content="Remove"
-                                                                    Background="Red"
-                                                                    Foreground="White"
-                                                                    Command="{Binding DataContext.DeletePeriodBillCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                    CommandParameter="{Binding}"
-                                                                    Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellTemplate>
-                                                </DataGridTemplateColumn>
+                                                <!-- <DataGridTemplateColumn Width="80"> -->
+                                                <!--     <DataGridTemplateColumn.CellTemplate> -->
+                                                <!--         <DataTemplate> -->
+                                                <!--             <Button Content="Remove" -->
+                                                <!--                     Background="Red" -->
+                                                <!--                     Foreground="White" -->
+                                                <!--                     Command="{Binding DataContext.DeletePeriodBillCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                                <!--                     CommandParameter="{Binding}" -->
+                                                <!--                     Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" /> -->
+                                                <!--         </DataTemplate> -->
+                                                <!--     </DataGridTemplateColumn.CellTemplate> -->
+                                                <!-- </DataGridTemplateColumn> -->
                                             </DataGrid.Columns>
                                         </DataGrid>
                                         <StackPanel Grid.Row="1" Margin="10"
@@ -242,20 +242,20 @@
                                                 <DataGridTextColumn Header="Envelope" Binding="{Binding BucketName}"
                                                                     IsReadOnly="True" Width="*" />
                                                 <DataGridTextColumn Header="Actual Amount"
-                                                                    Binding="{Binding ActualAmount, StringFormat=C, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                                                                    Binding="{Binding ActualAmount, StringFormat=C}"
                                                                     Width="100" />
-                                                <DataGridTemplateColumn Width="80">
-                                                    <DataGridTemplateColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <Button Content="Remove"
-                                                                    Background="Red"
-                                                                    Foreground="White"
-                                                                    Command="{Binding DataContext.DeletePeriodBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                    CommandParameter="{Binding}"
-                                                                    Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellTemplate>
-                                                </DataGridTemplateColumn>
+                                                <!-- <DataGridTemplateColumn Width="80"> -->
+                                                <!--     <DataGridTemplateColumn.CellTemplate> -->
+                                                <!--         <DataTemplate> -->
+                                                <!--             <Button Content="Remove" -->
+                                                <!--                     Background="Red" -->
+                                                <!--                     Foreground="White" -->
+                                                <!--                     Command="{Binding DataContext.DeletePeriodBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                                <!--                     CommandParameter="{Binding}" -->
+                                                <!--                     Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" /> -->
+                                                <!--         </DataTemplate> -->
+                                                <!--     </DataGridTemplateColumn.CellTemplate> -->
+                                                <!-- </DataGridTemplateColumn> -->
                                             </DataGrid.Columns>
                                         </DataGrid>
 
@@ -318,17 +318,19 @@
                                                     Width="80"
                                                     Margin="2"
                                                     Background="Red"
-                                                    Foreground="White"
-                                                    >
+                                                    Foreground="White">
                                                 <Button.Style>
                                                     <Style TargetType="Button">
-                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Setter Property="Visibility" Value="Visible" />
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Collapsed">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <DataTrigger
+                                                                Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                                Value="Collapsed">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding IsEditingTransaction}" Value="False">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <DataTrigger Binding="{Binding IsEditingTransaction}"
+                                                                         Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
                                                             </DataTrigger>
                                                             <!-- Use MultiDataTrigger for multiple conditions -->
                                                             <!-- <MultiDataTrigger> -->
@@ -343,7 +345,7 @@
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Button.Style>
-                                                
+
                                             </Button>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Orientation="Horizontal"
@@ -394,18 +396,18 @@
                                                                     Width="100" />
                                                 <DataGridTextColumn Header="To" Binding="{Binding ToAccountName}"
                                                                     Width="100" />
-                                                <DataGridTemplateColumn Width="80">
-                                                    <DataGridTemplateColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <Button Content="Remove"
-                                                                    Background="Red"
-                                                                    Foreground="White"
-                                                                    Command="{Binding DataContext.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                    CommandParameter="{Binding}"
-                                                                    Visibility="{Binding DataContext.IsNotEditingTransaction, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellTemplate>
-                                                </DataGridTemplateColumn>
+                                                <!-- <DataGridTemplateColumn Width="80"> -->
+                                                <!--     <DataGridTemplateColumn.CellTemplate> -->
+                                                <!--         <DataTemplate> -->
+                                                <!--             <Button Content="Remove" -->
+                                                <!--                     Background="Red" -->
+                                                <!--                     Foreground="White" -->
+                                                <!--                     Command="{Binding DataContext.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                                <!--                     CommandParameter="{Binding}" -->
+                                                <!--                     Visibility="{Binding DataContext.IsNotEditingTransaction, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" /> -->
+                                                <!--         </DataTemplate> -->
+                                                <!--     </DataGridTemplateColumn.CellTemplate> -->
+                                                <!-- </DataGridTemplateColumn> -->
                                             </DataGrid.Columns>
                                         </DataGrid>
 
@@ -547,8 +549,33 @@
                                 <Button Content="Delete" Command="{Binding DeleteBucketCommand}" Margin="5" Width="80"
 
                                         Background="Red"
-                                        Foreground="White"
-                                        Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        Foreground="White">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding EditingBucketClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                    Value="Collapsed">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsEditingBucket}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <!-- Use MultiDataTrigger for multiple conditions -->
+                                                <!-- <MultiDataTrigger> -->
+                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
+                                                <!--     <MultiDataTrigger.Conditions> -->
+                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
+                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
+                                                <!--     </MultiDataTrigger.Conditions> -->
+                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
+                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
+                                                <!-- </MultiDataTrigger> -->
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Add" Command="{Binding AddBucketCommand}" Margin="5" Width="80"
@@ -575,17 +602,17 @@
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                                     <DataGridTextColumn Header="Budgeted"
                                                         Binding="{Binding ExpectedAmount, StringFormat=C}" Width="100" />
-                                    <DataGridTemplateColumn Width="80">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Remove"
-                                                        Background="Red"
-                                                        Foreground="White"
-                                                        Command="{Binding DataContext.DeleteBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                        CommandParameter="{Binding}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
+                                    <!-- <DataGridTemplateColumn Width="80"> -->
+                                    <!--     <DataGridTemplateColumn.CellTemplate> -->
+                                    <!--         <DataTemplate> -->
+                                    <!--             <Button Content="Remove" -->
+                                    <!--                     Background="Red" -->
+                                    <!--                     Foreground="White" -->
+                                    <!--                     Command="{Binding DataContext.DeleteBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                    <!--                     CommandParameter="{Binding}" /> -->
+                                    <!--         </DataTemplate> -->
+                                    <!--     </DataGridTemplateColumn.CellTemplate> -->
+                                    <!-- </DataGridTemplateColumn> -->
                                 </DataGrid.Columns>
                             </DataGrid>
 
@@ -652,8 +679,33 @@
                                 <Button Content="Delete" Command="{Binding DeleteBillCommand}" Margin="5" Width="80"
 
                                         Background="Red"
-                                        Foreground="White"
-                                        Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        Foreground="White">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding EditingBillClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                    Value="Collapsed">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsEditingBill}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <!-- Use MultiDataTrigger for multiple conditions -->
+                                                <!-- <MultiDataTrigger> -->
+                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
+                                                <!--     <MultiDataTrigger.Conditions> -->
+                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
+                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
+                                                <!--     </MultiDataTrigger.Conditions> -->
+                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
+                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
+                                                <!-- </MultiDataTrigger> -->
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Add" Command="{Binding AddBillCommand}" Margin="5" Width="80"
@@ -681,17 +733,17 @@
                                     <DataGridTextColumn Header="Budgeted"
                                                         Binding="{Binding ExpectedAmount, StringFormat=C}" Width="80" />
                                     <DataGridTextColumn Header="Due Day" Binding="{Binding DueDay}" Width="60" />
-                                    <DataGridTemplateColumn Width="80">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Remove"
-                                                        Background="Red"
-                                                        Foreground="White"
-                                                        Command="{Binding DataContext.DeleteBillCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                        CommandParameter="{Binding}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
+                                    <!-- <DataGridTemplateColumn Width="80"> -->
+                                    <!--     <DataGridTemplateColumn.CellTemplate> -->
+                                    <!--         <DataTemplate> -->
+                                    <!--             <Button Content="Remove" -->
+                                    <!--                     Background="Red" -->
+                                    <!--                     Foreground="White" -->
+                                    <!--                     Command="{Binding DataContext.DeleteBillCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                    <!--                     CommandParameter="{Binding}" /> -->
+                                    <!--         </DataTemplate> -->
+                                    <!--     </DataGridTemplateColumn.CellTemplate> -->
+                                    <!-- </DataGridTemplateColumn> -->
                                 </DataGrid.Columns>
                             </DataGrid>
 
@@ -756,8 +808,33 @@
                                         Width="80"
                                         Margin="2"
                                         Background="Red"
-                                        Foreground="White"
-                                        Visibility="{Binding IsEditingPaycheck, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        Foreground="White">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding EditingPaycheckClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                    Value="Collapsed">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsEditingPaycheck}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <!-- Use MultiDataTrigger for multiple conditions -->
+                                                <!-- <MultiDataTrigger> -->
+                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
+                                                <!--     <MultiDataTrigger.Conditions> -->
+                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
+                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
+                                                <!--     </MultiDataTrigger.Conditions> -->
+                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
+                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
+                                                <!-- </MultiDataTrigger> -->
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Add" Command="{Binding AddPaycheckCommand}"
@@ -819,17 +896,17 @@
                                     <DataGridCheckBoxColumn Header="Balanced"
                                                             Binding="{Binding IsBalanced, UpdateSourceTrigger=PropertyChanged}"
                                                             Width="60" />
-                                    <DataGridTemplateColumn Width="80">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Remove"
-                                                        Background="Red"
-                                                        Foreground="White"
-                                                        Command="{Binding DataContext.DeletePaycheckCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                        CommandParameter="{Binding}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
+                                    <!-- <DataGridTemplateColumn Width="80"> -->
+                                    <!--     <DataGridTemplateColumn.CellTemplate> -->
+                                    <!--         <DataTemplate> -->
+                                    <!--             <Button Content="Remove" -->
+                                    <!--                     Background="Red" -->
+                                    <!--                     Foreground="White" -->
+                                    <!--                     Command="{Binding DataContext.DeletePaycheckCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                    <!--                     CommandParameter="{Binding}" /> -->
+                                    <!--         </DataTemplate> -->
+                                    <!--     </DataGridTemplateColumn.CellTemplate> -->
+                                    <!-- </DataGridTemplateColumn> -->
                                 </DataGrid.Columns>
                             </DataGrid>
 
@@ -899,21 +976,56 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Delete" Command="{Binding CancelAccountCommand}" Margin="5"
+                                <Button Content="Delete" Command="{Binding CancelAccountCommand}" 
+                                        Width="80"
+                                        Margin="2"
                                         Background="Red"
-                                        Foreground="White"
-                                        Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        Foreground="White">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding EditingAccountClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                    Value="Collapsed">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsEditingAccount}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <!-- Use MultiDataTrigger for multiple conditions -->
+                                                <!-- <MultiDataTrigger> -->
+                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
+                                                <!--     <MultiDataTrigger.Conditions> -->
+                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
+                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
+                                                <!--     </MultiDataTrigger.Conditions> -->
+                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
+                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
+                                                <!-- </MultiDataTrigger> -->
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Add" Command="{Binding AddAccountCommand}" Margin="5"
+                                <Button Content="Add" Command="{Binding AddAccountCommand}" 
+                                        Width="80"
+                                        Margin="2"
                                         Visibility="{Binding IsNotEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Content="Edit" Command="{Binding EditAccountCommand}" Margin="5"
+                                <Button Content="Edit" Command="{Binding EditAccountCommand}" 
+                                        Width="80"
+                                        Margin="2"
                                         Visibility="{Binding CanEditAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Content="Save" Command="{Binding SaveAccountCommand}" Margin="5"
+                                <Button Content="Save" Command="{Binding SaveAccountCommand}" 
                                         Background=" CornflowerBlue"
                                         Foreground="White"
+                                        Width="80"
+                                        Margin="2"
                                         Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Content="Cancel" Command="{Binding CancelAccountCommand}" Margin="5"
+                                <Button Content="Cancel" Command="{Binding CancelAccountCommand}" 
+                                        Width="80"
+                                        Margin="2"
                                         Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </StackPanel>
                         </Grid>
@@ -937,12 +1049,12 @@
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Button Content="Remove"
-                                                            Background="Red"
-                                                            Foreground="White"
-                                                            Command="{Binding DataContext.DeleteAccountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                            CommandParameter="{Binding}"
-                                                            Visibility="{Binding DataContext.IsNotEditingAccount, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                    <!-- <Button Content="Remove" -->
+                                                    <!--         Background="Red" -->
+                                                    <!--         Foreground="White" -->
+                                                    <!--         Command="{Binding DataContext.DeleteAccountCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                                    <!--         CommandParameter="{Binding}" -->
+                                                    <!--         Visibility="{Binding DataContext.IsNotEditingAccount, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" /> -->
                                                     <Button Content="Loan"
                                                             Command="{Binding DataContext.ShowAmortizationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}"

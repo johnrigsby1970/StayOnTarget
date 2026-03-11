@@ -217,8 +217,6 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-
-
     
     public bool IsNotEditingBill => !IsEditingBill;
     public bool CanEditBill => SelectedBill != null && !IsEditingBill;
@@ -345,6 +343,7 @@ public class MainViewModel : ViewModelBase {
     public ICommand EditBillCommand => new RelayCommand(_ => EditBill(), _ => CanEditBill);
     public ICommand SaveBillCommand => new RelayCommand(_ => SaveBill(), _ => IsEditingBill);
     public ICommand CancelBillCommand => new RelayCommand(_ => CancelBill(), _ => IsEditingBill);
+    public ICommand DeleteBillCommand => new RelayCommand(b => DeleteBill(b as Bill));
     
     public ICommand EditPeriodBillCommand => new RelayCommand(_ => EditPeriodBill(), _ => CanEditPeriodBill);
     public ICommand SavePeriodBillCommand => new RelayCommand(_ => SavePeriodBill(), _ => IsEditingPeriodBill);
@@ -362,40 +361,33 @@ public class MainViewModel : ViewModelBase {
     public ICommand CancelPeriodBucketCommand => new RelayCommand(_ => CancelPeriodBucket(), _ => IsEditingPeriodBucket);
     public ICommand DeletePeriodBucketCommand => new RelayCommand(pb => DeletePeriodBucket(pb as PeriodBucket));
     
-
     public ICommand AddTransactionCommand =>
         new RelayCommand(_ => AddTransaction(), _ => IsNotEditingTransaction);
-
     public ICommand EditTransactionCommand =>
         new RelayCommand(_ => EditTransaction(), _ => CanEditTransaction);
-    public ICommand EditPaycheckCommand =>
-        new RelayCommand(_ => EditPaycheck(), _ => CanEditPaycheck);
     public ICommand SaveTransactionCommand =>
         new RelayCommand(_ => SaveTransaction(), _ => IsEditingTransaction);
-
-    public ICommand CancelPaycheckCommand =>
-        new RelayCommand(_ => CancelPaycheck(), _ => IsEditingPaycheck);
-    
-    public ICommand SavePaycheckCommand =>
-        new RelayCommand(_ => SavePaycheck(), _ => IsEditingPaycheck);
-    
     public ICommand CancelTransactionCommand =>
         new RelayCommand(_ => CancelTransaction(), _ => IsEditingTransaction);
-
     public ICommand DeleteTransactionCommand =>
         new RelayCommand(t => DeleteTransaction(t as Transaction));
-
+    
     public ICommand AddPaycheckCommand => new RelayCommand(_ => AddPaycheck());
+    public ICommand EditPaycheckCommand => new RelayCommand(_ => EditPaycheck(), _ => CanEditPaycheck);
+    public ICommand SavePaycheckCommand => new RelayCommand(_ => SavePaycheck(), _ => IsEditingPaycheck);
+    public ICommand CancelPaycheckCommand => new RelayCommand(_ => CancelPaycheck(), _ => IsEditingPaycheck);
+    public ICommand DeletePaycheckCommand => new RelayCommand(p => DeletePaycheck(p as Paycheck));
+
     public ICommand AddAccountCommand => new RelayCommand(_ => AddAccount(), _ => IsNotEditingAccount);
     public ICommand EditAccountCommand => new RelayCommand(_ => EditAccount(), _ => CanEditAccount);
     public ICommand SaveAccountCommand => new RelayCommand(_ => SaveAccount(), _ => IsEditingAccount);
     public ICommand CancelAccountCommand => new RelayCommand(_ => CancelAccount(), _ => IsEditingAccount);
-
     public ICommand DeleteAccountCommand =>
         new RelayCommand(a => DeleteAccount(a as Account), _ => IsNotEditingAccount);
-
+    
     public ICommand NextPeriodCommand => new RelayCommand(_ => NavigatePeriod(1));
     public ICommand PrevPeriodCommand => new RelayCommand(_ => NavigatePeriod(-1));
+    
     public ICommand ShowAmortizationCommand => new RelayCommand(a => ShowAmortization(a as Account ?? throw new InvalidOperationException()));
     public ICommand ShowAboutCommand => new RelayCommand(_ => ShowAbout());
 
@@ -580,9 +572,7 @@ public class MainViewModel : ViewModelBase {
         target.DueDate = clone.DueDate;
         target.IsPaid = clone.IsPaid;
     }
-
-    public ICommand DeleteBillCommand => new RelayCommand(b => DeleteBill(b as Bill));
-
+    
     private void DeleteBill(Bill? b) {
         if (b != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -914,9 +904,7 @@ public class MainViewModel : ViewModelBase {
         IsEditingPaycheck = false;
         EditingPaycheckClone = null;
     }
-
-    public ICommand DeletePaycheckCommand => new RelayCommand(p => DeletePaycheck(p as Paycheck));
-
+    
     private void DeletePaycheck(Paycheck? p) {
         if (p != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
