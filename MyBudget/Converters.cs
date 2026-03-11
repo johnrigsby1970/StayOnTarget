@@ -1,7 +1,27 @@
 ﻿using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace MyBudget;
+
+public class IntToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is int id && id == 0)
+        {
+            // Hide the button (and do not reserve layout space) when Id is 0
+            return Visibility.Collapsed;
+        }
+        return Visibility.Visible;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        // This method is used for two-way binding; a simple implementation is sufficient here.
+        return DependencyProperty.UnsetValue;
+    }
+}
 
 public class NegativeToRedConverter : IValueConverter
 {
@@ -26,9 +46,9 @@ public class NullToVisibilityConverter : IValueConverter
     {
         if (value is not null)
         {
-            return System.Windows.Visibility.Visible;
+            return Visibility.Visible;
         }
-        return System.Windows.Visibility.Collapsed;
+        return Visibility.Collapsed;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -43,16 +63,16 @@ public class InverseBooleanToVisibilityConverter : IValueConverter
     {
         if (value is bool b)
         {
-            return b ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+            return b ? Visibility.Collapsed : Visibility.Visible;
         }
-        return System.Windows.Visibility.Visible;
+        return Visibility.Visible;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is System.Windows.Visibility v)
+        if (value is Visibility v)
         {
-            return v != System.Windows.Visibility.Visible;
+            return v != Visibility.Visible;
         }
         return false;
     }
@@ -72,11 +92,11 @@ public class AccountTypeToVisibilityConverter : IValueConverter
             if (targetTypeStr.Contains("|"))
             {
                 var targets = targetTypeStr.Split('|');
-                return targets.Contains(actualTypeStr) ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+                return targets.Contains(actualTypeStr) ? Visibility.Visible : Visibility.Collapsed;
             }
-            return actualTypeStr == targetTypeStr ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            return actualTypeStr == targetTypeStr ? Visibility.Visible : Visibility.Collapsed;
         }
-        return System.Windows.Visibility.Collapsed;
+        return Visibility.Collapsed;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -94,7 +114,7 @@ public class PaycheckFieldVisibilityConverter : IMultiValueConverter
 
         if (values.Length < 2 || values[0] is not int toAccountId || values[1] is not System.Collections.IEnumerable accounts)
         {
-            return System.Windows.Visibility.Collapsed;
+            return Visibility.Collapsed;
         }
 
         // Find the account with the matching ToAccountId
@@ -102,16 +122,16 @@ public class PaycheckFieldVisibilityConverter : IMultiValueConverter
         {
             if (item is Models.Account account && account.Id == toAccountId)
             {
-                // Check if account type is Checking or Savings
+                // Check if the account type is Checking or Savings
                 if (account.Type == Models.AccountType.Checking || account.Type == Models.AccountType.Savings)
                 {
-                    return System.Windows.Visibility.Visible;
+                    return Visibility.Visible;
                 }
                 break;
             }
         }
 
-        return System.Windows.Visibility.Collapsed;
+        return Visibility.Collapsed;
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

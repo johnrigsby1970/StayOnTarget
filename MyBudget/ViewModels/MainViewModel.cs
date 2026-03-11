@@ -521,6 +521,8 @@ public class MainViewModel : ViewModelBase {
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
                 _budgetService.DeletePeriodBill(pb.Id);
+                IsEditingPeriodBill = false;
+                EditingPeriodBillClone = null;
                 LoadPeriodData();
                 CalculateProjections();
             }
@@ -594,6 +596,8 @@ public class MainViewModel : ViewModelBase {
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
                 _budgetService.DeleteBill(b.Id);
+                IsEditingBill = false;
+                EditingBillClone = null;
                 LoadData();
                 CalculateProjections();
             }
@@ -667,6 +671,8 @@ public class MainViewModel : ViewModelBase {
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
                 _budgetService.DeleteBucket(b.Id);
+                IsEditingBucket = false;
+                EditingBucketClone = null;
                 LoadData();
                 CalculateProjections();
             }
@@ -735,6 +741,8 @@ public class MainViewModel : ViewModelBase {
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
                 _budgetService.DeletePeriodBucket(pb.Id);
+                IsEditingPeriodBucket = false;
+                EditingPeriodBucketClone = null;
                 LoadPeriodData();
                 CalculateProjections();
             }
@@ -828,6 +836,8 @@ public class MainViewModel : ViewModelBase {
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
                 _budgetService.DeleteTransaction(t.Id);
+                IsEditingTransaction = false;
+                EditingTransactionClone = null;
                 LoadPeriodData();
                 CalculateProjections();
             }
@@ -920,6 +930,8 @@ public class MainViewModel : ViewModelBase {
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
                 _budgetService.DeletePaycheck(p.Id);
+                IsEditingPaycheck = false;
+                EditingPaycheckClone = null;
                 LoadData();
                 RefreshPaychecks();
                 CalculateProjections();
@@ -1056,6 +1068,8 @@ public class MainViewModel : ViewModelBase {
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
                 _budgetService.DeleteAccount(a.Id);
+                IsEditingAccount = false;
+                EditingAccountClone = null;
                 LoadData();
                 CalculateProjections();
             }
