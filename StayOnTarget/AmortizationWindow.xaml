@@ -1,0 +1,21 @@
+﻿<Window x:Class="StayOnTarget.AmortizationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Amortization Schedule" Height="450" Width="600">
+    <Grid Margin="10">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" x:Name="HeaderLabel" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" />
+            <DataGrid x:Name="ScheduleGrid" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Month" Binding="{Binding Month}" Width="50" />
+                    <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="80" />
+                    <DataGridTextColumn Header="Payment" Binding="{Binding Payment, StringFormat=C}" Width="80" />
+                    <DataGridTextColumn Header="Principal" Binding="{Binding Principal, StringFormat=C}" Width="85" />
+                    <DataGridTextColumn Header="Interest" Binding="{Binding Interest, StringFormat=C}" Width="85" />
+                    <DataGridTextColumn Header="Escrow/Ins" Binding="{Binding EscrowInsurance, StringFormat=C}" Width="85" />
+                    <DataGridTextColumn Header="Balance" Binding="{Binding Balance, StringFormat=C}" Width="100" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+    </Grid>
+</Window>
