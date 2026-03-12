@@ -343,23 +343,27 @@ public class MainViewModel : ViewModelBase {
     public ICommand EditBillCommand => new RelayCommand(_ => EditBill(), _ => CanEditBill);
     public ICommand SaveBillCommand => new RelayCommand(_ => SaveBill(), _ => IsEditingBill);
     public ICommand CancelBillCommand => new RelayCommand(_ => CancelBill(), _ => IsEditingBill);
-    public ICommand DeleteBillCommand => new RelayCommand(b => DeleteBill(b as Bill));
+    //public ICommand DeleteBillCommand => new RelayCommand(b => DeleteBill(b as Bill));
+    public ICommand DeleteBillCommand => new RelayCommand(_ => DeleteBill(), _ => IsEditingBill);
     
     public ICommand EditPeriodBillCommand => new RelayCommand(_ => EditPeriodBill(), _ => CanEditPeriodBill);
     public ICommand SavePeriodBillCommand => new RelayCommand(_ => SavePeriodBill(), _ => IsEditingPeriodBill);
     public ICommand CancelPeriodBillCommand => new RelayCommand(_ => CancelPeriodBill(), _ => IsEditingPeriodBill);
-    public ICommand DeletePeriodBillCommand => new RelayCommand(pb => DeletePeriodBill(pb as PeriodBill));
+    //public ICommand DeletePeriodBillCommand => new RelayCommand(pb => DeletePeriodBill(pb as PeriodBill));
+    public ICommand DeletePeriodBillCommand => new RelayCommand(_ => DeletePeriodBill(), _ => IsEditingPeriodBill);
     
     public ICommand AddBucketCommand => new RelayCommand(_ => AddBucket(), _ => IsNotEditingBucket);
     public ICommand EditBucketCommand => new RelayCommand(_ => EditBucket(), _ => CanEditBucket);
     public ICommand SaveBucketCommand => new RelayCommand(_ => SaveBucket(), _ => IsEditingBucket);
     public ICommand CancelBucketCommand => new RelayCommand(_ => CancelBucket(), _ => IsEditingBucket);
-    public ICommand DeleteBucketCommand => new RelayCommand(b => DeleteBucket(b as BudgetBucket));
+    //public ICommand DeleteBucketCommand => new RelayCommand(b => DeleteBucket(b as BudgetBucket));
+    public ICommand DeleteBucketCommand => new RelayCommand(_ => DeleteBucket());
     
     public ICommand EditPeriodBucketCommand => new RelayCommand(_ => EditPeriodBucket(), _ => CanEditPeriodBucket);
     public ICommand SavePeriodBucketCommand => new RelayCommand(_ => SavePeriodBucket(), _ => IsEditingPeriodBucket);
     public ICommand CancelPeriodBucketCommand => new RelayCommand(_ => CancelPeriodBucket(), _ => IsEditingPeriodBucket);
-    public ICommand DeletePeriodBucketCommand => new RelayCommand(pb => DeletePeriodBucket(pb as PeriodBucket));
+    //public ICommand DeletePeriodBucketCommand => new RelayCommand(pb => DeletePeriodBucket(pb as PeriodBucket));
+    public ICommand DeletePeriodBucketCommand => new RelayCommand(_ => DeletePeriodBucket(), _ => IsEditingPeriodBucket);
     
     public ICommand AddTransactionCommand =>
         new RelayCommand(_ => AddTransaction(), _ => IsNotEditingTransaction);
@@ -369,21 +373,26 @@ public class MainViewModel : ViewModelBase {
         new RelayCommand(_ => SaveTransaction(), _ => IsEditingTransaction);
     public ICommand CancelTransactionCommand =>
         new RelayCommand(_ => CancelTransaction(), _ => IsEditingTransaction);
-    public ICommand DeleteTransactionCommand =>
-        new RelayCommand(t => DeleteTransaction(t as Transaction));
+    
+    // public ICommand DeleteTransactionCommand =>
+    //     new RelayCommand(t => DeleteTransaction(t as Transaction));
+    public ICommand DeleteTransactionCommand => new RelayCommand(_  => DeleteTransaction(), _ => IsEditingTransaction);
     
     public ICommand AddPaycheckCommand => new RelayCommand(_ => AddPaycheck());
     public ICommand EditPaycheckCommand => new RelayCommand(_ => EditPaycheck(), _ => CanEditPaycheck);
     public ICommand SavePaycheckCommand => new RelayCommand(_ => SavePaycheck(), _ => IsEditingPaycheck);
     public ICommand CancelPaycheckCommand => new RelayCommand(_ => CancelPaycheck(), _ => IsEditingPaycheck);
-    public ICommand DeletePaycheckCommand => new RelayCommand(p => DeletePaycheck(p as Paycheck));
+    //public ICommand DeletePaycheckCommand => new RelayCommand(p => DeletePaycheck(p as Paycheck));
+    public ICommand DeletePaycheckCommand => new RelayCommand(_ => DeletePaycheck(), _ => IsEditingPaycheck);
 
     public ICommand AddAccountCommand => new RelayCommand(_ => AddAccount(), _ => IsNotEditingAccount);
     public ICommand EditAccountCommand => new RelayCommand(_ => EditAccount(), _ => CanEditAccount);
     public ICommand SaveAccountCommand => new RelayCommand(_ => SaveAccount(), _ => IsEditingAccount);
     public ICommand CancelAccountCommand => new RelayCommand(_ => CancelAccount(), _ => IsEditingAccount);
+    //public ICommand DeleteAccountCommand =>
+   //     new RelayCommand(a => DeleteAccount(a as Account), _ => IsNotEditingAccount);
     public ICommand DeleteAccountCommand =>
-        new RelayCommand(a => DeleteAccount(a as Account), _ => IsNotEditingAccount);
+        new RelayCommand(_ => DeleteAccount(), _ => IsEditingAccount);
     
     public ICommand NextPeriodCommand => new RelayCommand(_ => NavigatePeriod(1));
     public ICommand PrevPeriodCommand => new RelayCommand(_ => NavigatePeriod(-1));
@@ -500,8 +509,29 @@ public class MainViewModel : ViewModelBase {
         EditingBillClone = null;
     }
 
-    private void DeletePeriodBill(PeriodBill? pb) {
-        if (pb != null) {
+    // private void DeletePeriodBill(PeriodBill? pb) {
+    //     if (pb != null) {
+    //         MessageBoxResult messageBoxResult = MessageBox.Show(
+    //             "Are you sure you want to delete this period's bill?", // Message
+    //             "Delete Confirmation", // Title
+    //             MessageBoxButton.YesNo, // Buttons
+    //             MessageBoxImage.Warning // Icon
+    //         );
+    //
+    //         // Check the user's response
+    //         if (messageBoxResult == MessageBoxResult.Yes) {
+    //             // User confirmed deletion, proceed with your delete logic here
+    //             _budgetService.DeletePeriodBill(pb.Id);
+    //             IsEditingPeriodBill = false;
+    //             EditingPeriodBillClone = null;
+    //             LoadPeriodData();
+    //             CalculateProjections();
+    //         }
+    //     }
+    // }
+    
+    private void DeletePeriodBill() {
+        if (EditingPeriodBillClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
                 "Are you sure you want to delete this period's bill?", // Message
                 "Delete Confirmation", // Title
@@ -512,7 +542,7 @@ public class MainViewModel : ViewModelBase {
             // Check the user's response
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
-                _budgetService.DeletePeriodBill(pb.Id);
+                _budgetService.DeletePeriodBill(EditingPeriodBillClone.Id);
                 IsEditingPeriodBill = false;
                 EditingPeriodBillClone = null;
                 LoadPeriodData();
@@ -573,8 +603,29 @@ public class MainViewModel : ViewModelBase {
         target.IsPaid = clone.IsPaid;
     }
     
-    private void DeleteBill(Bill? b) {
-        if (b != null) {
+    // private void DeleteBill(Bill? b) {
+    //     if (b != null) {
+    //         MessageBoxResult messageBoxResult = MessageBox.Show(
+    //             "Are you sure you want to delete this bill?", // Message
+    //             "Delete Confirmation", // Title
+    //             MessageBoxButton.YesNo, // Buttons
+    //             MessageBoxImage.Warning // Icon
+    //         );
+    //
+    //         // Check the user's response
+    //         if (messageBoxResult == MessageBoxResult.Yes) {
+    //             // User confirmed deletion, proceed with your delete logic here
+    //             _budgetService.DeleteBill(b.Id);
+    //             IsEditingBill = false;
+    //             EditingBillClone = null;
+    //             LoadData();
+    //             CalculateProjections();
+    //         }
+    //     }
+    // }
+    
+    private void DeleteBill() {
+        if (EditingBillClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
                 "Are you sure you want to delete this bill?", // Message
                 "Delete Confirmation", // Title
@@ -585,7 +636,7 @@ public class MainViewModel : ViewModelBase {
             // Check the user's response
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
-                _budgetService.DeleteBill(b.Id);
+                _budgetService.DeleteBill(EditingBillClone.Id);
                 IsEditingBill = false;
                 EditingBillClone = null;
                 LoadData();
@@ -593,7 +644,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-
+    
     #endregion
 
     #region Bucket CRUD
@@ -648,8 +699,29 @@ public class MainViewModel : ViewModelBase {
         EditingBucketClone = null;
     }
     
-    private void DeleteBucket(BudgetBucket? b) {
-        if (b != null) {
+    // private void DeleteBucket(BudgetBucket? b) {
+    //     if (b != null) {
+    //         MessageBoxResult messageBoxResult = MessageBox.Show(
+    //             "Are you sure you want to delete this bucket?", // Message
+    //             "Delete Confirmation", // Title
+    //             MessageBoxButton.YesNo, // Buttons
+    //             MessageBoxImage.Warning // Icon
+    //         );
+    //
+    //         // Check the user's response
+    //         if (messageBoxResult == MessageBoxResult.Yes) {
+    //             // User confirmed deletion, proceed with your delete logic here
+    //             _budgetService.DeleteBucket(b.Id);
+    //             IsEditingBucket = false;
+    //             EditingBucketClone = null;
+    //             LoadData();
+    //             CalculateProjections();
+    //         }
+    //     }
+    // }
+    
+    private void DeleteBucket() {
+        if (EditingBucketClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
                 "Are you sure you want to delete this bucket?", // Message
                 "Delete Confirmation", // Title
@@ -660,7 +732,7 @@ public class MainViewModel : ViewModelBase {
             // Check the user's response
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
-                _budgetService.DeleteBucket(b.Id);
+                _budgetService.DeleteBucket(EditingBucketClone.Id);
                 IsEditingBucket = false;
                 EditingBucketClone = null;
                 LoadData();
@@ -718,8 +790,29 @@ public class MainViewModel : ViewModelBase {
         EditingPeriodBucketClone = null;
     }
     
-    private void DeletePeriodBucket(PeriodBucket? pb) {
-        if (pb != null) {
+    // private void DeletePeriodBucket(PeriodBucket? pb) {
+    //     if (pb != null) {
+    //         MessageBoxResult messageBoxResult = MessageBox.Show(
+    //             "Are you sure you want to delete this period's bucket?\r\n\r\nIt will use the budgetted amount for the bucket instead. Save a $0 amount if you do not want to budget for this bucket for this period.", // Message
+    //             "Delete Confirmation", // Title
+    //             MessageBoxButton.YesNo, // Buttons
+    //             MessageBoxImage.Warning // Icon
+    //         );
+    //
+    //         // Check the user's response
+    //         if (messageBoxResult == MessageBoxResult.Yes) {
+    //             // User confirmed deletion, proceed with your delete logic here
+    //             _budgetService.DeletePeriodBucket(pb.Id);
+    //             IsEditingPeriodBucket = false;
+    //             EditingPeriodBucketClone = null;
+    //             LoadPeriodData();
+    //             CalculateProjections();
+    //         }
+    //     }
+    // }
+    
+    private void DeletePeriodBucket() {
+        if (EditingPeriodBucketClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
                 "Are you sure you want to delete this period's bucket?\r\n\r\nIt will use the budgetted amount for the bucket instead. Save a $0 amount if you do not want to budget for this bucket for this period.", // Message
                 "Delete Confirmation", // Title
@@ -730,7 +823,7 @@ public class MainViewModel : ViewModelBase {
             // Check the user's response
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
-                _budgetService.DeletePeriodBucket(pb.Id);
+                _budgetService.DeletePeriodBucket(EditingPeriodBucketClone.Id);
                 IsEditingPeriodBucket = false;
                 EditingPeriodBucketClone = null;
                 LoadPeriodData();
@@ -813,8 +906,28 @@ public class MainViewModel : ViewModelBase {
         EditingTransactionClone = null;
     }
 
-    private void DeleteTransaction(Transaction? t) {
-        if (t != null) {
+    // private void DeleteTransaction(Transaction? t) {
+    //     if (t != null) {
+    //         MessageBoxResult messageBoxResult = MessageBox.Show(
+    //             "Are you sure you want to delete this transaction?", // Message
+    //             "Delete Confirmation", // Title
+    //             MessageBoxButton.YesNo, // Buttons
+    //             MessageBoxImage.Warning // Icon
+    //         );
+    //
+    //         // Check the user's response
+    //         if (messageBoxResult == MessageBoxResult.Yes) {
+    //             // User confirmed deletion, proceed with your delete logic here
+    //             _budgetService.DeleteTransaction(t.Id);
+    //             IsEditingTransaction = false;
+    //             EditingTransactionClone = null;
+    //             LoadPeriodData();
+    //             CalculateProjections();
+    //         }
+    //     }
+    // }
+    private void DeleteTransaction() {
+        if (EditingTransactionClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
                 "Are you sure you want to delete this transaction?", // Message
                 "Delete Confirmation", // Title
@@ -825,7 +938,7 @@ public class MainViewModel : ViewModelBase {
             // Check the user's response
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
-                _budgetService.DeleteTransaction(t.Id);
+                _budgetService.DeleteTransaction(EditingTransactionClone.Id);
                 IsEditingTransaction = false;
                 EditingTransactionClone = null;
                 LoadPeriodData();
@@ -833,6 +946,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
+
 
     #endregion
 
@@ -905,8 +1019,30 @@ public class MainViewModel : ViewModelBase {
         EditingPaycheckClone = null;
     }
     
-    private void DeletePaycheck(Paycheck? p) {
-        if (p != null) {
+    // private void DeletePaycheck(Paycheck? p) {
+    //     if (p != null) {
+    //         MessageBoxResult messageBoxResult = MessageBox.Show(
+    //             "Are you sure you want to delete this paycheck?", // Message
+    //             "Delete Confirmation", // Title
+    //             MessageBoxButton.YesNo, // Buttons
+    //             MessageBoxImage.Warning // Icon
+    //         );
+    //
+    //         // Check the user's response
+    //         if (messageBoxResult == MessageBoxResult.Yes) {
+    //             // User confirmed deletion, proceed with your delete logic here
+    //             _budgetService.DeletePaycheck(p.Id);
+    //             IsEditingPaycheck = false;
+    //             EditingPaycheckClone = null;
+    //             LoadData();
+    //             RefreshPaychecks();
+    //             CalculateProjections();
+    //         }
+    //     }
+    // }
+    
+    private void DeletePaycheck() {
+        if (EditingPaycheckClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
                 "Are you sure you want to delete this paycheck?", // Message
                 "Delete Confirmation", // Title
@@ -917,7 +1053,7 @@ public class MainViewModel : ViewModelBase {
             // Check the user's response
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
-                _budgetService.DeletePaycheck(p.Id);
+                _budgetService.DeletePaycheck(EditingPaycheckClone.Id);
                 IsEditingPaycheck = false;
                 EditingPaycheckClone = null;
                 LoadData();
@@ -926,7 +1062,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-
+    
     #endregion
 
     #region Account CRUD
@@ -1043,8 +1179,29 @@ public class MainViewModel : ViewModelBase {
         EditingAccountClone = null;
     }
 
-    private void DeleteAccount(Account? a) {
-        if (a != null) {
+    // private void DeleteAccount(Account? a) {
+    //     if (a != null) {
+    //         MessageBoxResult messageBoxResult = MessageBox.Show(
+    //             "Are you sure you want to delete this account?", // Message
+    //             "Delete Confirmation", // Title
+    //             MessageBoxButton.YesNo, // Buttons
+    //             MessageBoxImage.Warning // Icon
+    //         );
+    //
+    //         // Check the user's response
+    //         if (messageBoxResult == MessageBoxResult.Yes) {
+    //             // User confirmed deletion, proceed with your delete logic here
+    //             _budgetService.DeleteAccount(a.Id);
+    //             IsEditingAccount = false;
+    //             EditingAccountClone = null;
+    //             LoadData();
+    //             CalculateProjections();
+    //         }
+    //     }
+    // }
+    
+    private void DeleteAccount() {
+        if (EditingAccountClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
                 "Are you sure you want to delete this account?", // Message
                 "Delete Confirmation", // Title
@@ -1055,7 +1212,7 @@ public class MainViewModel : ViewModelBase {
             // Check the user's response
             if (messageBoxResult == MessageBoxResult.Yes) {
                 // User confirmed deletion, proceed with your delete logic here
-                _budgetService.DeleteAccount(a.Id);
+                _budgetService.DeleteAccount(EditingAccountClone.Id);
                 IsEditingAccount = false;
                 EditingAccountClone = null;
                 LoadData();
@@ -1063,7 +1220,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-
+    
     #endregion
 
     #region Helpers
