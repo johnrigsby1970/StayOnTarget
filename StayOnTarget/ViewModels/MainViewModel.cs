@@ -43,7 +43,9 @@ public class MainViewModel : ViewModelBase {
     private ObservableCollection<Paycheck> _periodPaychecks = new();
     private bool _isEditingPaycheck;
     private Paycheck? _selectedPaycheck;
-    
+
+    #region Properties
+
     public bool IsCalculatingProjections => _isCalculatingProjections;
 
     public static MainViewModel? Instance { get; private set; }
@@ -152,14 +154,14 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public PeriodBill? SelectedPeriodBill {
         get => _selectedPeriodBill;
         set {
             if (SetProperty(ref _selectedPeriodBill, value)) {
                 OnPropertyChanged(nameof(CanEditPeriodBill));
             }
-        } 
+        }
     }
 
     public BudgetBucket? SelectedBucket {
@@ -177,9 +179,9 @@ public class MainViewModel : ViewModelBase {
             if (SetProperty(ref _selectedPeriodBucket, value)) {
                 OnPropertyChanged(nameof(CanEditPeriodBucket));
             }
-        } 
+        }
     }
-    
+
 
     public Account? SelectedAccount {
         get => _selectedAccount;
@@ -207,7 +209,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public bool IsEditingBill {
         get => _isEditingBill;
         set {
@@ -217,10 +219,10 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public bool IsNotEditingBill => !IsEditingBill;
     public bool CanEditBill => SelectedBill != null && !IsEditingBill;
-    
+
     public bool IsEditingPaycheck {
         get => _isEditingPaycheck;
         set {
@@ -230,10 +232,11 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
+
     public bool IsNotEditingPaycheck => !IsEditingPaycheck;
-    
+
     public bool CanEditPaycheck => SelectedPaycheck != null && !IsEditingPaycheck;
-    
+
     public bool IsEditingPeriodBucket {
         get => _isEditingPeriodBucket;
         set {
@@ -243,7 +246,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public bool IsEditingBucket {
         get => _isEditingBucket;
         set {
@@ -255,11 +258,11 @@ public class MainViewModel : ViewModelBase {
     }
 
     public bool IsNotEditingBucket => !IsEditingBucket;
-    
+
     public bool CanEditBucket => SelectedBucket != null && !IsEditingBucket;
-    
+
     public bool IsNotEditingPeriodBill => !IsEditingPeriodBill;
-    
+
     public bool IsEditingPeriodBill {
         get => _isEditingPeriodBill;
         set {
@@ -269,13 +272,12 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-        
+
     public bool CanEditPeriodBill => SelectedPeriodBill != null && !IsEditingPeriodBill;
-    
+
     public bool IsNotEditingPeriodBucket => !IsEditingPeriodBucket;
-    
+
     public bool CanEditPeriodBucket => SelectedPeriodBucket != null && !IsEditingPeriodBucket;
-    
 
     public bool IsEditingAccount {
         get => _isEditingAccount;
@@ -307,22 +309,22 @@ public class MainViewModel : ViewModelBase {
         get => _editingBillClone;
         set => SetProperty(ref _editingBillClone, value);
     }
-    
+
     public PeriodBill? EditingPeriodBillClone {
         get => _editingPeriodBillClone;
         set => SetProperty(ref _editingPeriodBillClone, value);
     }
-    
+
     public BudgetBucket? EditingBucketClone {
         get => _editingBucketClone;
         set => SetProperty(ref _editingBucketClone, value);
     }
-    
+
     public PeriodBucket? EditingPeriodBucketClone {
         get => _editingPeriodBucketClone;
         set => SetProperty(ref _editingPeriodBucketClone, value);
     }
-    
+
     public Account? EditingAccountClone {
         get => _editingAccountClone;
         set => SetProperty(ref _editingAccountClone, value);
@@ -332,73 +334,90 @@ public class MainViewModel : ViewModelBase {
         get => _editingTransactionClone;
         set => SetProperty(ref _editingTransactionClone, value);
     }
-    
+
     public Paycheck? EditingPaycheckClone {
         get => _editingPaycheckClone;
         set => SetProperty(ref _editingPaycheckClone, value);
     }
-    
-    
+
+    #endregion
+
+    #region Commands
+
     public ICommand AddBillCommand => new RelayCommand(_ => AddBill(), _ => IsNotEditingBill);
     public ICommand EditBillCommand => new RelayCommand(_ => EditBill(), _ => CanEditBill);
     public ICommand SaveBillCommand => new RelayCommand(_ => SaveBill(), _ => IsEditingBill);
+
     public ICommand CancelBillCommand => new RelayCommand(_ => CancelBill(), _ => IsEditingBill);
+
     //public ICommand DeleteBillCommand => new RelayCommand(b => DeleteBill(b as Bill));
     public ICommand DeleteBillCommand => new RelayCommand(_ => DeleteBill(), _ => IsEditingBill);
-    
+
     public ICommand EditPeriodBillCommand => new RelayCommand(_ => EditPeriodBill(), _ => CanEditPeriodBill);
     public ICommand SavePeriodBillCommand => new RelayCommand(_ => SavePeriodBill(), _ => IsEditingPeriodBill);
+
     public ICommand CancelPeriodBillCommand => new RelayCommand(_ => CancelPeriodBill(), _ => IsEditingPeriodBill);
+
     //public ICommand DeletePeriodBillCommand => new RelayCommand(pb => DeletePeriodBill(pb as PeriodBill));
     public ICommand DeletePeriodBillCommand => new RelayCommand(_ => DeletePeriodBill(), _ => IsEditingPeriodBill);
-    
+
     public ICommand AddBucketCommand => new RelayCommand(_ => AddBucket(), _ => IsNotEditingBucket);
     public ICommand EditBucketCommand => new RelayCommand(_ => EditBucket(), _ => CanEditBucket);
     public ICommand SaveBucketCommand => new RelayCommand(_ => SaveBucket(), _ => IsEditingBucket);
+
     public ICommand CancelBucketCommand => new RelayCommand(_ => CancelBucket(), _ => IsEditingBucket);
+
     //public ICommand DeleteBucketCommand => new RelayCommand(b => DeleteBucket(b as BudgetBucket));
     public ICommand DeleteBucketCommand => new RelayCommand(_ => DeleteBucket());
-    
+
     public ICommand EditPeriodBucketCommand => new RelayCommand(_ => EditPeriodBucket(), _ => CanEditPeriodBucket);
     public ICommand SavePeriodBucketCommand => new RelayCommand(_ => SavePeriodBucket(), _ => IsEditingPeriodBucket);
-    public ICommand CancelPeriodBucketCommand => new RelayCommand(_ => CancelPeriodBucket(), _ => IsEditingPeriodBucket);
+
+    public ICommand CancelPeriodBucketCommand =>
+        new RelayCommand(_ => CancelPeriodBucket(), _ => IsEditingPeriodBucket);
+
     //public ICommand DeletePeriodBucketCommand => new RelayCommand(pb => DeletePeriodBucket(pb as PeriodBucket));
-    public ICommand DeletePeriodBucketCommand => new RelayCommand(_ => DeletePeriodBucket(), _ => IsEditingPeriodBucket);
-    
-    public ICommand AddTransactionCommand =>
-        new RelayCommand(_ => AddTransaction(), _ => IsNotEditingTransaction);
-    public ICommand EditTransactionCommand =>
-        new RelayCommand(_ => EditTransaction(), _ => CanEditTransaction);
-    public ICommand SaveTransactionCommand =>
-        new RelayCommand(_ => SaveTransaction(), _ => IsEditingTransaction);
-    public ICommand CancelTransactionCommand =>
-        new RelayCommand(_ => CancelTransaction(), _ => IsEditingTransaction);
-    
+    public ICommand DeletePeriodBucketCommand =>
+        new RelayCommand(_ => DeletePeriodBucket(), _ => IsEditingPeriodBucket);
+
+    public ICommand AddTransactionCommand => new RelayCommand(_ => AddTransaction(), _ => IsNotEditingTransaction);
+    public ICommand EditTransactionCommand => new RelayCommand(_ => EditTransaction(), _ => CanEditTransaction);
+    public ICommand SaveTransactionCommand => new RelayCommand(_ => SaveTransaction(), _ => IsEditingTransaction);
+
+    public ICommand CancelTransactionCommand => new RelayCommand(_ => CancelTransaction(), _ => IsEditingTransaction);
+
     // public ICommand DeleteTransactionCommand =>
     //     new RelayCommand(t => DeleteTransaction(t as Transaction));
-    public ICommand DeleteTransactionCommand => new RelayCommand(_  => DeleteTransaction(), _ => IsEditingTransaction);
-    
+    public ICommand DeleteTransactionCommand => new RelayCommand(_ => DeleteTransaction(), _ => IsEditingTransaction);
+
     public ICommand AddPaycheckCommand => new RelayCommand(_ => AddPaycheck());
     public ICommand EditPaycheckCommand => new RelayCommand(_ => EditPaycheck(), _ => CanEditPaycheck);
     public ICommand SavePaycheckCommand => new RelayCommand(_ => SavePaycheck(), _ => IsEditingPaycheck);
+
     public ICommand CancelPaycheckCommand => new RelayCommand(_ => CancelPaycheck(), _ => IsEditingPaycheck);
+
     //public ICommand DeletePaycheckCommand => new RelayCommand(p => DeletePaycheck(p as Paycheck));
     public ICommand DeletePaycheckCommand => new RelayCommand(_ => DeletePaycheck(), _ => IsEditingPaycheck);
 
     public ICommand AddAccountCommand => new RelayCommand(_ => AddAccount(), _ => IsNotEditingAccount);
     public ICommand EditAccountCommand => new RelayCommand(_ => EditAccount(), _ => CanEditAccount);
     public ICommand SaveAccountCommand => new RelayCommand(_ => SaveAccount(), _ => IsEditingAccount);
+
     public ICommand CancelAccountCommand => new RelayCommand(_ => CancelAccount(), _ => IsEditingAccount);
+
     //public ICommand DeleteAccountCommand =>
-   //     new RelayCommand(a => DeleteAccount(a as Account), _ => IsNotEditingAccount);
-    public ICommand DeleteAccountCommand =>
-        new RelayCommand(_ => DeleteAccount(), _ => IsEditingAccount);
-    
+    //     new RelayCommand(a => DeleteAccount(a as Account), _ => IsNotEditingAccount);
+    public ICommand DeleteAccountCommand => new RelayCommand(_ => DeleteAccount(), _ => IsEditingAccount);
+
     public ICommand NextPeriodCommand => new RelayCommand(_ => NavigatePeriod(1));
     public ICommand PrevPeriodCommand => new RelayCommand(_ => NavigatePeriod(-1));
-    
-    public ICommand ShowAmortizationCommand => new RelayCommand(a => ShowAmortization(a as Account ?? throw new InvalidOperationException()));
+
+    public ICommand ShowAmortizationCommand =>
+        new RelayCommand(a => ShowAmortization(a as Account ?? throw new InvalidOperationException()));
+
     public ICommand ShowAboutCommand => new RelayCommand(_ => ShowAbout());
+
+    #endregion
 
     private bool _isLoadingData;
 
@@ -475,7 +494,6 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void SaveBill() {
-        //if (EditingBillClone != null && SelectedBill != null) {
         if (EditingBillClone != null) {
             if (SelectedBill != null) {
                 UpdateBillFromClone(SelectedBill, EditingBillClone);
@@ -529,7 +547,7 @@ public class MainViewModel : ViewModelBase {
     //         }
     //     }
     // }
-    
+
     private void DeletePeriodBill() {
         if (EditingPeriodBillClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -550,14 +568,13 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
-    
-    
+
+
     private void EditPeriodBill() {
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (SelectedPeriodBill != null) {
             EditingPeriodBillClone = new PeriodBill {
-                Id = SelectedPeriodBill.Id, 
+                Id = SelectedPeriodBill.Id,
                 BillName = SelectedPeriodBill.BillName,
                 ActualAmount = SelectedPeriodBill.ActualAmount,
                 BillId = SelectedPeriodBill.BillId,
@@ -566,11 +583,11 @@ public class MainViewModel : ViewModelBase {
                 PeriodDate = SelectedPeriodBill.PeriodDate,
                 IsPaid = SelectedPeriodBill.IsPaid
             };
-            
+
             IsEditingPeriodBill = true;
         }
     }
-    
+
     private void SavePeriodBill() {
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (EditingPeriodBillClone != null) {
@@ -587,22 +604,21 @@ public class MainViewModel : ViewModelBase {
             CalculateProjections();
         }
     }
-    
+
 
     private void CancelPeriodBill() {
         IsEditingPeriodBill = false;
         EditingPeriodBillClone = null;
     }
-    
-    
-    
+
+
     private void UpdatePeriodBillFromClone(PeriodBill target, PeriodBill clone) {
         target.Id = clone.Id;
         target.ActualAmount = clone.ActualAmount;
         target.DueDate = clone.DueDate;
         target.IsPaid = clone.IsPaid;
     }
-    
+
     // private void DeleteBill(Bill? b) {
     //     if (b != null) {
     //         MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -623,7 +639,7 @@ public class MainViewModel : ViewModelBase {
     //         }
     //     }
     // }
-    
+
     private void DeleteBill() {
         if (EditingBillClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -644,7 +660,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     #endregion
 
     #region Bucket CRUD
@@ -668,7 +684,7 @@ public class MainViewModel : ViewModelBase {
             IsEditingBucket = true;
         }
     }
-    
+
     private void SaveBucket() {
         //if (EditingBucketClone != null && SelectedBucket != null) {
         if (EditingBucketClone != null) {
@@ -686,19 +702,19 @@ public class MainViewModel : ViewModelBase {
             CalculateProjections();
         }
     }
-    
+
     private void UpdateBucketFromClone(BudgetBucket target, BudgetBucket clone) {
         target.Name = clone.Name;
         target.ExpectedAmount = clone.ExpectedAmount;
         target.AccountId = clone.AccountId;
         target.PaycheckId = clone.PaycheckId;
     }
-    
+
     private void CancelBucket() {
         IsEditingBucket = false;
         EditingBucketClone = null;
     }
-    
+
     // private void DeleteBucket(BudgetBucket? b) {
     //     if (b != null) {
     //         MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -719,7 +735,7 @@ public class MainViewModel : ViewModelBase {
     //         }
     //     }
     // }
-    
+
     private void DeleteBucket() {
         if (EditingBucketClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -740,12 +756,12 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     private void EditPeriodBucket() {
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (SelectedPeriodBucket != null) {
             EditingPeriodBucketClone = new PeriodBucket {
-                Id = SelectedPeriodBucket.Id, 
+                Id = SelectedPeriodBucket.Id,
                 BucketName = SelectedPeriodBucket.BucketName,
                 ActualAmount = SelectedPeriodBucket.ActualAmount,
                 BucketId = SelectedPeriodBucket.BucketId,
@@ -756,7 +772,7 @@ public class MainViewModel : ViewModelBase {
             IsEditingPeriodBucket = true;
         }
     }
-    
+
     private void SavePeriodBucket() {
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (EditingPeriodBucketClone != null) {
@@ -789,7 +805,7 @@ public class MainViewModel : ViewModelBase {
         IsEditingPeriodBucket = false;
         EditingPeriodBucketClone = null;
     }
-    
+
     // private void DeletePeriodBucket(PeriodBucket? pb) {
     //     if (pb != null) {
     //         MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -810,7 +826,7 @@ public class MainViewModel : ViewModelBase {
     //         }
     //     }
     // }
-    
+
     private void DeletePeriodBucket() {
         if (EditingPeriodBucketClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -846,16 +862,16 @@ public class MainViewModel : ViewModelBase {
     private void EditTransaction() {
         if (SelectedTransaction != null) {
             EditingTransactionClone = new Transaction {
-                Id = SelectedTransaction.Id, 
+                Id = SelectedTransaction.Id,
                 Description = SelectedTransaction.Description,
-                Amount = SelectedTransaction.Amount, 
+                Amount = SelectedTransaction.Amount,
                 Date = SelectedTransaction.Date,
-                AccountId = SelectedTransaction.AccountId, 
+                AccountId = SelectedTransaction.AccountId,
                 ToAccountId = SelectedTransaction.ToAccountId,
-                BucketId = SelectedTransaction.BucketId, 
+                BucketId = SelectedTransaction.BucketId,
                 PeriodDate = SelectedTransaction.PeriodDate,
                 IsPrincipalOnly = SelectedTransaction.IsPrincipalOnly,
-                IsRebalance = SelectedTransaction.IsRebalance, 
+                IsRebalance = SelectedTransaction.IsRebalance,
                 PaycheckId = SelectedTransaction.PaycheckId,
                 BillId = SelectedTransaction.BillId,
                 BillName = SelectedTransaction.BillName,
@@ -877,7 +893,7 @@ public class MainViewModel : ViewModelBase {
 
             IsEditingTransaction = false;
             EditingTransactionClone = null;
-            
+
             LoadPeriodData();
             CalculateProjections();
         }
@@ -947,18 +963,16 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
-
     #endregion
 
     #region Paycheck CRUD
 
     private void AddPaycheck() {
-        
         EditingPaycheckClone = new Paycheck
             { Name = "New Paycheck", ExpectedAmount = 0, StartDate = DateTime.Today, Frequency = Frequency.BiWeekly };
         SelectedPaycheck = null;
         IsEditingPaycheck = true;
-        
+
         // var p = new Paycheck
         //     { Name = "New Paycheck", ExpectedAmount = 0, StartDate = DateTime.Today, Frequency = Frequency.BiWeekly };
         // _budgetService.UpsertPaycheck(p);
@@ -967,23 +981,23 @@ public class MainViewModel : ViewModelBase {
         // LoadPaychecks();
         // CalculateProjections();
     }
-    
+
     private void EditPaycheck() {
         if (SelectedPaycheck != null) {
             EditingPaycheckClone = new Paycheck {
-                Id = SelectedPaycheck.Id, 
+                Id = SelectedPaycheck.Id,
                 Name = SelectedPaycheck.Name,
-                ExpectedAmount = SelectedPaycheck.ExpectedAmount, 
+                ExpectedAmount = SelectedPaycheck.ExpectedAmount,
                 Frequency = SelectedPaycheck.Frequency,
-                StartDate = SelectedPaycheck.StartDate, 
+                StartDate = SelectedPaycheck.StartDate,
                 EndDate = SelectedPaycheck.EndDate,
-                AccountId = SelectedPaycheck.AccountId, 
+                AccountId = SelectedPaycheck.AccountId,
                 IsBalanced = SelectedPaycheck.IsBalanced
             };
             IsEditingPaycheck = true;
         }
     }
-    
+
     private void SavePaycheck() {
         if (EditingPaycheckClone != null) {
             if (SelectedPaycheck != null) {
@@ -996,7 +1010,7 @@ public class MainViewModel : ViewModelBase {
 
             IsEditingPaycheck = false;
             EditingPaycheckClone = null;
-            
+
             LoadData();
             RefreshPaychecks();
             LoadPaychecks();
@@ -1013,12 +1027,12 @@ public class MainViewModel : ViewModelBase {
         target.AccountId = clone.AccountId;
         target.IsBalanced = clone.IsBalanced;
     }
-    
+
     private void CancelPaycheck() {
         IsEditingPaycheck = false;
         EditingPaycheckClone = null;
     }
-    
+
     // private void DeletePaycheck(Paycheck? p) {
     //     if (p != null) {
     //         MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -1040,7 +1054,7 @@ public class MainViewModel : ViewModelBase {
     //         }
     //     }
     // }
-    
+
     private void DeletePaycheck() {
         if (EditingPaycheckClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -1062,16 +1076,16 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     #endregion
 
     #region Account CRUD
 
     private void AddAccount() {
         EditingAccountClone = new Account {
-            Name = "New Account", 
-            Type = AccountType.Checking, 
-            Balance = 0, 
+            Name = "New Account",
+            Type = AccountType.Checking,
+            Balance = 0,
             BalanceAsOf = DateTime.Today,
             IncludeInTotal = true,
             MortgageDetails = new MortgageDetails(),
@@ -1085,14 +1099,14 @@ public class MainViewModel : ViewModelBase {
     private void EditAccount() {
         if (SelectedAccount != null) {
             EditingAccountClone = new Account {
-                Id = SelectedAccount.Id, 
-                Name = SelectedAccount.Name, 
+                Id = SelectedAccount.Id,
+                Name = SelectedAccount.Name,
                 BankName = SelectedAccount.BankName,
-                Balance = SelectedAccount.Balance, 
+                Balance = SelectedAccount.Balance,
                 BalanceAsOf = SelectedAccount.BalanceAsOf,
-                AnnualGrowthRate = SelectedAccount.AnnualGrowthRate, 
+                AnnualGrowthRate = SelectedAccount.AnnualGrowthRate,
                 IncludeInTotal = SelectedAccount.IncludeInTotal,
-                Type = SelectedAccount.Type, 
+                Type = SelectedAccount.Type,
                 HexColor = SelectedAccount.HexColor
             };
             if (SelectedAccount.MortgageDetails != null) {
@@ -1141,7 +1155,7 @@ public class MainViewModel : ViewModelBase {
             IsEditingAccount = false;
             EditingAccountClone = null;
             CalculateProjections();
-            
+
             // Re-trigger Accounts collection change to update chart
             OnPropertyChanged(nameof(Accounts));
         }
@@ -1170,7 +1184,8 @@ public class MainViewModel : ViewModelBase {
             if (target.CreditCardDetails == null) target.CreditCardDetails = new CreditCardDetails();
             target.CreditCardDetails.Apr = clone.CreditCardDetails.Apr;
             target.CreditCardDetails.StatementDay = clone.CreditCardDetails.StatementDay;
-            target.CreditCardDetails.PayPreviousMonthBalanceInFull = clone.CreditCardDetails.PayPreviousMonthBalanceInFull;
+            target.CreditCardDetails.PayPreviousMonthBalanceInFull =
+                clone.CreditCardDetails.PayPreviousMonthBalanceInFull;
         }
     }
 
@@ -1199,7 +1214,7 @@ public class MainViewModel : ViewModelBase {
     //         }
     //     }
     // }
-    
+
     private void DeleteAccount() {
         if (EditingAccountClone != null) {
             MessageBoxResult messageBoxResult = MessageBox.Show(
@@ -1220,7 +1235,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     #endregion
 
     #region Helpers
@@ -1269,7 +1284,7 @@ public class MainViewModel : ViewModelBase {
     //
     //     return allPaycheckDates.Where(d => d <= date).OrderByDescending(d => d).FirstOrDefault();
     // }
-    
+
     // public Transaction? GetForPaycheck(int paycheckId, DateTime date) {
     //     return _budgetService.GetAllTransactions()
     //         .FirstOrDefault(a => a.PaycheckId == paycheckId && a.Date.Date == date.Date);
@@ -1398,7 +1413,7 @@ public class MainViewModel : ViewModelBase {
 
         SetCurrentPeriodDate();
     }
-    
+
     private void LoadPeriodData() {
         LoadPeriodBills();
         LoadPeriodBuckets();
@@ -1410,26 +1425,20 @@ public class MainViewModel : ViewModelBase {
         pBills = pBills.OrderBy(pb => pb.DueDate).ToList();
         // Always ensure projected bills for this period are in the database and collection
         var projectedBillsForPeriod = GetProjectedBillsForPeriod(CurrentPeriodDate);
-        //bool addedAny = false;
+
         foreach (var pb in projectedBillsForPeriod) {
-            if (!pBills.Any(existing => existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date)) {
-                //Bills don't get added just because a period is viewed or is current. They get added if the amount differs
-                //_budgetService.UpsertPeriodBill(pb);
-                //addedAny = true;
-                
+            if (!pBills.Any(existing =>
+                    existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date)) {
             }
             else {
-                var periodBill = pBills.SingleOrDefault(existing => existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date);
+                var periodBill = pBills.SingleOrDefault(existing =>
+                    existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date);
                 UpdatePeriodBillFromClone(pb, periodBill!);
             }
         }
-
-        // if (addedAny) {
-        //     pBills = _budgetService.GetPeriodBills(CurrentPeriodDate).ToList();
-        //     pBills = pBills.OrderBy(pb => pb.DueDate).ToList();
-        // }
+        
         projectedBillsForPeriod = projectedBillsForPeriod.OrderBy(pb => pb.DueDate).ToList();
-        //CurrentPeriodBills = new ObservableCollection<PeriodBill>(pBills);
+
         CurrentPeriodBills = new ObservableCollection<PeriodBill>(projectedBillsForPeriod);
         foreach (var pb in CurrentPeriodBills) pb.PropertyChanged += PeriodBill_PropertyChanged;
     }
@@ -1437,34 +1446,34 @@ public class MainViewModel : ViewModelBase {
     private void LoadPeriodBuckets() {
         var pBuckets = _budgetService.GetPeriodBucketsIncludingMonthly(CurrentPeriodDate).ToList();
 
-        // Same for buckets
-        //bool addedAnyBucket = false;
-        foreach (var bucket in Buckets.Where(b=>b.PaycheckId == null || (b.PaycheckId == SelectedPeriodPaycheckId && !ShowByMonth))) {
+        foreach (var bucket in Buckets.Where(b =>
+                     b.PaycheckId == null || (b.PaycheckId == SelectedPeriodPaycheckId && !ShowByMonth))) {
             if (!pBuckets.Any(existing => existing.BucketId == bucket.Id)) {
                 var pb = new PeriodBucket {
                     BucketId = bucket.Id,
                     BucketName = bucket.Name,
-                    PeriodDate = bucket.PaycheckId == null ? new DateTime(CurrentPeriodDate.Year, CurrentPeriodDate.Month, 1) : CurrentPeriodDate,
+                    PeriodDate = bucket.PaycheckId == null
+                        ? new DateTime(CurrentPeriodDate.Year, CurrentPeriodDate.Month, 1)
+                        : CurrentPeriodDate,
                     ActualAmount = bucket.ExpectedAmount,
                     IsPaid = false,
-                    FitId = Guid.NewGuid() 
+                    FitId = Guid.NewGuid()
                 };
                 pBuckets.Add(pb);
-                //addedAnyBucket = true;
             }
         }
-        
+
         CurrentPeriodBuckets = new ObservableCollection<PeriodBucket>(pBuckets);
         foreach (var pb in CurrentPeriodBuckets) pb.PropertyChanged += PeriodBucket_PropertyChanged;
     }
-        
+
     private void LoadPeriodTransactions() {
         var transactions = _budgetService.GetTransactions(CurrentPeriodDate).ToList();
         transactions = transactions.OrderBy(pb => pb.Date).ToList();
         CurrentPeriodTransactions = new ObservableCollection<Transaction>(transactions);
         foreach (var t in CurrentPeriodTransactions) t.PropertyChanged += Transaction_PropertyChanged;
     }
-            
+
     private void InitializePeriod() {
         if (ShowByMonth) {
             CurrentPeriodDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -1473,7 +1482,7 @@ public class MainViewModel : ViewModelBase {
 
         LoadPaychecks();
     }
-    
+
     private void NavigatePeriod(int direction) {
         if (ShowByMonth) {
             CurrentPeriodDate = CurrentPeriodDate.AddMonths(direction);
@@ -1510,10 +1519,10 @@ public class MainViewModel : ViewModelBase {
             if (nextIndex >= 0 && nextIndex < sortedDates.Count)
                 CurrentPeriodDate = sortedDates[nextIndex];
         }
-        
+
         LoadPeriodData();
     }
-    
+
     private void RefreshPaychecks() {
         var allPaychecks = Paychecks.ToList();
         if (!allPaychecks.Any()) {
@@ -1522,10 +1531,6 @@ public class MainViewModel : ViewModelBase {
         }
 
         PeriodPaychecks = new ObservableCollection<Paycheck>(allPaychecks);
-    }
-
-    public void SaveNewTransaction(Transaction transaction) {
-        _budgetService.UpsertTransaction(transaction);
     }
     
     private void SetCurrentPeriodDate(int? id = null) {
@@ -1577,8 +1582,6 @@ public class MainViewModel : ViewModelBase {
             if (found) currentPeriodPaychecks.Add(pay);
         }
 
-
-        //PeriodPaychecks = new ObservableCollection<Paycheck>(currentPeriodPaychecks);
         if (id == null && currentPeriodPaychecks.Any()) {
             _selectedPeriodPaycheckId = currentPeriodPaychecks.First().Id;
             OnPropertyChanged(nameof(SelectedPeriodPaycheckId));
@@ -1591,13 +1594,13 @@ public class MainViewModel : ViewModelBase {
         };
         about.ShowDialog();
     }
-    
+
     private void ShowAmortization(Account account) {
         var amortization = new AmortizationWindow(account) {
             Owner = Application.Current.MainWindow
         };
         amortization.ShowDialog();
     }
-    
+
     #endregion
 }
