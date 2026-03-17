@@ -19,6 +19,8 @@ public class Transaction : ViewModelBase
     private bool _isCashAdvance;
     private bool _isBalanceTransfer;
     private bool _isInterestAdjustment;
+    private int? _fromAccountReconciledId;
+    private int? _toAccountReconciledId;
 
     public int Id { get; set; }
     public Guid FitId { get; set; } = Guid.NewGuid();
@@ -113,9 +115,37 @@ public class Transaction : ViewModelBase
         set => SetProperty(ref _isInterestAdjustment, value);
     }
 
+    public int? FromAccountReconciledId
+    {
+        get => _fromAccountReconciledId;
+        set => SetProperty(ref _fromAccountReconciledId, value);
+    }
+
+    public int? ToAccountReconciledId
+    {
+        get => _toAccountReconciledId;
+        set => SetProperty(ref _toAccountReconciledId, value);
+    }
+
     // Helper for UI
     public string? AccountName { get; set; }
     public string? ToAccountName { get; set; }
     public string? BillName { get; set; }
     public string? BucketName { get; set; }
+}
+
+public class ReconciliationTransaction : Transaction {
+    private decimal _runningBalance;
+    public decimal RunningBalance
+    {
+        get => _runningBalance;
+        set => SetProperty(ref _runningBalance, value);
+    }
+    
+    private bool _isReconciled;
+    public bool IsReconciled
+    {
+        get => _isReconciled;
+        set => SetProperty(ref _isReconciled, value);
+    }
 }

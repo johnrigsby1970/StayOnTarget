@@ -85,16 +85,17 @@ public partial class BudgetService
                 account.CreditCardDetails.AccountId,
                 account.CreditCardDetails.Apr,
                 account.CreditCardDetails.StatementDay,
+                account.CreditCardDetails.DueDay,
                 PayPreviousMonthBalanceInFull = account.CreditCardDetails.PayPreviousMonthBalanceInFull ? 1 : 0
             };
             if (account.CreditCardDetails.Id == 0)
             {
-                conn.Execute(@"INSERT INTO CreditCardDetails (AccountId, Apr, StatementDay, PayPreviousMonthBalanceInFull) 
-                               VALUES (@AccountId, @Apr, @StatementDay, @PayPreviousMonthBalanceInFull)", ccdParam);
+                conn.Execute(@"INSERT INTO CreditCardDetails (AccountId, Apr, StatementDay, DueDay, PayPreviousMonthBalanceInFull) 
+                               VALUES (@AccountId, @Apr, @StatementDay, @DueDay, @PayPreviousMonthBalanceInFull)", ccdParam);
             }
             else
             {
-                conn.Execute(@"UPDATE CreditCardDetails SET Apr=@Apr, StatementDay=@StatementDay, 
+                conn.Execute(@"UPDATE CreditCardDetails SET Apr=@Apr, StatementDay=@StatementDay, DueDay=@DueDay, 
                                PayPreviousMonthBalanceInFull=@PayPreviousMonthBalanceInFull WHERE Id=@Id", ccdParam);
             }
         }

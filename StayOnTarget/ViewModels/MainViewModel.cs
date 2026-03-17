@@ -43,7 +43,9 @@ public class MainViewModel : ViewModelBase {
     private ObservableCollection<Paycheck> _periodPaychecks = new();
     private bool _isEditingPaycheck;
     private Paycheck? _selectedPaycheck;
-
+    private bool _showReconciled;
+    private string _toggleReconciliationText = "Show Reconciled";
+    
     #region Properties
 
     public bool IsCalculatingProjections => _isCalculatingProjections;
@@ -59,8 +61,6 @@ public class MainViewModel : ViewModelBase {
         LoadPeriodData();
         CalculateProjections();
     }
-
-    #region Properties
 
     public ObservableCollection<Bill> Bills {
         get => _bills;
@@ -104,6 +104,26 @@ public class MainViewModel : ViewModelBase {
         set => SetProperty(ref _currentPeriodTransactions, value);
     }
 
+    public string ToggleReconciliationText {
+        get => _toggleReconciliationText;
+        set => SetProperty(ref _toggleReconciliationText, value);
+    }
+    
+    public bool ShowReconciled {
+        get => _showReconciled;
+        set {
+            if (SetProperty(ref _showReconciled, value)) {
+                // if (_showReconciled) {
+                //     ToggleReconciliationText = "Hide Reconciled";
+                // }
+                // else {
+                //     ToggleReconciliationText = "Show Reconciled";
+                // }
+                CalculateProjections();
+            }
+        }
+    }
+    
     public bool ShowByMonth {
         get => _showByMonth;
         set {
@@ -341,7 +361,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     #endregion
-
+    
     #region Commands
 
     public ICommand AddBillCommand => new RelayCommand(_ => AddBill(), _ => IsNotEditingBill);
@@ -401,6 +421,7 @@ public class MainViewModel : ViewModelBase {
 
     public ICommand AddAccountCommand => new RelayCommand(_ => AddAccount(), _ => IsNotEditingAccount);
     public ICommand EditAccountCommand => new RelayCommand(_ => EditAccount(), _ => CanEditAccount);
+    public ICommand ReconcileAccountCommand => new RelayCommand(_ => ReconcileAccount(), _ => IsEditingAccount);
     public ICommand SaveAccountCommand => new RelayCommand(_ => SaveAccount(), _ => IsEditingAccount);
 
     public ICommand CancelAccountCommand => new RelayCommand(_ => CancelAccount(), _ => IsEditingAccount);
@@ -420,11 +441,9 @@ public class MainViewModel : ViewModelBase {
     #endregion
 
     private bool _isLoadingData;
-
-    #endregion
-
+    
     #region Events
-
+    
     private void Item_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (_isLoadingData) return;
         if (sender is Bill b) _budgetService.UpsertBill(b);
@@ -1130,6 +1149,7 @@ public class MainViewModel : ViewModelBase {
                     AccountId = SelectedAccount.CreditCardDetails.AccountId,
                     Apr = SelectedAccount.CreditCardDetails.Apr,
                     StatementDay = SelectedAccount.CreditCardDetails.StatementDay,
+                    DueDay = SelectedAccount.CreditCardDetails.DueDay,
                     PayPreviousMonthBalanceInFull = SelectedAccount.CreditCardDetails.PayPreviousMonthBalanceInFull
                 };
             }
@@ -1184,6 +1204,7 @@ public class MainViewModel : ViewModelBase {
             if (target.CreditCardDetails == null) target.CreditCardDetails = new CreditCardDetails();
             target.CreditCardDetails.Apr = clone.CreditCardDetails.Apr;
             target.CreditCardDetails.StatementDay = clone.CreditCardDetails.StatementDay;
+            target.CreditCardDetails.DueDay = clone.CreditCardDetails.DueDay;
             target.CreditCardDetails.PayPreviousMonthBalanceInFull =
                 clone.CreditCardDetails.PayPreviousMonthBalanceInFull;
         }
@@ -1250,13 +1271,21 @@ public class MainViewModel : ViewModelBase {
             var buckets = _budgetService.GetAllBuckets();
             var periodBills = _budgetService.GetAllPeriodBills();
             var periodBuckets = _budgetService.GetAllPeriodBuckets();
-            var transactions = _budgetService.GetAllTransactions();
+            var transactions = ShowReconciled ? _budgetService.GetAllTransactions() : _budgetService.GetAllUnreconciledTransactions();
+            var reconciliations = !ShowReconciled ? _budgetService.GetAllAccountReconciliations() : null;
 
             DateTime start = CurrentPeriodDate == DateTime.MinValue ? DateTime.Today : CurrentPeriodDate;
             DateTime end = start.AddYears(1);
-
+            
+            var allPaycheckTransactions = _budgetService.GetAllPaycheckTransactions();
+            var allBillTransactions = _budgetService.GetBillTransactions();
+            var allBucketTransactions = _budgetService.GetBucketTransactions();
+            
             var results = _projectionEngine.CalculateProjections(
-                start, end, accounts, paychecks, bills, buckets, periodBills, periodBuckets, transactions);
+                allPaycheckTransactions, 
+                allBillTransactions, 
+                allBucketTransactions,
+                start, end, accounts, paychecks, bills, buckets, periodBills, periodBuckets, transactions, reconciliations, ShowReconciled, true);
 
             Projections = new ObservableCollection<ProjectionItem>(results);
         }
@@ -1523,6 +1552,15 @@ public class MainViewModel : ViewModelBase {
         LoadPeriodData();
     }
 
+    private void ReconcileAccount() {
+        if(EditingAccountClone==null) return;
+        var reconciliation = new ReconciliationWindow(EditingAccountClone, _budgetService) {
+            Owner = Application.Current.MainWindow
+        };
+        reconciliation.ShowDialog();
+        CalculateProjections();
+    }
+    
     private void RefreshPaychecks() {
         var allPaychecks = Paychecks.ToList();
         if (!allPaychecks.Any()) {

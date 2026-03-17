@@ -1,0 +1,87 @@
+﻿<Window x:Class="StayOnTarget.ReconciliationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:StayOnTarget"
+        mc:Ignorable="d"
+        Title="ReconciliationWindow" Height="450" Width="600">
+    <Grid Margin="10">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" x:Name="HeaderLabel" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,5" Orientation="Horizontal">
+                                        <Label Content="Beginning balance:" Margin="0,0" />
+                                        <Label
+                                            Content="{Binding BeginningBalance, StringFormat=C}"
+                                            Width="Auto" Margin="0,0" />
+                                        
+                                    </StackPanel>
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding ReconciliationTransactions}"
+                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date"
+                                        Binding="{Binding Date, StringFormat=d}" Width="80" />
+                    <DataGridTextColumn Header="Description"
+                                        Binding="{Binding Description}" Width="*" />
+                    <DataGridTextColumn Header="Amount"
+                                        Binding="{Binding Amount, StringFormat=C}"
+                                        Width="80" />
+                    <DataGridTextColumn Header="From" Binding="{Binding AccountName}"
+                                        Width="100" />
+                    <DataGridTextColumn Header="To" Binding="{Binding ToAccountName}"
+                                        Width="100" />
+                    <DataGridTextColumn Header="Balance"
+                                        Binding="{Binding RunningBalance, StringFormat=C}"
+                                        Width="80" />
+                    <DataGridTemplateColumn Header="Reconciled" Width="70">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox
+                                    IsChecked="{Binding IsReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Checked="HandleCheck" Unchecked="HandleUnchecked" 
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+                <StackPanel Grid.Row="2" Margin="0,5"
+                            Orientation="Horizontal">
+                    <Label Content="Ending balance:" Margin="0,0" />
+                    <Label
+                        Content="{Binding EndingBalance, StringFormat=C}"
+                        Width="Auto" Margin="0,0" />
+                                        
+                </StackPanel>
+                <StackPanel Grid.Row="3" Margin="0,5"
+                            Orientation="Horizontal">
+                    <Label Content="Reconciled balance:" Margin="0,0" />
+                    <Label
+                        Content="{Binding NewReconciledBalance, StringFormat=C}"
+                        Width="80" Margin="0,0" />
+                    <Label Content="Reconciled date:" Margin="0,0" />
+                    <Label
+                        Content="{Binding NewReconciledDate, StringFormat=d}"
+                        Width="80" Margin="0,0" />
+                                        
+                </StackPanel>
+                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                    <Button Content="OK" Width="75" Margin="0,0,10,0" Click="OkButton_Click" IsDefault="True"
+                            Background="CornflowerBlue" Foreground="White"/>
+                    <Button Content="Cancel" Width="75" Click="CancelButton_Click" IsCancel="True"
+                            />
+                </StackPanel>
+                </Grid>
+        </DockPanel>
+    </Grid>
+</Window>

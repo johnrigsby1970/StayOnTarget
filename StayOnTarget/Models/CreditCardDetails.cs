@@ -6,6 +6,7 @@ public class CreditCardDetails : ViewModelBase
 {
     private decimal _apr;
     private int _statementDay = 1;
+    private int _dueDay = 1;
     private bool _payPreviousMonthBalanceInFull = true;
 
     public int Id { get; set; }
@@ -21,6 +22,12 @@ public class CreditCardDetails : ViewModelBase
     {
         get => _statementDay;
         set => SetProperty(ref _statementDay, value);
+    }
+    
+    public int DueDay
+    {
+        get => _dueDay;
+        set => SetProperty(ref _dueDay, value);
     }
 
     public bool PayPreviousMonthBalanceInFull

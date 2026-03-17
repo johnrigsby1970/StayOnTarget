@@ -36,6 +36,65 @@
                 <x:Type TypeName="models:Frequency" />
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+        <!-- Style for the ToggleButton -->
+
+        
+        <Style x:Key="ToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="{x:Type ToggleButton}">
+                <Viewbox>
+
+                    <Border x:Name="Border" CornerRadius="10"
+                            Background="#FFFFFFFF"
+                            Width="40" Height="20">
+                        <Border.Effect>
+                            <DropShadowEffect ShadowDepth="0.5" Direction="0" Opacity="0.3" />
+                        </Border.Effect>
+                        <Ellipse x:Name="Ellipse" Fill="#FFFFFFFF" Stretch="Uniform"
+                                 Margin="2 1 2 1"
+                                 Stroke="Gray" StrokeThickness="0.2"
+                                 HorizontalAlignment="Stretch">
+                            <Ellipse.Effect>
+                                <DropShadowEffect BlurRadius="10" ShadowDepth="1" Opacity="0.3" Direction="260" />
+                            </Ellipse.Effect>
+                        </Ellipse>
+                    </Border>
+                </Viewbox>
+                <ControlTemplate.Triggers>
+                    <EventTrigger RoutedEvent="Checked">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <ColorAnimation Storyboard.TargetName="Border"
+                                                    Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                    To="#FF4CD661"
+                                                    Duration="0:0:0.1" />
+                                <ThicknessAnimation Storyboard.TargetName="Ellipse"
+                                                        Storyboard.TargetProperty="Margin"
+                                                        To="20 1 2 1"
+                                                        Duration="0:0:0.1" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="Unchecked">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <ColorAnimation Storyboard.TargetName="Border"
+                                                    Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                    To="White"
+                                                    Duration="0:0:0.1" />
+                                <ThicknessAnimation Storyboard.TargetName="Ellipse"
+                                                        Storyboard.TargetProperty="Margin"
+                                                        To="2 1 2 1"
+                                                        Duration="0:0:0.1" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>
     </Window.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -130,9 +189,9 @@
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False">
                                             <DataGrid.Columns>
-                                                <DataGridCheckBoxColumn Header="Paid"
-                                                                        Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}"
-                                                                        Width="40" />
+                                                <!-- <DataGridCheckBoxColumn Header="Paid" -->
+                                                <!--                         Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}" -->
+                                                <!--                         Width="40" /> -->
                                                 <DataGridTextColumn Header="Bill" Binding="{Binding BillName}"
                                                                     IsReadOnly="True" Width="*" />
                                                 <DataGridTextColumn Header="Due Date"
@@ -236,9 +295,9 @@
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False">
                                             <DataGrid.Columns>
-                                                <DataGridCheckBoxColumn Header="Paid"
-                                                                        Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}"
-                                                                        Width="40" />
+                                                <!-- <DataGridCheckBoxColumn Header="Paid" -->
+                                                <!--                         Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}" -->
+                                                <!--                         Width="40" /> -->
                                                 <DataGridTextColumn Header="Envelope" Binding="{Binding BucketName}"
                                                                     IsReadOnly="True" Width="*" />
                                                 <DataGridTextColumn Header="Actual Amount"
@@ -1007,6 +1066,27 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
+                                <Button Content="Reconcile" Command="{Binding ReconcileAccountCommand}" 
+                                        Width="80"
+                                        Margin="2"
+                                        Background="YellowGreen"
+                                        Foreground="White">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding EditingAccountClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                    Value="Collapsed">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsEditingAccount}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Add" Command="{Binding AddAccountCommand}" 
@@ -1158,6 +1238,10 @@
                                         <TextBox
                                             Text="{Binding EditingAccountClone.CreditCardDetails.StatementDay, UpdateSourceTrigger=PropertyChanged}"
                                             Width="30" Margin="2,5" />
+                                        <Label Content="Due Day:" />
+                                        <TextBox
+                                            Text="{Binding EditingAccountClone.CreditCardDetails.DueDay, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="30" Margin="2,5" />
                                         <CheckBox Content="Grace Period"
                                                   IsChecked="{Binding EditingAccountClone.CreditCardDetails.PayPreviousMonthBalanceInFull, UpdateSourceTrigger=PropertyChanged}"
                                                   VerticalAlignment="Center" Margin="10,0,0,0"
@@ -1177,11 +1261,21 @@
 
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="2*" />
                         <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
-
-                    <DataGrid x:Name="ProjectionGrid" Grid.Row="0" ItemsSource="{Binding Projections}"
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" >
+                    <!-- <TextBlock x:Name="ToggleTextBlock" Text="{Binding Path=ToggleReconciliationText}" -->
+                    <!--            HorizontalAlignment="Center" Margin="0,0,0,10"/> -->
+                    <TextBlock x:Name="ToggleTextBlock" Text="Show reconciled transactions"
+                               HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <ToggleButton Style="{StaticResource ToggleButtonStyle}"
+                                  ToolTip="{Binding Path=ToggleReconciliationText}" 
+                                  IsChecked="{Binding Path=ShowReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Width="50" Height="15" />
+                    </StackPanel>
+                    <DataGrid x:Name="ProjectionGrid" Grid.Row="1" ItemsSource="{Binding Projections}"
                               AutoGenerateColumns="False">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}">
@@ -1201,18 +1295,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}"
                                                 IsReadOnly="True" Width="80" />
-
-                            <DataGridTemplateColumn Header="Reconciled" Width="70">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <CheckBox
-                                            IsChecked="{Binding IsReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
+                            
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="True"
                                                 Width="150" />
 
@@ -1267,7 +1350,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <local:ProjectionLiveChartControl Grid.Row="1" Projections="{Binding Projections}"
+                    <local:ProjectionLiveChartControl Grid.Row="2" Projections="{Binding Projections}"
                                                       Accounts="{Binding Accounts}" Margin="0,5,0,0" />
                 </Grid>
             </DockPanel>

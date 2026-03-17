@@ -113,6 +113,7 @@ public class DatabaseContext
                 AccountId INTEGER NOT NULL,
                 Apr DECIMAL NOT NULL,
                 StatementDay INTEGER NOT NULL,
+                DueDay INTEGER NOT NULL,
                 PayPreviousMonthBalanceInFull INTEGER NOT NULL,
                 FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
             );
@@ -191,6 +192,16 @@ public class DatabaseContext
                 FOREIGN KEY(BucketId) REFERENCES Buckets(Id)
             );
 
+            CREATE TABLE IF NOT EXISTS AccountReconciliations (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                AccountId INTEGER NOT NULL,
+                ReconciledAsOfDate TEXT NOT NULL,
+                ReconciledBalance DECIMAL NOT NULL,
+                ReconciledOnDate TEXT NOT NULL,
+                IsInvalidated INTEGER DEFAULT 0,
+                FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
+            );
+
         ");
   
         // var columnExists = connection.ExecuteScalar<int>(@"
@@ -239,20 +250,20 @@ public class DatabaseContext
         //     }
         // }
         //
-        // // Check if ToAccountId exists in Bills table
+        // Check if ToAccountId exists in Bills table
         // var columnExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Bills') WHERE name='ToAccountId'");
+        //     SELECT COUNT(*) FROM pragma_table_info('CreditCardDetails') WHERE name='DueDay'");
         //
         // if (columnExists == 0)
         // {
         //     // If the table exists but the column doesn't, add it. 
         //     // We check if table exists first.
         //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Bills'");
+        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='CreditCardDetails'");
         //     
         //     if (tableExists > 0)
         //     {
-        //         connection.Execute("ALTER TABLE Bills ADD COLUMN ToAccountId INTEGER REFERENCES Accounts(Id)");
+        //         connection.Execute("ALTER TABLE CreditCardDetails ADD COLUMN DueDay INTEGER");
         //     }
         // }
         //
@@ -428,6 +439,7 @@ public class DatabaseContext
                     AccountId INTEGER NOT NULL,
                     Apr DECIMAL NOT NULL,
                     StatementDay INTEGER NOT NULL,
+                    DueDay INTEGER NOT NULL,
                     PayPreviousMonthBalanceInFull INTEGER NOT NULL,
                     FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
                 )");
@@ -440,6 +452,36 @@ public class DatabaseContext
         if (hexColorExists == 0)
         {
             connection.Execute("ALTER TABLE Accounts ADD COLUMN HexColor TEXT DEFAULT '#FF0000FF'");
+        }
+
+        // Check if FromAccountReconciledId exists in Transactions table
+        var fromAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
+            SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='FromAccountReconciledId'");
+
+        if (fromAccountReconciledIdExists == 0)
+        {
+            var tableExists = connection.ExecuteScalar<int>(@"
+                SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
+
+            if (tableExists > 0)
+            {
+                connection.Execute("ALTER TABLE Transactions ADD COLUMN FromAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
+            }
+        }
+
+        // Check if ToAccountReconciledId exists in Transactions table
+        var toAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
+            SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='ToAccountReconciledId'");
+
+        if (toAccountReconciledIdExists == 0)
+        {
+            var tableExists = connection.ExecuteScalar<int>(@"
+                SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
+
+            if (tableExists > 0)
+            {
+                connection.Execute("ALTER TABLE Transactions ADD COLUMN ToAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
+            }
         }
     }
 }
