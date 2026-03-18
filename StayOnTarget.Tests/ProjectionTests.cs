@@ -230,10 +230,20 @@ namespace StayOnTarget.Tests
                     BalanceAsOf = new DateTime(2026, 2, 1),
                     CreditCardDetails = new CreditCardDetails
                     {
-                        Apr = 36.5m, // 0.1% daily
                         StatementDay = 15,
-                        DueDay = 2,
+                        DueDateOffset = 25,
+                        MinPayFloor = 25,
+                        GraceActive = true,
                         PayPreviousMonthBalanceInFull = false // No grace period
+                    },
+                    AccountAprHistory = new List<AccountAprHistory>() {
+                        new AccountAprHistory() {
+                            AccountId = 1, 
+                            AnnualPercentageRate = 36.5m, 
+                            BalanceTransferRate = 36.5m, 
+                            CashAdvanceRate = 36.5m, 
+                            AsOfDate = DateTime.MinValue
+                        }
                     }
                 }
             };
@@ -283,10 +293,20 @@ namespace StayOnTarget.Tests
                     BalanceAsOf = new DateTime(2026, 2, 5),
                     CreditCardDetails = new CreditCardDetails
                     {
-                        Apr = 17.74m,
                         StatementDay = 5,
-                        DueDay = 2,
-                        PayPreviousMonthBalanceInFull = true
+                        DueDateOffset = 25,
+                        MinPayFloor = 25,
+                        GraceActive = true,
+                        PayPreviousMonthBalanceInFull = false // No grace period
+                    },
+                    AccountAprHistory = new List<AccountAprHistory>() {
+                        new AccountAprHistory() {
+                            AccountId = 1, 
+                            AnnualPercentageRate = 17.74m, 
+                            BalanceTransferRate = 17.74m, 
+                            CashAdvanceRate = 17.74m, 
+                            AsOfDate = DateTime.MinValue
+                        }
                     }
                 }
             };
@@ -353,10 +373,20 @@ namespace StayOnTarget.Tests
                     BalanceAsOf = new DateTime(2026, 2, 1),
                     CreditCardDetails = new CreditCardDetails
                     {
-                        Apr = 36.5m,
                         StatementDay = 15,
-                        DueDay = 2,
-                        PayPreviousMonthBalanceInFull = true
+                        DueDateOffset = 25,
+                        MinPayFloor = 25,
+                        GraceActive = true,
+                        PayPreviousMonthBalanceInFull = false // No grace period
+                    },
+                    AccountAprHistory = new List<AccountAprHistory>() {
+                        new AccountAprHistory() {
+                            AccountId = 1, 
+                            AnnualPercentageRate = 36.5m, 
+                            BalanceTransferRate = 36.5m, 
+                            CashAdvanceRate = 36.5m, 
+                            AsOfDate = DateTime.MinValue
+                        }
                     }
                 }
             };
@@ -398,10 +428,20 @@ namespace StayOnTarget.Tests
                     BalanceAsOf = new DateTime(2026, 2, 1),
                     CreditCardDetails = new CreditCardDetails
                     {
-                        Apr = 36.5m,
                         StatementDay = 15,
-                        DueDay = 2,
-                        PayPreviousMonthBalanceInFull = false
+                        DueDateOffset = 25,
+                        MinPayFloor = 25,
+                        GraceActive = true,
+                        PayPreviousMonthBalanceInFull = false // No grace period
+                    },
+                    AccountAprHistory = new List<AccountAprHistory>() {
+                        new AccountAprHistory() {
+                            AccountId = 1, 
+                            AnnualPercentageRate = 36.5m, 
+                            BalanceTransferRate = 36.5m, 
+                            CashAdvanceRate = 36.5m, 
+                            AsOfDate = DateTime.MinValue
+                        }
                     }
                 }
             };
@@ -453,7 +493,7 @@ namespace StayOnTarget.Tests
             };
             var bills = new List<Bill>
             {
-                new Bill { Id = 1, Name = "Bill1", ExpectedAmount = 500, Frequency = Frequency.Monthly, DueDay = 5, AccountId = 1 }
+                new Bill { Id = 1, Name = "Bill1", ExpectedAmount = 500, Frequency = Frequency.Monthly, DueDay = 25, AccountId = 1 }
             };
 
             var startDate = new DateTime(2026, 2, 1);

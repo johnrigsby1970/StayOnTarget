@@ -1,6 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Text.Json.Serialization;
-using System.Windows;
 using Newtonsoft.Json;
 using StayOnTarget.Models;
 using StayOnTarget.Services;
@@ -25,13 +23,13 @@ public class ReconciliationViewModel: ViewModelBase {
         set => SetProperty(ref _reconciliationTransactions, value);
     }
 
-    private decimal _beginningBalance = 0;
+    private decimal _beginningBalance;
     public decimal BeginningBalance {
         get => _beginningBalance;
         set => SetProperty(ref _beginningBalance, value);
     }
     
-    private decimal _endingBalance = 0;
+    private decimal _endingBalance;
     public decimal EndingBalance {
         get => _endingBalance;
         set => SetProperty(ref _endingBalance, value);

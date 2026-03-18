@@ -165,7 +165,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-
+    
     public Bill? SelectedBill {
         get => _selectedBill;
         set {
@@ -422,6 +422,7 @@ public class MainViewModel : ViewModelBase {
     public ICommand AddAccountCommand => new RelayCommand(_ => AddAccount(), _ => IsNotEditingAccount);
     public ICommand EditAccountCommand => new RelayCommand(_ => EditAccount(), _ => CanEditAccount);
     public ICommand ReconcileAccountCommand => new RelayCommand(_ => ReconcileAccount(), _ => IsEditingAccount);
+    public ICommand SetAccountAprRatesCommand => new RelayCommand(_ => SetAccountAprRates(), _ => IsEditingAccount);
     public ICommand SaveAccountCommand => new RelayCommand(_ => SaveAccount(), _ => IsEditingAccount);
 
     public ICommand CancelAccountCommand => new RelayCommand(_ => CancelAccount(), _ => IsEditingAccount);
@@ -1147,9 +1148,10 @@ public class MainViewModel : ViewModelBase {
                 EditingAccountClone.CreditCardDetails = new CreditCardDetails {
                     Id = SelectedAccount.CreditCardDetails.Id,
                     AccountId = SelectedAccount.CreditCardDetails.AccountId,
-                    Apr = SelectedAccount.CreditCardDetails.Apr,
                     StatementDay = SelectedAccount.CreditCardDetails.StatementDay,
-                    DueDay = SelectedAccount.CreditCardDetails.DueDay,
+                    DueDateOffset = SelectedAccount.CreditCardDetails.DueDateOffset,
+                    GraceActive = SelectedAccount.CreditCardDetails.GraceActive,
+                    MinPayFloor = SelectedAccount.CreditCardDetails.MinPayFloor,
                     PayPreviousMonthBalanceInFull = SelectedAccount.CreditCardDetails.PayPreviousMonthBalanceInFull
                 };
             }
@@ -1163,6 +1165,16 @@ public class MainViewModel : ViewModelBase {
 
     private void SaveAccount() {
         if (EditingAccountClone != null) {
+            if (EditingAccountClone.Type == AccountType.Checking && (EditingAccountClone.AccountAprHistory == null || EditingAccountClone.AccountAprHistory.Count == 0)) {
+                MessageBoxResult messageBoxResult = MessageBox.Show(
+                    "Before you can save this credit card, you need to set up your interest rates.", // Message
+                    "Incomplete Setup", // Title
+                    MessageBoxButton.OK, // Buttons
+                    MessageBoxImage.Warning // Icon
+                );
+                SetAccountAprRatesCommand.Execute(EditingAccountClone);
+                return;
+            }
             if (SelectedAccount != null) {
                 UpdateAccountFromClone(SelectedAccount, EditingAccountClone);
                 _budgetService.UpsertAccount(SelectedAccount);
@@ -1202,9 +1214,10 @@ public class MainViewModel : ViewModelBase {
 
         if (clone.Type == AccountType.CreditCard && clone.CreditCardDetails != null) {
             if (target.CreditCardDetails == null) target.CreditCardDetails = new CreditCardDetails();
-            target.CreditCardDetails.Apr = clone.CreditCardDetails.Apr;
             target.CreditCardDetails.StatementDay = clone.CreditCardDetails.StatementDay;
-            target.CreditCardDetails.DueDay = clone.CreditCardDetails.DueDay;
+            target.CreditCardDetails.DueDateOffset = clone.CreditCardDetails.DueDateOffset;
+            target.CreditCardDetails.GraceActive = clone.CreditCardDetails.GraceActive;
+            target.CreditCardDetails.MinPayFloor = clone.CreditCardDetails.MinPayFloor;
             target.CreditCardDetails.PayPreviousMonthBalanceInFull =
                 clone.CreditCardDetails.PayPreviousMonthBalanceInFull;
         }
@@ -1554,12 +1567,24 @@ public class MainViewModel : ViewModelBase {
 
     private void ReconcileAccount() {
         if(EditingAccountClone==null) return;
-        var reconciliation = new ReconciliationWindow(EditingAccountClone, _budgetService) {
+        var window = new ReconciliationWindow(EditingAccountClone, _budgetService) {
             Owner = Application.Current.MainWindow
         };
-        reconciliation.ShowDialog();
+        window.ShowDialog();
         CalculateProjections();
     }
+    
+    private void SetAccountAprRates() {
+        if(EditingAccountClone==null || EditingAccountClone.Type != AccountType.CreditCard) return;
+        if (EditingAccountClone.AccountAprHistory == null)
+            EditingAccountClone.AccountAprHistory = new List<AccountAprHistory>();
+        var window = new AccountAprHistoryWindow(EditingAccountClone, _budgetService) {
+            Owner = Application.Current.MainWindow
+        };
+        window.ShowDialog();
+        CalculateProjections();
+    }
+    
     
     private void RefreshPaychecks() {
         var allPaychecks = Paychecks.ToList();

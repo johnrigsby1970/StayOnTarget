@@ -1,0 +1,83 @@
+﻿<Window x:Class="StayOnTarget.AccountAprHistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:StayOnTarget"
+        mc:Ignorable="d"
+        Title="AccountAprHistoryWindow" Height="450" Width="500">
+    <Grid Margin="10">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" x:Name="HeaderLabel" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,5" Orientation="Horizontal">
+                    <TextBlock Text="Your credit card may have a different annual interest rate than cash advances and transfers. It may also change over time. Ensure your current interest rates are entered." TextWrapping="Wrap"  
+                               Margin="0,0" Height="60" Width="375"/>
+                </StackPanel>
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding AccountAprHistories}"
+                          SelectedItem="{Binding SelectedItem}"
+                          AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="As of Date"
+                                            Binding="{Binding AsOfDate, StringFormat=d}" Width="80" />
+                        <DataGridTextColumn Header="Annual Percentage"
+                                            Binding="{Binding AnnualPercentageRate, StringFormat=F, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="110" />
+                        <DataGridTextColumn Header="Cash Advance"
+                                            Binding="{Binding CashAdvanceRate, StringFormat=F, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="90" />
+                        <DataGridTextColumn Header="Balance Transfer"
+                                            Binding="{Binding BalanceTransferRate, StringFormat=F, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="100" />
+                        <DataGridTemplateColumn Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Remove"
+                                                Background="Red"
+                                                Foreground="White"
+                                                Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                
+                <Grid Grid.Row="4" DockPanel.Dock="Bottom">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="Add" Command="{Binding AddCommand}" 
+                                        Width="80"
+                                        Margin="2"
+                                        Background="CornflowerBlue"
+                                        Foreground="White">
+                                </Button>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="OK" Width="75" Margin="0,0,10,0" Click="OkButton_Click" IsDefault="True"
+                                        Background="CornflowerBlue" Foreground="White" />
+                                <Button Content="Cancel" Width="75" Click="CancelButton_Click" IsCancel="True" />
+                            </StackPanel>
+                        </Grid>
+                
+            </Grid>
+        </DockPanel>
+    </Grid>
+</Window>

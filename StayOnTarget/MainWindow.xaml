@@ -38,63 +38,63 @@
         </ObjectDataProvider>
         <!-- Style for the ToggleButton -->
 
-        
-        <Style x:Key="ToggleButtonStyle" TargetType="{x:Type ToggleButton}">
-    <Setter Property="Template">
-        <Setter.Value>
-            <ControlTemplate TargetType="{x:Type ToggleButton}">
-                <Viewbox>
 
-                    <Border x:Name="Border" CornerRadius="10"
-                            Background="#FFFFFFFF"
-                            Width="40" Height="20">
-                        <Border.Effect>
-                            <DropShadowEffect ShadowDepth="0.5" Direction="0" Opacity="0.3" />
-                        </Border.Effect>
-                        <Ellipse x:Name="Ellipse" Fill="#FFFFFFFF" Stretch="Uniform"
-                                 Margin="2 1 2 1"
-                                 Stroke="Gray" StrokeThickness="0.2"
-                                 HorizontalAlignment="Stretch">
-                            <Ellipse.Effect>
-                                <DropShadowEffect BlurRadius="10" ShadowDepth="1" Opacity="0.3" Direction="260" />
-                            </Ellipse.Effect>
-                        </Ellipse>
-                    </Border>
-                </Viewbox>
-                <ControlTemplate.Triggers>
-                    <EventTrigger RoutedEvent="Checked">
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <ColorAnimation Storyboard.TargetName="Border"
-                                                    Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                    To="#FF4CD661"
-                                                    Duration="0:0:0.1" />
-                                <ThicknessAnimation Storyboard.TargetName="Ellipse"
-                                                        Storyboard.TargetProperty="Margin"
-                                                        To="20 1 2 1"
+        <Style x:Key="ToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Viewbox>
+
+                            <Border x:Name="Border" CornerRadius="10"
+                                    Background="#FFFFFFFF"
+                                    Width="40" Height="20">
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="0.5" Direction="0" Opacity="0.3" />
+                                </Border.Effect>
+                                <Ellipse x:Name="Ellipse" Fill="#FFFFFFFF" Stretch="Uniform"
+                                         Margin="2 1 2 1"
+                                         Stroke="Gray" StrokeThickness="0.2"
+                                         HorizontalAlignment="Stretch">
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect BlurRadius="10" ShadowDepth="1" Opacity="0.3" Direction="260" />
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Border>
+                        </Viewbox>
+                        <ControlTemplate.Triggers>
+                            <EventTrigger RoutedEvent="Checked">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="Border"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#FF4CD661"
                                                         Duration="0:0:0.1" />
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                    <EventTrigger RoutedEvent="Unchecked">
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <ColorAnimation Storyboard.TargetName="Border"
-                                                    Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                    To="White"
-                                                    Duration="0:0:0.1" />
-                                <ThicknessAnimation Storyboard.TargetName="Ellipse"
-                                                        Storyboard.TargetProperty="Margin"
-                                                        To="2 1 2 1"
+                                        <ThicknessAnimation Storyboard.TargetName="Ellipse"
+                                                            Storyboard.TargetProperty="Margin"
+                                                            To="20 1 2 1"
+                                                            Duration="0:0:0.1" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Unchecked">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="Border"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="White"
                                                         Duration="0:0:0.1" />
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
-        </Setter.Value>
-    </Setter>
-</Style>
+                                        <ThicknessAnimation Storyboard.TargetName="Ellipse"
+                                                            Storyboard.TargetProperty="Margin"
+                                                            To="2 1 2 1"
+                                                            Duration="0:0:0.1" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -1035,7 +1035,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Delete" Command="{Binding CancelAccountCommand}" 
+                                <Button Content="Delete" Command="{Binding CancelAccountCommand}"
                                         Width="80"
                                         Margin="2"
                                         Background="Red"
@@ -1066,7 +1066,7 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Button Content="Reconcile" Command="{Binding ReconcileAccountCommand}" 
+                                <Button Content="Reconcile" Command="{Binding ReconcileAccountCommand}"
                                         Width="80"
                                         Margin="2"
                                         Background="YellowGreen"
@@ -1089,21 +1089,21 @@
                                 </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Add" Command="{Binding AddAccountCommand}" 
+                                <Button Content="Add" Command="{Binding AddAccountCommand}"
                                         Width="80"
                                         Margin="2"
                                         Visibility="{Binding IsNotEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Content="Edit" Command="{Binding EditAccountCommand}" 
+                                <Button Content="Edit" Command="{Binding EditAccountCommand}"
                                         Width="80"
                                         Margin="2"
                                         Visibility="{Binding CanEditAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Content="Save" Command="{Binding SaveAccountCommand}" 
+                                <Button Content="Save" Command="{Binding SaveAccountCommand}"
                                         Background=" CornflowerBlue"
                                         Foreground="White"
                                         Width="80"
                                         Margin="2"
                                         Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Content="Cancel" Command="{Binding CancelAccountCommand}" 
+                                <Button Content="Cancel" Command="{Binding CancelAccountCommand}"
                                         Width="80"
                                         Margin="2"
                                         Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -1228,24 +1228,42 @@
 
                                     <!-- Credit Card Specific Details -->
                                     <StackPanel Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="4"
-                                                Orientation="Horizontal"
+                                                Orientation="Vertical"
                                                 Visibility="{Binding EditingAccountClone.Type, ConverterParameter=CreditCard, Converter={StaticResource AccountTypeToVisibilityConverter}}">
-                                        <Label Content="APR %:" />
-                                        <TextBox
-                                            Text="{Binding EditingAccountClone.CreditCardDetails.Apr, UpdateSourceTrigger=PropertyChanged}"
-                                            Width="50" Margin="2,5" />
-                                        <Label Content="Statement Day:" />
-                                        <TextBox
-                                            Text="{Binding EditingAccountClone.CreditCardDetails.StatementDay, UpdateSourceTrigger=PropertyChanged}"
-                                            Width="30" Margin="2,5" />
-                                        <Label Content="Due Day:" />
-                                        <TextBox
-                                            Text="{Binding EditingAccountClone.CreditCardDetails.DueDay, UpdateSourceTrigger=PropertyChanged}"
-                                            Width="30" Margin="2,5" />
-                                        <CheckBox Content="Grace Period"
-                                                  IsChecked="{Binding EditingAccountClone.CreditCardDetails.PayPreviousMonthBalanceInFull, UpdateSourceTrigger=PropertyChanged}"
-                                                  VerticalAlignment="Center" Margin="10,0,0,0"
-                                                  ToolTip="Interest is not charged if previous month's balance is paid in full" />
+
+                                        <StackPanel Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="4"
+                                                    Orientation="Horizontal"
+                                                    Visibility="{Binding EditingAccountClone.Type, ConverterParameter=CreditCard, Converter={StaticResource AccountTypeToVisibilityConverter}}">
+                                            <TextBox
+                                                Text="{Binding EditingAccountClone.CreditCardDetails.StatementDay, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="30" Margin="2,5" />
+                                            <Label Content="Due Date Offset:" />
+                                            <TextBox
+                                                Text="{Binding EditingAccountClone.CreditCardDetails.DueDateOffset, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="30" Margin="2,5" />
+                                            <Label Content="Minimum payment:" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="4"
+                                                    Orientation="Horizontal"
+                                                    Visibility="{Binding EditingAccountClone.Type, ConverterParameter=CreditCard, Converter={StaticResource AccountTypeToVisibilityConverter}}">
+                                            <Label Content="Minimum payment:" />
+                                            <TextBox
+                                                Text="{Binding EditingAccountClone.CreditCardDetails.MinPayFloor, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="50" Margin="2,5" />
+                                            <CheckBox Content="Grace Period"
+                                                      IsChecked="{Binding EditingAccountClone.CreditCardDetails.PayPreviousMonthBalanceInFull, UpdateSourceTrigger=PropertyChanged}"
+                                                      VerticalAlignment="Center" Margin="10,0,0,0"
+                                                      ToolTip="Interest is not charged if previous month's balance is paid in full" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="4"
+                                                    Orientation="Horizontal"
+                                                    Visibility="{Binding EditingAccountClone.Type, ConverterParameter=CreditCard, Converter={StaticResource AccountTypeToVisibilityConverter}}">
+                                            <Button Content="Manage Interest Rates"
+                                                    Command="{Binding DataContext.SetAccountAprRatesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    Margin="0,0,0,0"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -1265,15 +1283,15 @@
                         <RowDefinition Height="2*" />
                         <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" >
-                    <!-- <TextBlock x:Name="ToggleTextBlock" Text="{Binding Path=ToggleReconciliationText}" -->
-                    <!--            HorizontalAlignment="Center" Margin="0,0,0,10"/> -->
-                    <TextBlock x:Name="ToggleTextBlock" Text="Show reconciled transactions"
-                               HorizontalAlignment="Center" Margin="0,0,0,5"/>
-                    <ToggleButton Style="{StaticResource ToggleButtonStyle}"
-                                  ToolTip="{Binding Path=ToggleReconciliationText}" 
-                                  IsChecked="{Binding Path=ShowReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  Width="50" Height="15" />
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                        <!-- <TextBlock x:Name="ToggleTextBlock" Text="{Binding Path=ToggleReconciliationText}" -->
+                        <!--            HorizontalAlignment="Center" Margin="0,0,0,10"/> -->
+                        <TextBlock x:Name="ToggleTextBlock" Text="Show reconciled transactions"
+                                   HorizontalAlignment="Center" Margin="0,0,0,5" />
+                        <ToggleButton Style="{StaticResource ToggleButtonStyle}"
+                                      ToolTip="{Binding Path=ToggleReconciliationText}"
+                                      IsChecked="{Binding Path=ShowReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Width="50" Height="15" />
                     </StackPanel>
                     <DataGrid x:Name="ProjectionGrid" Grid.Row="1" ItemsSource="{Binding Projections}"
                               AutoGenerateColumns="False">
@@ -1295,7 +1313,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}"
                                                 IsReadOnly="True" Width="80" />
-                            
+
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="True"
                                                 Width="150" />
 

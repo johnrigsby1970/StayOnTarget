@@ -76,4 +76,6 @@ public class Account : ViewModelBase
         get => _creditCardDetails;
         set => SetProperty(ref _creditCardDetails, value);
     }
+    
+    public List<AccountAprHistory>? AccountAprHistory { get; set; } 
 }

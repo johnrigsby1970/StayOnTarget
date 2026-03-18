@@ -18,6 +18,8 @@ public partial class BudgetService
             if (acc.Type == AccountType.CreditCard)
             {
                 acc.CreditCardDetails = conn.QueryFirstOrDefault<CreditCardDetails>("SELECT * FROM CreditCardDetails WHERE AccountId = @Id", new { acc.Id });
+                acc.AccountAprHistory = conn.Query<AccountAprHistory>(
+                    "SELECT * FROM AccountAprHistory WHERE AccountId = @Id", new { acc.Id }).ToList();
             }
         }
         return accounts;
@@ -83,21 +85,27 @@ public partial class BudgetService
             {
                 account.CreditCardDetails.Id,
                 account.CreditCardDetails.AccountId,
-                account.CreditCardDetails.Apr,
                 account.CreditCardDetails.StatementDay,
-                account.CreditCardDetails.DueDay,
+                account.CreditCardDetails.DueDateOffset,
+                account.CreditCardDetails.GraceActive,
+                account.CreditCardDetails.MinPayFloor,
                 PayPreviousMonthBalanceInFull = account.CreditCardDetails.PayPreviousMonthBalanceInFull ? 1 : 0
             };
             if (account.CreditCardDetails.Id == 0)
             {
-                conn.Execute(@"INSERT INTO CreditCardDetails (AccountId, Apr, StatementDay, DueDay, PayPreviousMonthBalanceInFull) 
-                               VALUES (@AccountId, @Apr, @StatementDay, @DueDay, @PayPreviousMonthBalanceInFull)", ccdParam);
+                conn.Execute(@"INSERT INTO CreditCardDetails (AccountId, StatementDay, DueDateOffset, GraceActive, MinPayFloor, PayPreviousMonthBalanceInFull) 
+                               VALUES (@AccountId, @StatementDay, @DueDateOffset, @GraceActive, @MinPayFloor, @PayPreviousMonthBalanceInFull)", ccdParam);
             }
             else
             {
-                conn.Execute(@"UPDATE CreditCardDetails SET Apr=@Apr, StatementDay=@StatementDay, DueDay=@DueDay, 
+                conn.Execute(@"UPDATE CreditCardDetails SET StatementDay=@StatementDay, DueDateOffset=@DueDateOffset, GraceActive=@GraceActive, MinPayFloor=@MinPayFloor,
                                PayPreviousMonthBalanceInFull=@PayPreviousMonthBalanceInFull WHERE Id=@Id", ccdParam);
             }
+
+            foreach (var aah in account.AccountAprHistory) {
+                UpsertAccountAprHistory(aah);
+            }
+           
         }
     }
     

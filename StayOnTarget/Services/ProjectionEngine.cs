@@ -333,14 +333,7 @@ public class ProjectionEngine : IProjectionEngine {
             if (acc.Type == AccountType.CreditCard && acc.CreditCardDetails != null) {
                 DateTime nextStatement = new DateTime(startDate.Year, startDate.Month, Math.Min(acc.CreditCardDetails.StatementDay, DateTime.DaysInMonth(startDate.Year, startDate.Month)));
                 if (nextStatement <= startDate) nextStatement = nextStatement.AddMonths(1);
-                DateTime nextDueDate = new DateTime(startDate.Year, startDate.Month, Math.Min(acc.CreditCardDetails.DueDay, DateTime.DaysInMonth(startDate.Year, startDate.Month)));
-                if (acc.CreditCardDetails.PayPreviousMonthBalanceInFull) {
-                    //There is a grace period if you pay it in full
-                    if (nextDueDate <= nextStatement) nextDueDate = nextDueDate.AddMonths(1);
-                }
-                else {
-                    if (nextDueDate < nextStatement) nextDueDate = nextDueDate.AddMonths(1);
-                }
+                DateTime nextDueDate = nextStatement.AddDays(acc.CreditCardDetails.DueDateOffset);
                 
                 //what we need to know is if the nextDueDate has come, and then if there are any payments that bring the balance amount to 0 or what that balance amount would be 
                 //based on those payments, and then calculate the interest that would have been applied on the statement date. At present, we will assume the due date is not the same as the statement date.
@@ -528,7 +521,9 @@ public class ProjectionEngine : IProjectionEngine {
                 if (acc != null && acc.Type == AccountType.CreditCard && acc.CreditCardDetails != null) {
                     var dailyBalances = ccDailyBalances[acc.Id];
                     if (dailyBalances.Any()) {
-                        decimal dailyPeriodicRate = (acc.CreditCardDetails.Apr / 100m) / 365m;
+                        var aprHist = acc.AccountAprHistory?.SingleOrDefault(x => x.AsOfDate <= e.Date);
+                        if(aprHist==null) aprHist = new AccountAprHistory { AsOfDate = e.Date };
+                        decimal dailyPeriodicRate = (aprHist.AnnualPercentageRate / 100m) / 365m;
                         decimal totalInterest = 0;
                         bool gracePeriodApplies = acc.CreditCardDetails.PayPreviousMonthBalanceInFull && ccPreviousMonthPaidInFull[acc.Id];
                         

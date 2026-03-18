@@ -111,10 +111,11 @@ public class DatabaseContext
             CREATE TABLE IF NOT EXISTS CreditCardDetails (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 AccountId INTEGER NOT NULL,
-                Apr DECIMAL NOT NULL,
                 StatementDay INTEGER NOT NULL,
-                DueDay INTEGER NOT NULL,
+                DueDateOffset INTEGER NOT NULL DEFAULT 21,
+                MinPayFloor DECIMAL NOT NULL DEFAULT 25,
                 PayPreviousMonthBalanceInFull INTEGER NOT NULL,
+                GraceActive INTEGER DEFAULT 0,
                 FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
             );
 
@@ -202,6 +203,15 @@ public class DatabaseContext
                 FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
             );
 
+            CREATE TABLE IF NOT EXISTS AccountAprHistory (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                AccountId INTEGER NOT NULL,
+                AsOfDate TEXT NOT NULL,
+                AnnualPercentageRate DECIMAL NOT NULL,
+                CashAdvanceRate DECIMAL NOT NULL,
+                BalanceTransferRate DECIMAL NOT NULL,
+                FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
+            );
         ");
   
         // var columnExists = connection.ExecuteScalar<int>(@"
@@ -439,8 +449,9 @@ public class DatabaseContext
                     AccountId INTEGER NOT NULL,
                     Apr DECIMAL NOT NULL,
                     StatementDay INTEGER NOT NULL,
-                    DueDay INTEGER NOT NULL,
+                    DueDateOffset INTEGER NOT NULL DEFAULT 21,
                     PayPreviousMonthBalanceInFull INTEGER NOT NULL,
+                    GraceActive INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
                 )");
         }
