@@ -5,69 +5,81 @@ using StayOnTarget.Services;
 
 namespace StayOnTarget.ViewModels;
 
-public class ReconciliationViewModel: ViewModelBase {
+public class ReconciliationViewModel : ViewModelBase {
     private readonly BudgetService _budgetService;
     private readonly ReconciliationService _reconciliationService;
-    private readonly Account _account;
-    
+    private Account _account;
+
     public ReconciliationViewModel(Account account, BudgetService budgetService) {
         _account = account;
         _budgetService = budgetService;
         _reconciliationService = new ReconciliationService(_budgetService);
         LoadData();
-    }   
-    
+    }
+
     private ObservableCollection<ReconciliationTransaction> _reconciliationTransactions = new();
+
     public ObservableCollection<ReconciliationTransaction> ReconciliationTransactions {
         get => _reconciliationTransactions;
         set => SetProperty(ref _reconciliationTransactions, value);
     }
 
+    public Account Account {
+        get => _account;
+        set => SetProperty(ref _account, value);
+    }
+
     private decimal _beginningBalance;
+
     public decimal BeginningBalance {
         get => _beginningBalance;
         set => SetProperty(ref _beginningBalance, value);
     }
-    
+
     private decimal _endingBalance;
+
     public decimal EndingBalance {
         get => _endingBalance;
         set => SetProperty(ref _endingBalance, value);
     }
-    
+
     private DateTime? _lastReconciledDate;
+
     public DateTime? LastReconciledDate {
         get => _lastReconciledDate;
         set => SetProperty(ref _lastReconciledDate, value);
     }
-    
+
     private decimal? _newReconciledBalance = 0;
+
     public decimal? NewReconciledBalance {
         get => _newReconciledBalance;
         set => SetProperty(ref _newReconciledBalance, value);
     }
-    
+
     private DateTime? _newReconciledDate;
+
     public DateTime? NewReconciledDate {
         get => _newReconciledDate;
         set => SetProperty(ref _newReconciledDate, value);
     }
-    
+
     private void LoadData() {
         decimal beginningBalance = _account.Balance;
         DateTime? lastReconciledDate = _account.BalanceAsOf;
         var accountReconciliation = _budgetService.GetLatestValidReconciliation(_account.Id);
-        
+
         if (accountReconciliation != null) {
             beginningBalance = accountReconciliation.ReconciledBalance;
             lastReconciledDate = accountReconciliation.ReconciledAsOfDate;
         }
-        
+
         var transactions = _budgetService.GetAllUnreconciledTransactionsSinceLastReconciliation(_account.Id);
         transactions = transactions.OrderBy(b => b.Date).ToList();
         string json = JsonConvert.SerializeObject(transactions.ToList());
         var reconciliationTransactions = JsonConvert.DeserializeObject<List<ReconciliationTransaction>>(json);
-        EndingBalance = _reconciliationService.CalculateRunningBalance(_account.Id, reconciliationTransactions!, out lastReconciledDate, out beginningBalance);
+        EndingBalance = _reconciliationService.CalculateRunningBalance(_account.Id, reconciliationTransactions!,
+            out lastReconciledDate, out beginningBalance);
         BeginningBalance = beginningBalance;
         LastReconciledDate = lastReconciledDate ?? DateTime.MinValue;
         // foreach (var t in reconciliationTransactions) {
@@ -95,7 +107,7 @@ public class ReconciliationViewModel: ViewModelBase {
                 }
             }
         }
-        
+
         NewReconciledBalance = newReconciledBalance;
         NewReconciledDate = newReconciledDate;
         ReconciliationTransactions = new ObservableCollection<ReconciliationTransaction>(reconciliationTransactions!);
@@ -125,25 +137,25 @@ public class ReconciliationViewModel: ViewModelBase {
                 }
             }
         }
-        
+
         foreach (var t in ReconciliationTransactions.OrderBy(b => b.Date)) {
             if (t.IsReconciled) {
-                    newReconciledBalance = t.RunningBalance;
-                    newReconciledDate = t.Date;
+                newReconciledBalance = t.RunningBalance;
+                newReconciledDate = t.Date;
             }
         }
-        
-        if(changed) OnPropertyChanged(nameof(ReconciliationTransactions));
-        
-        if (newReconciledBalance.HasValue && newReconciledDate.HasValue) {
+
+        if (changed) OnPropertyChanged(nameof(ReconciliationTransactions));
+
+        if ((NewReconciledBalance.HasValue || newReconciledBalance.HasValue) && (NewReconciledDate.HasValue || newReconciledDate.HasValue)) {
             _reconciliationService.ReconcileAccount(
-                _account.Id, 
-                ReconciliationTransactions, 
-                newReconciledBalance.Value, 
-                newReconciledDate.Value);
+                _account.Id,
+                ReconciliationTransactions,
+                NewReconciledBalance ?? newReconciledBalance.Value,
+                NewReconciledDate ?? newReconciledDate.Value);
         }
     }
-    
+
     public void Reconcile() {
         decimal? newReconciledBalance = null;
         DateTime? newReconciledDate = null;
@@ -163,7 +175,7 @@ public class ReconciliationViewModel: ViewModelBase {
                 }
             }
         }
-        
+
         NewReconciledBalance = newReconciledBalance;
         NewReconciledDate = newReconciledDate;
     }
