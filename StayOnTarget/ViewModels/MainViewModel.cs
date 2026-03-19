@@ -41,6 +41,7 @@ public class MainViewModel : ViewModelBase {
     private bool _showByMonth;
     private int _selectedPeriodPaycheckId;
     private ObservableCollection<Paycheck> _periodPaychecks = new();
+    private ObservableCollection<ToastViewModel> _toasts = new();
     private bool _isEditingPaycheck;
     private Paycheck? _selectedPaycheck;
     private bool _showReconciled;
@@ -147,6 +148,11 @@ public class MainViewModel : ViewModelBase {
     public ObservableCollection<Paycheck> PeriodPaychecks {
         get => _periodPaychecks;
         set => SetProperty(ref _periodPaychecks, value);
+    }
+
+    public ObservableCollection<ToastViewModel> Toasts {
+        get => _toasts;
+        set => SetProperty(ref _toasts, value);
     }
 
     public string PeriodDisplay {
@@ -1300,11 +1306,41 @@ public class MainViewModel : ViewModelBase {
                 allBucketTransactions.ToList(),
                 start, end, accounts.ToList(), paychecks.ToList(), bills.ToList(), buckets.ToList(), periodBills.ToList(), periodBuckets.ToList(), transactions.ToList(), reconciliations?.ToList(), ShowReconciled, true);
 
-            Projections = new ObservableCollection<ProjectionItem>(results);
+            var resultList = results.ToList();
+            Projections = new ObservableCollection<ProjectionItem>(resultList);
+
+            // Check for negative checking/savings accounts
+            var negativeAccounts = new HashSet<string>();
+            foreach (var item in resultList) {
+                foreach (var acc in accounts) {
+                    if (acc.Type == AccountType.Checking || acc.Type == AccountType.Savings) {
+                        if (item.AccountBalances.TryGetValue(acc.Name, out decimal balance) && balance < 0) {
+                            negativeAccounts.Add(acc.Name);
+                        }
+                    }
+                }
+            }
+
+            if (negativeAccounts.Any()) {
+                string message = $"Warning: The following accounts go negative in the projection: {string.Join(", ", negativeAccounts)}";
+                ShowToast(message);
+            }
         }
         finally {
             _isCalculatingProjections = false;
         }
+    }
+
+    public void ShowToast(string message) {
+        Application.Current.Dispatcher.Invoke(() => {
+            // Avoid duplicate toasts with same message
+            if (Toasts.Any(t => t.Message == message)) return;
+            
+            var toast = new ToastViewModel(message, t => {
+                Application.Current.Dispatcher.Invoke(() => Toasts.Remove(t));
+            });
+            Toasts.Add(toast);
+        });
     }
 
     // public DateTime FindPeriodDateFor(DateTime date) {
