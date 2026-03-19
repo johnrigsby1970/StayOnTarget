@@ -297,7 +297,7 @@ namespace StayOnTarget.Tests
                         DueDateOffset = 25,
                         MinPayFloor = 25,
                         GraceActive = true,
-                        PayPreviousMonthBalanceInFull = false // No grace period
+                        PayPreviousMonthBalanceInFull = true // grace period
                     },
                     AccountAprHistory = new List<AccountAprHistory>() {
                         new AccountAprHistory() {
@@ -377,7 +377,7 @@ namespace StayOnTarget.Tests
                         DueDateOffset = 25,
                         MinPayFloor = 25,
                         GraceActive = true,
-                        PayPreviousMonthBalanceInFull = false // No grace period
+                        PayPreviousMonthBalanceInFull = true // There is a grace period allowed for this account
                     },
                     AccountAprHistory = new List<AccountAprHistory>() {
                         new AccountAprHistory() {
@@ -413,6 +413,61 @@ namespace StayOnTarget.Tests
         }
 
         [TestMethod]
+        public void TestCreditCard_GracePeriod_InterestWhenPaidInFullBecauseNoGracePeriodAllowed()
+        {
+            // Arrange
+            var accounts = new List<Account>
+            {
+                new Account 
+                { 
+                    Id = 1, 
+                    Name = "CreditCard", 
+                    Balance = 0, // Paid in full
+                    Type = AccountType.CreditCard, 
+                    IncludeInTotal = true, 
+                    BalanceAsOf = new DateTime(2026, 2, 1),
+                    CreditCardDetails = new CreditCardDetails
+                    {
+                        StatementDay = 15,
+                        DueDateOffset = 25,
+                        MinPayFloor = 25,
+                        GraceActive = true,
+                        PayPreviousMonthBalanceInFull = false // No grace period
+                    },
+                    AccountAprHistory = new List<AccountAprHistory>() {
+                        new AccountAprHistory() {
+                            AccountId = 1, 
+                            AnnualPercentageRate = 36.5m, 
+                            BalanceTransferRate = 36.5m, 
+                            CashAdvanceRate = 36.5m, 
+                            AsOfDate = DateTime.MinValue
+                        }
+                    }
+                }
+            };
+            
+            // New purchase on Feb 5
+            var transactions = new List<Transaction>
+            {
+                new Transaction { Date = new DateTime(2026, 2, 5), Amount = 500, AccountId = 1, Description = "Purchase" }
+            };
+
+            var startDate = new DateTime(2026, 2, 1);
+            var endDate = new DateTime(2026, 2, 16);
+
+            // Act
+            var results = _engine.CalculateProjections(
+                transactions.Where(x=>x.PaycheckId.HasValue).ToList(),
+                transactions.Where(x=>x.BillId.HasValue).ToList(),
+                transactions.Where(x=>x.BucketId.HasValue).ToList(),startDate, endDate, accounts, new List<Paycheck>(), new List<Bill>(), new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), transactions).ToList();
+
+            // Assert
+            var interestEntry = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest"));
+            Assert.IsNotNull(interestEntry);
+            Assert.AreEqual(5m, interestEntry.Amount, "Interest should be 5 due to lack of grace period");
+        }
+        
+        [TestMethod]
         public void TestCreditCard_InterestAdjustment_OverridesProjectedInterest()
         {
             // Arrange
@@ -432,7 +487,7 @@ namespace StayOnTarget.Tests
                         DueDateOffset = 25,
                         MinPayFloor = 25,
                         GraceActive = true,
-                        PayPreviousMonthBalanceInFull = false // No grace period
+                        PayPreviousMonthBalanceInFull = true // No grace period
                     },
                     AccountAprHistory = new List<AccountAprHistory>() {
                         new AccountAprHistory() {
@@ -503,16 +558,16 @@ namespace StayOnTarget.Tests
             var results = _engine.CalculateProjections(new List<Transaction>(),new List<Transaction>(),new List<Transaction>(), startDate, endDate, accounts, paychecks, bills, new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), new List<Transaction>()).ToList();
 
             // Assert
-            // Period 1: 2/1 to 2/14. Events: Pay1 (2000), Bill1 (-500). Net = 1500.
+            // Period 1: 2/1 to 2/14. Events: Pay1 (2000). Net = 2000.
             var pay1Entry = results.FirstOrDefault(r => r.Description == "Expected Pay: Pay1");
             Assert.IsNotNull(pay1Entry);
-            Assert.AreEqual(1500m, pay1Entry.PeriodNet);
+            Assert.AreEqual(2000m, pay1Entry.PeriodNet);
 
-            // Period 2: 2/15 onwards. Events: Pay1 (2000), Pay2 (2000). Total = 4000.
+            // Period 2: 2/15 onwards. Events: Pay1 (2000), Pay2 (2000), Bill1 (-500). Total = 3500.
             // Since they are on the same day, Pay: Pay1 should be the first item and have the PeriodNet.
             var pay1SecondOccurrence = results.FirstOrDefault(r => r.Description == "Expected Pay: Pay1" && r.Date == new DateTime(2026, 2, 15));
             Assert.IsNotNull(pay1SecondOccurrence);
-            Assert.AreEqual(4000m, pay1SecondOccurrence.PeriodNet);
+            Assert.AreEqual(3500m, pay1SecondOccurrence.PeriodNet);
 
             var pay2Entry = results.FirstOrDefault(r => r.Description == "Expected Pay: Pay2" && r.Date == new DateTime(2026, 2, 15));
             Assert.IsNotNull(pay2Entry);

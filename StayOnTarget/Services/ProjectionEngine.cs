@@ -31,6 +31,7 @@ public class ProjectionEngine : IProjectionEngine {
         Transaction,
         Interest,
         Growth,
+        Reconciliation,
         Final
     }
 
@@ -58,10 +59,12 @@ public class ProjectionEngine : IProjectionEngine {
 
         // Build reconciliation lookup: latest valid reconciliation per account
         var reconLookup = new Dictionary<int, AccountReconciliation>();
+        var allValidReconciliations = new List<AccountReconciliation>();
         if (reconciliations != null && !showReconciled)
         {
             foreach (var recon in reconciliations.Where(r => !r.IsInvalidated))
             {
+                allValidReconciliations.Add(recon);
                 if (!reconLookup.ContainsKey(recon.AccountId) ||
                     recon.ReconciledAsOfDate > reconLookup[recon.AccountId].ReconciledAsOfDate)
                 {
@@ -79,15 +82,22 @@ public class ProjectionEngine : IProjectionEngine {
                 }
             }
         }
-        // var oldestUnreconciledAccount = accounts.Where(a => !reconLookup.ContainsKey(a.Id)).OrderBy(a => a.BalanceAsOf).FirstOrDefault();
-        // var oldestReconciledAccount = accounts.Where(a => reconLookup.ContainsKey(a.Id)).OrderBy(a => reconLookup[a.Id].ReconciledAsOfDate).FirstOrDefault();
-        //
-        // if (oldestUnreconciledAccount.BalanceAsOf > oldestReconciledAccount?.BalanceAsOf) {
-        //     current = oldestUnreconciledAccount.BalanceAsOf;
-        // }
-        // else {
-        //     current = oldestReconciledAccount?.BalanceAsOf ?? current;
-        // }
+        else {
+            var oldestUnreconciledAccount = accounts.Where(a => !reconLookup.ContainsKey(a.Id)).OrderBy(a => a.BalanceAsOf).FirstOrDefault();
+            var oldestReconciledAccount = accounts.Where(a => reconLookup.ContainsKey(a.Id)).OrderBy(a => reconLookup[a.Id].ReconciledAsOfDate).FirstOrDefault();
+
+            if (oldestUnreconciledAccount != null && (oldestReconciledAccount == null || oldestUnreconciledAccount.BalanceAsOf < reconLookup[oldestReconciledAccount.Id].ReconciledAsOfDate)) {
+                if (oldestUnreconciledAccount.BalanceAsOf < current) {
+                    current = oldestUnreconciledAccount.BalanceAsOf;
+                }
+            }
+            else if (oldestReconciledAccount != null) {
+                var latestRecon = reconLookup[oldestReconciledAccount.Id];
+                if (latestRecon.ReconciledAsOfDate < current) {
+                    current = latestRecon.ReconciledAsOfDate;
+                }
+            }
+        }
 
         var events =
             new List<ProjectionGridItem>();
@@ -357,6 +367,10 @@ public class ProjectionEngine : IProjectionEngine {
             }
         }
 
+        foreach (var recon in allValidReconciliations) {
+            events.Add(new ProjectionGridItem(recon.ReconciledAsOfDate, recon.ReconciledBalance, "Reconciliation", recon.AccountId, null, null, null, null, ProjectionEventType.Reconciliation, false, false, false, false));
+        }
+
         var sortedEvents = events
             .OrderBy(e => e.Date)
             .ThenByDescending(e => e.Type == ProjectionEventType.Paycheck || (e.PaycheckId.HasValue && e.ToAccountId.HasValue))
@@ -374,14 +388,24 @@ public class ProjectionEngine : IProjectionEngine {
             DateTime effectiveBalanceDate = acc.BalanceAsOf;
             decimal effectiveBalance = acc.Balance;
 
-            // Use reconciliation data if available and more recent
-            if (reconLookup.TryGetValue(acc.Id, out var recon))
+            // Use latest reconciliation strictly BEFORE 'current' if available and more recent than BalanceAsOf
+            // We use BEFORE (<) instead of AT (<=) to avoid double-processing reconciliations that happen AT 'current'
+            var latestReconBeforeStart = allValidReconciliations
+                .Where(r => r.AccountId == acc.Id && r.ReconciledAsOfDate < current)
+                .OrderByDescending(r => r.ReconciledAsOfDate)
+                .FirstOrDefault();
+
+            if (latestReconBeforeStart != null)
             {
-                if (recon.ReconciledAsOfDate >= acc.BalanceAsOf)
+                if (latestReconBeforeStart.ReconciledAsOfDate >= acc.BalanceAsOf)
                 {
-                    effectiveBalanceDate = recon.ReconciledAsOfDate;
-                    effectiveBalance = recon.ReconciledBalance;
+                    effectiveBalanceDate = latestReconBeforeStart.ReconciledAsOfDate;
+                    effectiveBalance = latestReconBeforeStart.ReconciledBalance;
                     accountBalanceDates[acc.Id] = effectiveBalanceDate;
+                    
+                    if (acc.Type == AccountType.CreditCard) {
+                        ccPreviousMonthPaidInFull[acc.Id] = effectiveBalance <= 0.01m;
+                    }
                 }
             }
 
@@ -555,6 +579,35 @@ public class ProjectionEngine : IProjectionEngine {
                         continue;
                     }
                 }
+            }
+
+        // Apply Reconciliation
+            if (e.Type == ProjectionEventType.Reconciliation && e.FromAccountId.HasValue) {
+                int accId = e.FromAccountId.Value;
+                if (accountBalances.ContainsKey(accId)) {
+                    var acc = accounts.FirstOrDefault(a => a.Id == accId);
+                    if (acc != null) {
+                        decimal oldBalance = accountBalances[accId];
+                        decimal newBalance = e.Amount;
+                        accountBalances[accId] = newBalance;
+
+                        if (acc.Type == AccountType.CreditCard) {
+                            // Check if reconciled balance is 0 to determine grace period for next month
+                            ccPreviousMonthPaidInFull[accId] = newBalance <= 0.01m;
+                        }
+
+                        if (includedTotalAccounts.Contains(accId)) {
+                            bool isDebt = (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan || acc.Type == AccountType.CreditCard);
+                            if (isDebt) {
+                                runningBalance -= (newBalance - oldBalance);
+                            } else {
+                                runningBalance += (newBalance - oldBalance);
+                            }
+                        }
+                    }
+                }
+                // Do not add reconciliation to the projection grid (as requested)
+                continue;
             }
 
             // Apply balances
