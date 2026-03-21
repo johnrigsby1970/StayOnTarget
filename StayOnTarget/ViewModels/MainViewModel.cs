@@ -30,6 +30,8 @@ public class MainViewModel : ViewModelBase {
     private bool _isEditingAccount;
     private bool _isEditingTransaction;
     private bool _isCalculatingProjections;
+    private bool _isBillDescriptionExpanded;
+    private bool _isBucketDescriptionExpanded;
     private Bill? _editingBillClone;
     private PeriodBill? _editingPeriodBillClone;
     private BudgetBucket? _editingBucketClone;
@@ -46,10 +48,20 @@ public class MainViewModel : ViewModelBase {
     private Paycheck? _selectedPaycheck;
     private bool _showReconciled;
     private string _toggleReconciliationText = "Show Reconciled";
-    
+    private DateTime _projectionEndDate = DateTime.Today.AddYears(1);
     #region Properties
 
     public bool IsCalculatingProjections => _isCalculatingProjections;
+
+    public bool IsBucketDescriptionExpanded {
+        get => _isBucketDescriptionExpanded;
+        set => SetProperty(ref _isBucketDescriptionExpanded, value);
+    }
+    
+    public bool IsBillDescriptionExpanded {
+        get => _isBillDescriptionExpanded;
+        set => SetProperty(ref _isBillDescriptionExpanded, value);
+    }
 
     public static MainViewModel? Instance { get; private set; }
 
@@ -162,6 +174,15 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
+    public DateTime ProjectionEndDate {
+        get => _projectionEndDate;
+        set {
+            if (SetProperty(ref _projectionEndDate, value)) {
+                CalculateProjections();
+            }
+        }
+    }
+    
     public DateTime CurrentPeriodDate {
         get => _currentPeriodDate;
         set {
@@ -444,7 +465,29 @@ public class MainViewModel : ViewModelBase {
         new RelayCommand(a => ShowAmortization(a as Account ?? throw new InvalidOperationException()));
 
     public ICommand ShowAboutCommand => new RelayCommand(_ => ShowAbout());
+    public ICommand SetOneYearCommand => new RelayCommand(_ => SetProjectionEndDate(1));
 
+    public ICommand SetFiveYearCommand => new RelayCommand(_ => SetProjectionEndDate(5));
+
+    public ICommand SetTenYearCommand => new RelayCommand(_ => SetProjectionEndDate(10));
+    
+    public ICommand SetThirtyYearCommand => new RelayCommand(_ => SetProjectionEndDate(30));
+    public ICommand ToggleBucketDescriptionCommand => new RelayCommand(_ => IsBucketDescriptionExpanded = !IsBucketDescriptionExpanded);
+    public ICommand ToggleBillDescriptionCommand => new RelayCommand(_ => IsBillDescriptionExpanded = !IsBillDescriptionExpanded);
+    // private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    // {
+    //     // Execute your method here
+    //     MyMethod();
+    //
+    //     // Mark as handled to prevent navigation if you set NavigateUri
+    //     e.Handled = true; 
+    // }
+
+    private void SetProjectionEndDate(int years)
+    {
+        ProjectionEndDate = DateTime.Now.AddYears(years);
+    }
+    
     #endregion
 
     private bool _isLoadingData;
@@ -1294,7 +1337,8 @@ public class MainViewModel : ViewModelBase {
             var reconciliations = !ShowReconciled ? _budgetService.GetAllAccountReconciliations() : null;
 
             DateTime start = CurrentPeriodDate == DateTime.MinValue ? DateTime.Today : CurrentPeriodDate;
-            DateTime end = start.AddYears(1);
+            DateTime end = ProjectionEndDate;
+            if(end < start) end = start.AddYears(1);
             
             var allPaycheckTransactions = _budgetService.GetAllPaycheckTransactions();
             var allBillTransactions = _budgetService.GetBillTransactions();

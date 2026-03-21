@@ -53,7 +53,7 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
     public IEnumerable<Axis> XAxes { get; set; } = new[] {
         new Axis
         {
-            Labeler = value => new DateTime((long)value).Ticks > 0 ? new DateTime((long)value).ToString("MMM dd") : string.Empty,
+            Labeler = value => new DateTime((long)value).Ticks > 0 ? new DateTime((long)value).ToString("M/d/yy") : string.Empty,
             LabelsRotation = 45,
             UnitWidth = TimeSpan.FromDays(1).Ticks
         }
