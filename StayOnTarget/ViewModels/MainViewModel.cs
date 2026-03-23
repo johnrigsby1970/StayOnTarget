@@ -268,7 +268,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     public bool IsNotEditingBill => !IsEditingBill;
-    public bool CanEditBill => SelectedBill != null && !IsEditingBill;
+    public bool CanEditBill => SelectedBill != null;
 
     public bool IsEditingPaycheck {
         get => _isEditingPaycheck;
@@ -282,7 +282,7 @@ public class MainViewModel : ViewModelBase {
 
     public bool IsNotEditingPaycheck => !IsEditingPaycheck;
 
-    public bool CanEditPaycheck => SelectedPaycheck != null && !IsEditingPaycheck;
+    public bool CanEditPaycheck => SelectedPaycheck != null;
 
     public bool IsEditingPeriodBucket {
         get => _isEditingPeriodBucket;
@@ -306,7 +306,7 @@ public class MainViewModel : ViewModelBase {
 
     public bool IsNotEditingBucket => !IsEditingBucket;
 
-    public bool CanEditBucket => SelectedBucket != null && !IsEditingBucket;
+    public bool CanEditBucket => SelectedBucket != null;
 
     public bool IsNotEditingPeriodBill => !IsEditingPeriodBill;
 
@@ -320,11 +320,11 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
-    public bool CanEditPeriodBill => SelectedPeriodBill != null && !IsEditingPeriodBill;
+    public bool CanEditPeriodBill => SelectedPeriodBill != null;
 
     public bool IsNotEditingPeriodBucket => !IsEditingPeriodBucket;
 
-    public bool CanEditPeriodBucket => SelectedPeriodBucket != null && !IsEditingPeriodBucket;
+    public bool CanEditPeriodBucket => SelectedPeriodBucket != null;
 
     public bool IsEditingAccount {
         get => _isEditingAccount;
@@ -337,7 +337,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     public bool IsNotEditingAccount => !IsEditingAccount;
-    public bool CanEditAccount => SelectedAccount != null && !IsEditingAccount;
+    public bool CanEditAccount => SelectedAccount != null;
 
     public bool IsEditingTransaction {
         get => _isEditingTransaction;
@@ -350,7 +350,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     public bool IsNotEditingTransaction => !IsEditingTransaction;
-    public bool CanEditTransaction => SelectedTransaction != null && !IsEditingTransaction;
+    public bool CanEditTransaction => SelectedTransaction != null;
 
     public Bill? EditingBillClone {
         get => _editingBillClone;
@@ -551,6 +551,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void EditBill() {
+        CancelBill();
         if (SelectedBill != null) {
             EditingBillClone = new Bill {
                 Id = SelectedBill.Id, Name = SelectedBill.Name, ExpectedAmount = SelectedBill.ExpectedAmount,
@@ -640,6 +641,7 @@ public class MainViewModel : ViewModelBase {
 
 
     private void EditPeriodBill() {
+        CancelPeriodBill();
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (SelectedPeriodBill != null) {
             EditingPeriodBillClone = new PeriodBill {
@@ -745,6 +747,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void EditBucket() {
+        CancelBucket();
         if (SelectedBucket != null) {
             EditingBucketClone = new BudgetBucket {
                 Id = SelectedBucket.Id, Name = SelectedBucket.Name, ExpectedAmount = SelectedBucket.ExpectedAmount,
@@ -827,6 +830,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void EditPeriodBucket() {
+        CancelPeriodBucket();
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (SelectedPeriodBucket != null) {
             EditingPeriodBucketClone = new PeriodBucket {
@@ -929,6 +933,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void EditTransaction() {
+        CancelTransaction();
         if (SelectedTransaction != null) {
             EditingTransactionClone = new Transaction {
                 Id = SelectedTransaction.Id,
@@ -1052,6 +1057,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void EditPaycheck() {
+        CancelPaycheck();
         if (SelectedPaycheck != null) {
             EditingPaycheckClone = new Paycheck {
                 Id = SelectedPaycheck.Id,
@@ -1166,6 +1172,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void EditAccount() {
+        CancelAccount();
         if (SelectedAccount != null) {
             EditingAccountClone = new Account {
                 Id = SelectedAccount.Id,

@@ -221,6 +221,9 @@
                                                   SelectedItem="{Binding SelectedPeriodBill}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False">
+                                            <DataGrid.InputBindings>
+                                                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditPeriodBillCommand}" />
+                                            </DataGrid.InputBindings>
                                             <DataGrid.Columns>
                                                 <!-- <DataGridCheckBoxColumn Header="Paid" -->
                                                 <!--                         Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}" -->
@@ -341,6 +344,9 @@
                                                   SelectedItem="{Binding SelectedPeriodBucket}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False">
+                                            <DataGrid.InputBindings>
+                                                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditPeriodBucketCommand}" />
+                                            </DataGrid.InputBindings>
                                             <DataGrid.Columns>
                                                 <!-- <DataGridCheckBoxColumn Header="Paid" -->
                                                 <!--                         Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}" -->
@@ -493,6 +499,9 @@
                                                   HorizontalScrollBarVisibility="Auto"
                                                   CanUserAddRows="False" 
                                                   IsReadOnly="True">
+                                            <DataGrid.InputBindings>
+                                                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditTransactionCommand}" />
+                                            </DataGrid.InputBindings>
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="Date"
                                                                     Binding="{Binding Date, StringFormat=d}" Width="80" MinWidth="80" />
@@ -713,6 +722,9 @@
                             <DataGrid Grid.Row="0" ItemsSource="{Binding Buckets}"
                                       SelectedItem="{Binding SelectedBucket}"
                                       AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                                <DataGrid.InputBindings>
+                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditBucketCommand}" />
+                                </DataGrid.InputBindings>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                                     <DataGridTextColumn Header="Budgeted"
@@ -843,6 +855,9 @@
 
                             <DataGrid Grid.Row="0" ItemsSource="{Binding Bills}" SelectedItem="{Binding SelectedBill}"
                                       AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                                <DataGrid.InputBindings>
+                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditBillCommand}" />
+                                </DataGrid.InputBindings>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                                     <DataGridTextColumn Header="Budgeted"
@@ -983,6 +998,9 @@
                                       AutoGenerateColumns="False"
                                       HorizontalScrollBarVisibility="Auto"
                                       CanUserAddRows="False">
+                                <DataGrid.InputBindings>
+                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditPaycheckCommand}" />
+                                </DataGrid.InputBindings>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Name"
                                                         Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
@@ -1168,6 +1186,9 @@
                                       AutoGenerateColumns="False"
                                       HorizontalScrollBarVisibility="Auto"
                                       CanUserAddRows="False" IsReadOnly="True">
+                                <DataGrid.InputBindings>
+                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditAccountCommand}" />
+                                </DataGrid.InputBindings>
                                 
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" MinWidth="100" />
