@@ -1,19 +1,21 @@
 ﻿using StayOnTarget.Models;
-using StayOnTarget.Services.Projections;
+using StayOnTarget.ViewModels;
 
-namespace StayOnTarget.Services;
+namespace StayOnTarget.Services.Projections;
 
 public static class ProjectionEngineExtensions {
+    
+    //Determine the initial balance for an account based either on most recent reconciliations or past running
+    //events impacts on balance
     public static void AdjustForReconciliations(
-        Dictionary<int, decimal> accountBalances, 
-        Dictionary<int, DateTime> accountBalanceDates, 
-        Dictionary<int, bool> ccPreviousMonthPaidInFull, 
+        Dictionary<int, decimal> accountBalances,
+        Dictionary<int, DateTime> accountBalanceDates,
+        Dictionary<int, bool> ccPreviousMonthPaidInFull,
         List<Account> accounts,
-        List<AccountReconciliation> allValidReconciliations, 
-        List<ProjectionGridItem> sortedEvents, 
-        DateTime current 
-        ) {
-        
+        List<AccountReconciliation> allValidReconciliations,
+        List<ProjectionGridItem> sortedEvents,
+        DateTime current
+    ) {
         foreach (var acc in accounts) {
             var effectiveBalanceDate = acc.BalanceAsOf;
             var effectiveBalance = acc.Balance;
@@ -56,7 +58,8 @@ public static class ProjectionEngineExtensions {
                     var isCreditCard = acc.Type == AccountType.CreditCard;
                     var isPrincipalOnly = e.IsPrincipalOnly;
                     var isRebalance = e.IsRebalance;
-                    var isInterestAdjustment = (e.Type == ProjectionEngine.ProjectionEventType.Transaction && e.IsInterestAdjustment);
+                    var isInterestAdjustment = (e.Type == ProjectionEngine.ProjectionEventType.Transaction &&
+                                                e.IsInterestAdjustment);
                     var isInterestOrRebalance = (isMortgage || isCreditCard) && (isRebalance || isInterestAdjustment);
 
                     if (isInterestOrRebalance) {
@@ -72,10 +75,12 @@ public static class ProjectionEngineExtensions {
 
                         accountBalances[acc.Id] -= principal;
                     }
-                    else if (isPersonalLoan && (e.Type == ProjectionEngine.ProjectionEventType.Transaction && isPrincipalOnly)) {
+                    else if (isPersonalLoan &&
+                             (e.Type == ProjectionEngine.ProjectionEventType.Transaction && isPrincipalOnly)) {
                         accountBalances[acc.Id] -= amountChange;
                     }
-                    else if (isPersonalLoan && (e.Type == ProjectionEngine.ProjectionEventType.Transaction && isRebalance)) {
+                    else if (isPersonalLoan &&
+                             (e.Type == ProjectionEngine.ProjectionEventType.Transaction && isRebalance)) {
                         accountBalances[acc.Id] += amountChange;
                     }
                     else if (isPersonalLoan) {
@@ -91,17 +96,138 @@ public static class ProjectionEngineExtensions {
             }
         }
     }
-    public static void AddReconciliationEvents(this List<ProjectionGridItem> events, List<AccountReconciliation> allValidReconciliations) {
+
+    //As time goes on, the balances in an account could be reconciled at points in time. These may have out-of-band
+    //adjustments to the account not reflected in transactions within this system. Pick up those changes for 
+    //projected balances.
+    public static bool AdjustBalanceForReconciliationBalances(
+        ref decimal runningBalance,
+        ProjectionGridItem e,
+        List<Account> accounts,
+        Dictionary<int, decimal> accountBalances,
+        Dictionary<int, bool> ccPreviousMonthPaidInFull,
+        HashSet<int> includedTotalAccounts) {
+        if (e.Type == ProjectionEngine.ProjectionEventType.Reconciliation && e.FromAccountId.HasValue) {
+            var accId = e.FromAccountId.Value;
+            if (accountBalances.ContainsKey(accId)) {
+                var acc = accounts.FirstOrDefault(a => a.Id == accId);
+                if (acc != null) {
+                    var oldBalance = accountBalances[accId];
+                    var newBalance = e.Amount;
+                    accountBalances[accId] = newBalance;
+
+                    if (acc.Type == AccountType.CreditCard) {
+                        // Check if the reconciled balance is 0 to determine the grace period for next month
+                        ccPreviousMonthPaidInFull[accId] = newBalance <= 0.01m;
+                    }
+
+                    if (includedTotalAccounts.Contains(accId)) {
+                        var isDebt = (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan ||
+                                      acc.Type == AccountType.CreditCard);
+                        if (isDebt) {
+                            runningBalance -= (newBalance - oldBalance);
+                        }
+                        else {
+                            runningBalance += (newBalance - oldBalance);
+                        }
+                    }
+                }
+            }
+
+            // Do not add reconciliation to the projection grid (as requested)
+            return false; 
+        }
+
+        return true;
+    }
+    
+    public static bool AddInterestProjection(
+        List<ProjectionItem> list,
+        ref decimal runningBalance,
+        ProjectionGridItem e, 
+        List<Account> accounts,
+        Dictionary<int, decimal> accountBalances,
+        Dictionary<int, string> accountNames,
+        Dictionary<int, bool> ccPreviousMonthPaidInFull,
+        Dictionary<int, List<(DateTime Date, decimal Balance, decimal InterestAccruingBalance)>> ccDailyBalances,
+        HashSet<int> includedTotalAccounts) {
+        
+        if (e is { Type: ProjectionEngine.ProjectionEventType.Interest, FromAccountId: not null }) {
+            var acc = accounts.FirstOrDefault(a => a.Id == e.FromAccountId.Value);
+            if (acc is { Type: AccountType.Mortgage, MortgageDetails: not null }) {
+                var monthlyRate = (acc.MortgageDetails.InterestRate / 100m) / 12m;
+                var interest = Math.Round(accountBalances[acc.Id] * monthlyRate, 2);
+                accountBalances[acc.Id] += interest;
+                if (includedTotalAccounts.Contains(acc.Id)) {
+                    runningBalance -= interest;
+                }
+
+                list.Add(new ProjectionItem {
+                    Date = e.Date,
+                    Description = e.Description,
+                    Amount = interest,
+                    Balance = runningBalance,
+                    AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value)
+                });
+                return false;
+            }
+
+            if (acc is { Type: AccountType.CreditCard, CreditCardDetails: not null }) {
+                var dailyBalances = ccDailyBalances[acc.Id];
+                if (dailyBalances.Any()) {
+                    var aprHist = acc.AccountAprHistory?.SingleOrDefault(x => x.AsOfDate <= e.Date);
+                    if (aprHist == null) aprHist = new AccountAprHistory { AsOfDate = e.Date };
+                    var dailyPeriodicRate = (aprHist.AnnualPercentageRate / 100m) / 365m;
+                    decimal totalInterest = 0;
+                    var gracePeriodApplies = acc.CreditCardDetails.PayPreviousMonthBalanceInFull &&
+                                             ccPreviousMonthPaidInFull[acc.Id];
+
+                    if (!gracePeriodApplies) {
+                        var sumBalances = dailyBalances.Sum(db => db.Balance);
+                        var avgDailyBalance = sumBalances / dailyBalances.Count;
+                        totalInterest = Math.Round(avgDailyBalance * dailyPeriodicRate * dailyBalances.Count, 2);
+                    }
+
+                    if (totalInterest > 0) {
+                        accountBalances[acc.Id] += totalInterest;
+                        if (includedTotalAccounts.Contains(acc.Id)) {
+                            runningBalance -= totalInterest;
+                        }
+                    }
+
+                    if (totalInterest < 0) totalInterest = 0;
+                    // Check if the previous balance (before interest) was paid in full to determine the grace period for NEXT month
+                    ccPreviousMonthPaidInFull[acc.Id] = (accountBalances[acc.Id] - totalInterest) <= 0.01m;
+                    dailyBalances.Clear();
+
+                    list.Add(new ProjectionItem {
+                        Date = e.Date,
+                        Description = e.Description,
+                        Amount = totalInterest,
+                        Balance = runningBalance,
+                        AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value)
+                    });
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static void AddReconciliationEvents(this List<ProjectionGridItem> events,
+        List<AccountReconciliation> allValidReconciliations) {
         foreach (var recon in allValidReconciliations) {
             events.Add(new ProjectionGridItem(recon.ReconciledAsOfDate, recon.ReconciledBalance, "Reconciliation",
-                recon.AccountId, null, null, null, null, ProjectionEngine.ProjectionEventType.Reconciliation, false, false, false,
+                recon.AccountId, null, null, null, null, ProjectionEngine.ProjectionEventType.Reconciliation, false,
+                false, false,
                 false));
         }
     }
-    
-    public static void AddInterestEvents(this List<ProjectionGridItem> events, List<Account> accounts, List<Transaction> transactions, DateTime startDate,
+
+    public static void AddInterestEvents(this List<ProjectionGridItem> events, List<Account> accounts,
+        List<Transaction> transactions, DateTime startDate,
         DateTime endDate) {
-        
         foreach (var acc in accounts) {
             if (acc.Type == AccountType.Mortgage && acc.MortgageDetails != null) {
                 var nextInterest = acc.MortgageDetails.PaymentDate;
@@ -157,7 +283,9 @@ public static class ProjectionEngineExtensions {
             }
         }
     }
-    public static void AddTransactionEvents(this List<ProjectionGridItem> events, List<Transaction> transactions, bool showReconciled) {
+
+    public static void AddTransactionEvents(this List<ProjectionGridItem> events, List<Transaction> transactions,
+        bool showReconciled) {
         foreach (var transaction in transactions) {
             // Skip fully reconciled transactions:
             // A transaction is fully reconciled if:
@@ -197,20 +325,21 @@ public static class ProjectionEngineExtensions {
 
                 events.Add(new ProjectionGridItem(transaction.Date, transaction.Amount, transaction.Description,
                     accountId, toAcountId, transaction.BucketId,
-                    transaction.PaycheckId, transaction.PaycheckOccurrenceDate, ProjectionEngine.ProjectionEventType.Transaction,
+                    transaction.PaycheckId, transaction.PaycheckOccurrenceDate,
+                    ProjectionEngine.ProjectionEventType.Transaction,
                     transaction.IsPrincipalOnly,
                     transaction.IsRebalance, transaction.IsInterestAdjustment, false));
             }
         }
     }
-    public static void AddBucketEvents(this List<ProjectionGridItem> events, 
-        List<Account> accounts, 
-        List<Paycheck> paychecks, 
-        List<BudgetBucket> buckets, 
-        List<PeriodBucket> periodBuckets,
-        DateTime current, 
-        DateTime endDate) {
 
+    public static void AddBucketEvents(this List<ProjectionGridItem> events,
+        List<Account> accounts,
+        List<Paycheck> paychecks,
+        List<BudgetBucket> buckets,
+        List<PeriodBucket> periodBuckets,
+        DateTime current,
+        DateTime endDate) {
         var today = DateTime.Today;
         var primaryChecking = accounts.FirstOrDefault(a => a.Type == AccountType.Checking)?.Id;
         foreach (var bucket in buckets) {
@@ -225,11 +354,12 @@ public static class ProjectionEngineExtensions {
                             Frequency.Monthly => nextPay.AddMonths(1),
                             _ => nextPay.AddYears(100)
                         }).AddDays(-1);
-                        
+
                         //Buckets are projected entries. We won't project past entries. We simply didn't spend that money.
                         //Transactions that fit into that bucket matter, but not simply the bucket which represents future
                         //planned spending
-                        if (payPeriodEndDate>=today && nextPay >= current && (pay.EndDate == null || nextPay <= pay.EndDate)) {
+                        if (payPeriodEndDate >= today && nextPay >= current &&
+                            (pay.EndDate == null || nextPay <= pay.EndDate)) {
                             var pb = periodBuckets.FirstOrDefault(p =>
                                 p.BucketId == bucket.Id && (p.PeriodDate.Date == nextPay.Date));
 
@@ -239,7 +369,8 @@ public static class ProjectionEngineExtensions {
                             var fromAccId = bucket.AccountId ?? primaryChecking;
                             events.Add(new ProjectionGridItem(payPeriodEndDate, -amountToUse,
                                 $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
-                                bucket.Id, null, null, ProjectionEngine.ProjectionEventType.Bucket, false, false, false, false));
+                                bucket.Id, null, null, ProjectionEngine.ProjectionEventType.Bucket, false, false, false,
+                                false));
                         }
 
                         nextPay = pay.Frequency switch {
@@ -264,7 +395,7 @@ public static class ProjectionEngineExtensions {
                             Frequency.Monthly => nextPay.AddMonths(1),
                             _ => nextPay.AddYears(100)
                         }).AddDays(-1);
-                        
+
                         //Buckets are projected entries. We won't project past entries. We simply didn't spend that money.
                         //Transactions that fit into that bucket matter, but not simply the bucket which represents future
                         //planned spending
@@ -294,21 +425,21 @@ public static class ProjectionEngineExtensions {
                         var fromAccId = bucket.AccountId ?? primaryChecking;
                         events.Add(new ProjectionGridItem(occurrence.End, -amountToUse,
                             $"Bucket: {bucket.Name}{paidSuffix}", fromAccId, null,
-                            bucket.Id, null, null, ProjectionEngine.ProjectionEventType.Bucket, false, false, false, false));
+                            bucket.Id, null, null, ProjectionEngine.ProjectionEventType.Bucket, false, false, false,
+                            false));
                     }
                 }
             }
         }
     }
-    
-    public static void AddBillEvents(this List<ProjectionGridItem> events, 
-        List<Account> accounts, 
-        List<Bill> bills, 
-        List<Transaction> allBillTransactions, 
+
+    public static void AddBillEvents(this List<ProjectionGridItem> events,
+        List<Account> accounts,
+        List<Bill> bills,
+        List<Transaction> allBillTransactions,
         List<PeriodBill> periodBills,
-        DateTime current, 
+        DateTime current,
         DateTime endDate) {
-        
         var primaryChecking = accounts.FirstOrDefault(a => a.Type == AccountType.Checking)?.Id;
 
         foreach (var bill in bills) {
@@ -343,7 +474,8 @@ public static class ProjectionEngineExtensions {
                         if (bill.ToAccountId.HasValue) {
                             events.Add(new ProjectionGridItem(dueDate, amountToUse,
                                 $"Transfer: {bill.Name}{paidSuffix}", fromAccId,
-                                bill.ToAccountId.Value, null, null, null, ProjectionEngine.ProjectionEventType.Transfer, false, false,
+                                bill.ToAccountId.Value, null, null, null, ProjectionEngine.ProjectionEventType.Transfer,
+                                false, false,
                                 false, false));
                         }
                         else {
@@ -364,14 +496,13 @@ public static class ProjectionEngineExtensions {
             }
         }
     }
-    
-    public static void AddPaycheckEvents(this List<ProjectionGridItem> events, 
-        List<Account> accounts, 
-        List<Paycheck> paychecks, 
-        List<Transaction> allPaycheckTransactions, 
-        DateTime current, 
+
+    public static void AddPaycheckEvents(this List<ProjectionGridItem> events,
+        List<Account> accounts,
+        List<Paycheck> paychecks,
+        List<Transaction> allPaycheckTransactions,
+        DateTime current,
         DateTime endDate) {
-        
         var cashAccount = accounts.FirstOrDefault(a => a.Name == "Household Cash");
         foreach (var pay in paychecks) {
             var nextPay = pay.StartDate;
@@ -396,7 +527,8 @@ public static class ProjectionEngineExtensions {
                         events.Add(
                             new ProjectionGridItem(nextPay, pay.ExpectedAmount, $"Expected Pay: {pay.Name}", null,
                                 toAccountId, null,
-                                pay.Id, nextPay, ProjectionEngine.ProjectionEventType.Paycheck, false, false, false, false));
+                                pay.Id, nextPay, ProjectionEngine.ProjectionEventType.Paycheck, false, false, false,
+                                false));
                     }
                     else {
                         // if (transactionOverride.ToAccountReconciledId != null) {
