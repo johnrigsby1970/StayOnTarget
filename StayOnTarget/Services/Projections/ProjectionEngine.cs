@@ -127,6 +127,7 @@ public class ProjectionEngine : IProjectionEngine {
 
         #endregion
 
+        //order the events, being sure that paychecks are the first within a period
         var sortedEvents = events
             .OrderBy(e => e.Date)
             .ThenByDescending(e =>
@@ -134,7 +135,7 @@ public class ProjectionEngine : IProjectionEngine {
             .ThenByDescending(e => e.Type == ProjectionEventType.Paycheck)
             .ToList();
 
-        // 6. Tracking variables
+        // Tracking variables
         var accountBalanceDates = accounts.ToDictionary(a => a.Id, a => a.BalanceAsOf);
         var accumulatedGrowth = accounts.ToDictionary(a => a.Id, a => 0m);
         var ccDailyBalances = accounts.Where(a => a.Type == AccountType.CreditCard).ToDictionary(a => a.Id,
@@ -175,7 +176,8 @@ public class ProjectionEngine : IProjectionEngine {
             paycheckDates.Insert(0, current);
         }
 
-        //How much has been spent associated with a bucket up to this point.
+        //Associate each transaction associated with a bucket with the period date
+        //This will allow projected buckets to be reduced by actual spending later on.
         var bucketSpending = new Dictionary<(DateTime PeriodDate, int BucketId), decimal>();
         foreach (var transaction in allBucketTransactions) {
             if (transaction.BucketId.HasValue) {
@@ -189,39 +191,18 @@ public class ProjectionEngine : IProjectionEngine {
         }
 
         foreach (var e in futureEvents) {
-            var days = (e.Date - lastDate).Days;
-            if (days > 0) {
-                for (var d = 0; d < days; d++) {
-                    var dayDate = lastDate.AddDays(d);
-                    foreach (var acc in accounts.Where(a =>
-                                 a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage &&
-                                 a.Type != AccountType.CreditCard)) {
-                        if (dayDate < accountBalanceDates[acc.Id]) continue;
-                        var dailyRate = acc.AnnualGrowthRate / 100m / 365m;
-                        var growth = accountBalances[acc.Id] * dailyRate;
-                        accumulatedGrowth[acc.Id] += growth;
-                        if (accumulatedGrowth[acc.Id] >= 0.01m || accumulatedGrowth[acc.Id] <= -0.01m) {
-                            decimal toAdd = Math.Round(accumulatedGrowth[acc.Id], 2);
-                            accountBalances[acc.Id] += toAdd;
-                            if (includedTotalAccounts.Contains(acc.Id)) {
-                                if (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan) {
-                                    runningBalance -= toAdd;
-                                }
-                                else {
-                                    runningBalance += toAdd;
-                                }
-                            }
 
-                            accumulatedGrowth[acc.Id] -= toAdd;
-                        }
-                    }
-
-                    foreach (var acc in accounts.Where(a => a.Type == AccountType.CreditCard)) {
-                        ccDailyBalances[acc.Id].Add((dayDate, accountBalances[acc.Id], accountBalances[acc.Id]));
-                    }
-                }
-            }
-
+            ProjectionEngineExtensions.AccountForGrowthInAccountsDuringProjectedEvents(
+                lastDate,
+                ref runningBalance,
+                e,
+                accounts,
+                accountBalances,
+                accountBalanceDates,
+                accumulatedGrowth,
+                ccDailyBalances,
+                includedTotalAccounts);
+            
             lastDate = e.Date;
 
             // Apply Interest, add in interest events
@@ -259,7 +240,11 @@ public class ProjectionEngine : IProjectionEngine {
                 }
             }
 
-            if (e.Type == ProjectionEventType.Bucket && e.BucketId.HasValue) {
+            //Each projected bucket should be reduced by actual spending
+            //if the amount spent is greater than the projected amount, the projected amount is set to zero.
+            //we overspent the bucket, and to project further spending in this bucket category
+            //would require the user to adjust the period bucket. We cannot go negative, so the floor is zero.
+            if (e is { Type: ProjectionEventType.Bucket, BucketId: not null }) {
                 var periodDate = paycheckDates.LastOrDefault(d => d <= e.Date);
                 if (periodDate != DateTime.MinValue) {
                     var key = (periodDate, e.BucketId.Value);
@@ -269,6 +254,7 @@ public class ProjectionEngine : IProjectionEngine {
                 }
             }
 
+            //Handle internal transfers and payments
             if (e.ToAccountId.HasValue && accountBalances.ContainsKey(e.ToAccountId.Value)) {
                 var toAcc = accounts.FirstOrDefault(a => a.Id == e.ToAccountId.Value);
                 var amountChange = Math.Abs(currentEventAmount);
@@ -288,9 +274,9 @@ public class ProjectionEngine : IProjectionEngine {
                     }
                 }
                 else if (isMortgagePayment) {
-                    decimal principal = amountChange;
+                    var principal = amountChange;
                     if (!isPrincipalOnly && toAcc!.MortgageDetails != null) {
-                        decimal escrowAndInsurance =
+                        var escrowAndInsurance =
                             toAcc.MortgageDetails.Escrow + toAcc.MortgageDetails.MortgageInsurance;
                         principal = amountChange - escrowAndInsurance;
                         if (principal < 0) principal = 0;
@@ -375,6 +361,7 @@ public class ProjectionEngine : IProjectionEngine {
             list.Add(item);
         }
 
+        //Calculate the net income for this period.
         for (var i = 0; i < paycheckDates.Count; i++) {
             var start = paycheckDates[i];
             var next = (i + 1 < paycheckDates.Count) ? paycheckDates[i + 1] : endDate;
@@ -384,35 +371,18 @@ public class ProjectionEngine : IProjectionEngine {
             }
         }
 
+        //No more specific events in this projection, so what growth might occur in balances in accounts
+        //until the end of the projection
         if (lastDate < endDate) {
-            var remainingDays = (endDate - lastDate).Days;
-            if (remainingDays > 0) {
-                for (var d = 0; d < remainingDays; d++) {
-                    var dayDate = lastDate.AddDays(d);
-                    foreach (var acc in accounts.Where(a =>
-                                 a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage &&
-                                 a.Type != AccountType.CreditCard)) {
-                        if (dayDate < accountBalanceDates[acc.Id]) continue;
-                        var dailyRate = acc.AnnualGrowthRate / 100m / 365m;
-                        var growth = accountBalances[acc.Id] * dailyRate;
-                        accumulatedGrowth[acc.Id] += growth;
-                        if (accumulatedGrowth[acc.Id] >= 0.01m || accumulatedGrowth[acc.Id] <= -0.01m) {
-                            var toAdd = Math.Round(accumulatedGrowth[acc.Id], 2);
-                            accountBalances[acc.Id] += toAdd;
-                            if (includedTotalAccounts.Contains(acc.Id)) {
-                                if (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan) {
-                                    runningBalance -= toAdd;
-                                }
-                                else {
-                                    runningBalance += toAdd;
-                                }
-                            }
-
-                            accumulatedGrowth[acc.Id] -= toAdd;
-                        }
-                    }
-                }
-            }
+            ProjectionEngineExtensions.AccountForGrowthInRemainderOfProjection(
+                lastDate, //date of last format transaction or expected event
+                endDate,
+                ref runningBalance,
+                accounts,
+                accountBalances,
+                accountBalanceDates,
+                accumulatedGrowth,
+                includedTotalAccounts);
 
             list.Add(new ProjectionItem {
                 Date = endDate,
@@ -423,6 +393,7 @@ public class ProjectionEngine : IProjectionEngine {
             });
         }
 
+        //Remove projected bucket events which get set to 0, along with other events that would clutter the projection
         if (removeZeroBalanceEntries) {
             list = list.Where(x => x.Amount != 0).ToList();
         }

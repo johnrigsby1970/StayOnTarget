@@ -4,6 +4,91 @@ using StayOnTarget.ViewModels;
 namespace StayOnTarget.Services.Projections;
 
 public static class ProjectionEngineExtensions {
+    public static void AccountForGrowthInAccountsDuringProjectedEvents(
+        DateTime lastDate,
+        ref decimal runningBalance,
+        ProjectionGridItem e, 
+        List<Account> accounts,
+        Dictionary<int, decimal> accountBalances,
+        Dictionary<int, DateTime> accountBalanceDates,
+        Dictionary<int, decimal> accumulatedGrowth,
+        Dictionary<int,List<(DateTime Date, decimal Balance, decimal InterestAccruingBalance)>> ccDailyBalances,
+        HashSet<int> includedTotalAccounts) {
+        
+        var days = (e.Date - lastDate).Days;
+        if (days > 0) {
+            //Adjust balances for projected growth in the account, investment accounts
+            for (var d = 0; d < days; d++) {
+                var dayDate = lastDate.AddDays(d);
+                foreach (var acc in accounts.Where(a =>
+                             a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage &&
+                             a.Type != AccountType.CreditCard)) {
+                    if (dayDate < accountBalanceDates[acc.Id]) continue;
+                    var dailyRate = acc.AnnualGrowthRate / 100m / 365m;
+                    var growth = accountBalances[acc.Id] * dailyRate;
+                    accumulatedGrowth[acc.Id] += growth;
+                    if (accumulatedGrowth[acc.Id] >= 0.01m || accumulatedGrowth[acc.Id] <= -0.01m) {
+                        decimal toAdd = Math.Round(accumulatedGrowth[acc.Id], 2);
+                        accountBalances[acc.Id] += toAdd;
+                        if (includedTotalAccounts.Contains(acc.Id)) {
+                            if (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan) {
+                                runningBalance -= toAdd;
+                            }
+                            else {
+                                runningBalance += toAdd;
+                            }
+                        }
+
+                        accumulatedGrowth[acc.Id] -= toAdd;
+                    }
+                }
+
+                foreach (var acc in accounts.Where(a => a.Type == AccountType.CreditCard)) {
+                    ccDailyBalances[acc.Id].Add((dayDate, accountBalances[acc.Id], accountBalances[acc.Id]));
+                }
+            }
+        }
+    }
+    
+    public static void AccountForGrowthInRemainderOfProjection(
+        DateTime lastDate, //date of last format transaction or expected event
+        DateTime endDate, 
+        ref decimal runningBalance,
+        List<Account> accounts,
+        Dictionary<int, decimal> accountBalances,
+        Dictionary<int, DateTime> accountBalanceDates,
+        Dictionary<int, decimal> accumulatedGrowth,
+        HashSet<int> includedTotalAccounts) {
+        
+        var remainingDays = (endDate - lastDate).Days;
+        if (remainingDays > 0) {
+            for (var d = 0; d < remainingDays; d++) {
+                var dayDate = lastDate.AddDays(d);
+                foreach (var acc in accounts.Where(a =>
+                             a.AnnualGrowthRate > 0 && a.Type != AccountType.Mortgage &&
+                             a.Type != AccountType.CreditCard)) {
+                    if (dayDate < accountBalanceDates[acc.Id]) continue;
+                    var dailyRate = acc.AnnualGrowthRate / 100m / 365m;
+                    var growth = accountBalances[acc.Id] * dailyRate;
+                    accumulatedGrowth[acc.Id] += growth;
+                    if (accumulatedGrowth[acc.Id] >= 0.01m || accumulatedGrowth[acc.Id] <= -0.01m) {
+                        var toAdd = Math.Round(accumulatedGrowth[acc.Id], 2);
+                        accountBalances[acc.Id] += toAdd;
+                        if (includedTotalAccounts.Contains(acc.Id)) {
+                            if (acc.Type == AccountType.Mortgage || acc.Type == AccountType.PersonalLoan) {
+                                runningBalance -= toAdd; //a mortgage or loan reduces the net worth
+                            }
+                            else {
+                                runningBalance += toAdd;
+                            }
+                        }
+
+                        accumulatedGrowth[acc.Id] -= toAdd;
+                    }
+                }
+            }
+        }
+    }
     
     //Determine the initial balance for an account based either on most recent reconciliations or past running
     //events impacts on balance
@@ -225,8 +310,10 @@ public static class ProjectionEngineExtensions {
         }
     }
 
-    public static void AddInterestEvents(this List<ProjectionGridItem> events, List<Account> accounts,
-        List<Transaction> transactions, DateTime startDate,
+    public static void AddInterestEvents(this List<ProjectionGridItem> events, 
+        List<Account> accounts,
+        List<Transaction> transactions, 
+        DateTime startDate,
         DateTime endDate) {
         foreach (var acc in accounts) {
             if (acc.Type == AccountType.Mortgage && acc.MortgageDetails != null) {
