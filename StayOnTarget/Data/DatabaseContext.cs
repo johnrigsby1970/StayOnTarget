@@ -185,8 +185,9 @@ public class DatabaseContext
                 Name TEXT NOT NULL,
                 ExpectedAmount DECIMAL NOT NULL,
                 AccountId INTEGER,
-                PaycheckId INTEGER REFERENCES PayChecks(Id),
-                FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
+                PaycheckId INTEGER,
+                FOREIGN KEY(AccountId) REFERENCES Accounts(Id),
+                FOREIGN KEY(PaycheckId) REFERENCES PayChecks(Id) ON DELETE SET NULL
             );
 
             CREATE TABLE IF NOT EXISTS PeriodBuckets (

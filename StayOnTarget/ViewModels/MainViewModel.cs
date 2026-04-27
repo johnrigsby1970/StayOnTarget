@@ -10,15 +10,16 @@ namespace StayOnTarget.ViewModels;
 public class MainViewModel : ViewModelBase {
     private readonly BudgetService _budgetService;
     private readonly IProjectionEngine _projectionEngine;
-    private ObservableCollection<Bill> _bills = new();
-    private ObservableCollection<Paycheck> _paychecks = new();
     private ObservableCollection<Account> _accounts = new();
+    private ObservableCollection<Account> _accountsWithNone = new();
+    private ObservableCollection<Bill> _bills = new();
+    private ObservableCollection<Bill> _billsWithNone = new();
+    private ObservableCollection<Paycheck> _paychecks = new();
+    private ObservableCollection<Paycheck> _paychecksWithNone = new();
     private ObservableCollection<ProjectionItem> _projections = new();
     private ObservableCollection<PeriodBill> _currentPeriodBills = new();
     private ObservableCollection<BudgetBucket> _buckets = new();
     private ObservableCollection<BudgetBucket> _bucketsWithNone = new();
-    private ObservableCollection<Account> _accountsWithNone = new();
-    private ObservableCollection<Bill> _billsWithNone = new();
     private ObservableCollection<PeriodBucket> _currentPeriodBuckets = new();
     private ObservableCollection<Transaction> _currentPeriodTransactions = new();
     private Bill? _selectedBill;
@@ -88,7 +89,12 @@ public class MainViewModel : ViewModelBase {
         get => _paychecks;
         set => SetProperty(ref _paychecks, value);
     }
-
+    
+    public ObservableCollection<Paycheck> PaychecksWithNone {
+        get => _paychecksWithNone;
+        set => SetProperty(ref _paychecksWithNone, value);
+    }
+    
     public ObservableCollection<Account> Accounts {
         get => _accounts;
         set => SetProperty(ref _accounts, value);
@@ -772,8 +778,11 @@ public class MainViewModel : ViewModelBase {
         CancelBucket();
         if (SelectedBucket == null) return;
         EditingBucketClone = new BudgetBucket {
-            Id = SelectedBucket.Id, Name = SelectedBucket.Name, ExpectedAmount = SelectedBucket.ExpectedAmount,
-            AccountId = SelectedBucket.AccountId
+            Id = SelectedBucket.Id, 
+            Name = SelectedBucket.Name, 
+            ExpectedAmount = SelectedBucket.ExpectedAmount,
+            AccountId = SelectedBucket.AccountId,
+            PaycheckId = SelectedBucket.PaycheckId
         };
         IsEditingBucket = true;
     }
@@ -782,7 +791,8 @@ public class MainViewModel : ViewModelBase {
         if (EditingBucketClone == null) return;
 
         if (EditingBucketClone.AccountId == 0) EditingBucketClone.AccountId = null;
-
+        if (EditingBucketClone.PaycheckId == 0) EditingBucketClone.PaycheckId = null;
+        
         if (SelectedBucket != null) {
             UpdateBucketFromClone(SelectedBucket, EditingBucketClone);
             _budgetService.UpsertBucket(SelectedBucket);
@@ -801,7 +811,7 @@ public class MainViewModel : ViewModelBase {
         target.Name = clone.Name;
         target.ExpectedAmount = clone.ExpectedAmount;
         target.AccountId = clone.AccountId == 0 ? null : clone.AccountId;
-        target.PaycheckId = clone.PaycheckId;
+        target.PaycheckId = clone.PaycheckId == 0 ? null : clone.PaycheckId;
     }
 
     private void CancelBucket() {
@@ -1547,6 +1557,10 @@ public class MainViewModel : ViewModelBase {
             foreach (var p in paychecks) p.PropertyChanged += Item_PropertyChanged;
             Paychecks = new ObservableCollection<Paycheck>(paychecks);
 
+            var paychecksWithNone = new List<Paycheck> { new Paycheck { Id = 0, Name = "(None)" } };
+            paychecksWithNone.AddRange(paychecks);
+            PaychecksWithNone = new ObservableCollection<Paycheck>(paychecksWithNone);
+            
             var buckets = _budgetService.GetAllBuckets();
             buckets = buckets.OrderBy(b => b.Name).ToList();
             foreach (var b in buckets) b.PropertyChanged += Item_PropertyChanged;

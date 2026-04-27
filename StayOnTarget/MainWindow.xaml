@@ -674,8 +674,9 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
-                                <Button Content="Delete" Command="{Binding DeleteBucketCommand}" Margin="5" Width="80"
-
+                                <Button Content="Delete" Command="{Binding DeleteBucketCommand}" 
+                                        Margin="5" 
+                                        Width="80"
                                         Background="Red"
                                         Foreground="White">
                                     <Button.Style>
@@ -787,7 +788,7 @@
                                               SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
                                     <Label Grid.Column="2" Grid.Row="0" Content="Paycheck:" />
-                                    <ComboBox Grid.Column="3" Grid.Row="0" ItemsSource="{Binding Paychecks}"
+                                    <ComboBox Grid.Column="3" Grid.Row="0" ItemsSource="{Binding PaychecksWithNone}"
                                               SelectedValue="{Binding EditingBucketClone.PaycheckId}"
                                               SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
                                 </Grid>
