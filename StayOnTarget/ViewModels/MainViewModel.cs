@@ -215,7 +215,7 @@ public class MainViewModel : ViewModelBase {
     public Bill? SelectedBill {
         get => _selectedBill;
         set {
-            if (_selectedBill != value && EditingBillClone != null) {
+            if (_selectedBill != value && IsEditingBill && EditingBillClone != null && EditingBillClone?.Id != value?.Id) {
                 CancelBill();
             }
             if (SetProperty(ref _selectedBill, value)) {
@@ -227,7 +227,7 @@ public class MainViewModel : ViewModelBase {
     public PeriodBill? SelectedPeriodBill {
         get => _selectedPeriodBill;
         set {
-            if (_selectedPeriodBill != value && EditingPeriodBillClone != null) {
+            if (_selectedPeriodBill != value && IsEditingPeriodBill && EditingPeriodBillClone != null && EditingPeriodBillClone?.Id != value?.Id) {
                 CancelPeriodBill();
             }
             if (SetProperty(ref _selectedPeriodBill, value)) {
@@ -239,7 +239,7 @@ public class MainViewModel : ViewModelBase {
     public BudgetBucket? SelectedBucket {
         get => _selectedBucket;
         set {
-            if (_selectedBucket != value && EditingBucketClone != null) {
+            if (_selectedBucket != value && IsEditingBucket && EditingBucketClone != null && EditingBucketClone?.Id != value?.Id) {
                 CancelBucket();
             }
             if (SetProperty(ref _selectedBucket, value)) {
@@ -251,7 +251,7 @@ public class MainViewModel : ViewModelBase {
     public PeriodBucket? SelectedPeriodBucket {
         get => _selectedPeriodBucket;
         set {
-            if (_selectedPeriodBucket != value && EditingPeriodBucketClone != null) {
+            if (_selectedPeriodBucket != value && IsEditingPeriodBucket && EditingPeriodBucketClone != null && EditingPeriodBucketClone?.Id != value?.Id) {
                 CancelPeriodBucket();
             }
             if (SetProperty(ref _selectedPeriodBucket, value)) {
@@ -264,7 +264,7 @@ public class MainViewModel : ViewModelBase {
     public Account? SelectedAccount {
         get => _selectedAccount;
         set {
-            if (_selectedAccount != value && EditingAccountClone != null) {
+            if (_selectedAccount != value && IsEditingAccount && EditingAccountClone != null && EditingAccountClone?.Id != value?.Id) {
                 CancelAccount();
             }
             if (SetProperty(ref _selectedAccount, value)) {
@@ -276,7 +276,7 @@ public class MainViewModel : ViewModelBase {
     public Transaction? SelectedTransaction {
         get => _selectedTransaction;
         set {
-            if (_selectedTransaction != value && EditingTransactionClone != null) {
+            if (_selectedTransaction != value && IsEditingTransaction && EditingTransactionClone != null && EditingTransactionClone?.Id != value?.Id) {
                 CancelTransaction();
             }
             if (SetProperty(ref _selectedTransaction, value)) {
@@ -288,7 +288,7 @@ public class MainViewModel : ViewModelBase {
     public Paycheck? SelectedPaycheck {
         get => _selectedPaycheck;
         set {
-            if (_selectedPaycheck != value && EditingPaycheckClone != null) {
+            if (_selectedPaycheck != value && IsEditingPaycheck && EditingPaycheckClone != null && EditingPaycheckClone?.Id != value?.Id) {
                 CancelPaycheck();
             }
             if (SetProperty(ref _selectedPaycheck, value)) {
