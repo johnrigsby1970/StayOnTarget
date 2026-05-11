@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:StayOnTarget"
         mc:Ignorable="d"
-        Title="ReconciliationWindow" Height="450" Width="600">
+        Title="ReconciliationWindow" Height="450" Width="750">
     <Window.Resources>
         <local:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -44,15 +44,13 @@
                                         Binding="{Binding Date, StringFormat=d}" Width="80" />
                     <DataGridTextColumn Header="Description"
                                         Binding="{Binding Description}" Width="*" />
-                    <DataGridTextColumn Header="Amount"
-                                        Binding="{Binding Amount, StringFormat=C}"
-                                        Width="80" />
+                    
                     <DataGridTextColumn Header="From" Binding="{Binding AccountName}"
                                         Width="100" />
                     <DataGridTextColumn Header="To" Binding="{Binding ToAccountName}"
                                         Width="100" />
-                    <DataGridTextColumn Header="Balance"
-                                        Binding="{Binding RunningBalance, StringFormat=C}"
+                    <DataGridTextColumn Header="Amount"
+                                        Binding="{Binding Amount, StringFormat=C}"
                                         Width="80" />
                     <DataGridTemplateColumn Header="Reconciled" Width="70">
                         <DataGridTemplateColumn.CellTemplate>
@@ -65,6 +63,10 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
+                    
+                    <DataGridTextColumn Header="Balance"
+                                        Binding="{Binding RunningBalance, StringFormat=C}"
+                                        Width="80" />
                 </DataGrid.Columns>
             </DataGrid>
                 <StackPanel Grid.Row="2" Margin="0,5"
