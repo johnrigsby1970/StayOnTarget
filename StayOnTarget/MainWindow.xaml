@@ -548,6 +548,7 @@
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
                                                 </Grid.RowDefinitions>
 
                                                 <Label Grid.Column="0" Grid.Row="0" Content="Date:" />
@@ -555,8 +556,8 @@
                                                             SelectedDate="{Binding EditingTransactionClone.Date}"
                                                             Margin="5" />
 
-                                                <Label Grid.Column="2" Grid.Row="0" Content="Description:" />
-                                                <ComboBox Grid.Column="3" Grid.Row="0"
+                                                <Label Grid.Column="0" Grid.Row="1" Content="Description:" />
+                                                <ComboBox Grid.Column="1" Grid.Row="1"
                                                           ItemsSource="{Binding BillsWithNone}"
                                                           DisplayMemberPath="Name"
                                                           SelectedValuePath="Id"
@@ -566,37 +567,37 @@
                                                           IsTextSearchEnabled="True"
                                                           Margin="5" />
 
-                                                <Label Grid.Column="0" Grid.Row="1" Content="Amount:" />
-                                                <TextBox Grid.Column="1" Grid.Row="1"
+                                                <Label Grid.Column="2" Grid.Row="1" Content="Amount:" />
+                                                <TextBox Grid.Column="3" Grid.Row="1"
                                                          Text="{Binding EditingTransactionClone.Amount, StringFormat={}{0:0.00;-0.00;''}}"
                                                          Margin="5" />
 
-                                                <Label Grid.Column="2" Grid.Row="1" Content="From Account:" />
-                                                <ComboBox Grid.Column="3" Grid.Row="1" x:Name="FromAccountComboBox" ItemsSource="{Binding AccountsWithNone}"
+                                                <Label Grid.Column="0" Grid.Row="3" Content="From Account:" />
+                                                <ComboBox Grid.Column="1" Grid.Row="3" x:Name="FromAccountComboBox" ItemsSource="{Binding AccountsWithNone}"
                                                           SelectedValue="{Binding EditingTransactionClone.AccountId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
-                                                <Label Grid.Column="0" Grid.Row="2" Content="To Account:" />
-                                                <ComboBox Grid.Column="1" Grid.Row="2" x:Name="ToAccountComboBox"
+                                                <Label Grid.Column="2" Grid.Row="3" Content="To Account:" />
+                                                <ComboBox Grid.Column="3" Grid.Row="3" x:Name="ToAccountComboBox"
                                                           ItemsSource="{Binding AccountsWithNone}"
                                                           SelectedValue="{Binding EditingTransactionClone.ToAccountId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
-                                                <Label Grid.Column="0" Grid.Row="3" Content="Bill:" />
-                                                <ComboBox Grid.Column="1" Grid.Row="3"
+                                                <Label Grid.Column="0" Grid.Row="4" Content="Bill:" />
+                                                <ComboBox Grid.Column="1" Grid.Row="4"
                                                           x:Name="BillComboBox" 
                                                           ItemsSource="{Binding BillsWithNone}"
                                                           SelectedValue="{Binding EditingTransactionClone.BillId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
-                                                <Label Grid.Column="2" Grid.Row="3" Content="Bucket:" />
-                                                <ComboBox Grid.Column="3" Grid.Row="3" 
+                                                <Label Grid.Column="2" Grid.Row="4" Content="Bucket:" />
+                                                <ComboBox Grid.Column="3" Grid.Row="4" 
                                                           x:Name="BucketComboBox" 
                                                           ItemsSource="{Binding BucketsWithNone}"
                                                           SelectedValue="{Binding EditingTransactionClone.BucketId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
-                                                <Label Grid.Column="0" Grid.Row="4" Content="Paycheck:">
+                                                <Label Grid.Column="0" Grid.Row="5" Content="Paycheck:">
                                                     <Label.Visibility>
                                                         <MultiBinding
                                                             Converter="{StaticResource PaycheckFieldVisibilityConverter}"
@@ -606,7 +607,7 @@
                                                         </MultiBinding>
                                                     </Label.Visibility>
                                                 </Label>
-                                                <ComboBox Grid.Column="1" Grid.Row="4"
+                                                <ComboBox Grid.Column="1" Grid.Row="5"
                                                           ItemsSource="{Binding Paychecks}"
                                                           SelectedValue="{Binding EditingTransactionClone.PaycheckId}"
                                                           SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5">
@@ -620,7 +621,7 @@
                                                     </ComboBox.Visibility>
                                                 </ComboBox>
 
-                                                <Label Grid.Column="2" Grid.Row="4" Content="Payroll Date:">
+                                                <Label Grid.Column="2" Grid.Row="5" Content="Payroll Date:">
                                                     <Label.Visibility>
                                                         <MultiBinding
                                                             Converter="{StaticResource PaycheckFieldVisibilityConverter}"
@@ -630,7 +631,7 @@
                                                         </MultiBinding>
                                                     </Label.Visibility>
                                                 </Label>
-                                                <DatePicker Grid.Column="3" Grid.Row="4"
+                                                <DatePicker Grid.Column="3" Grid.Row="5"
                                                             SelectedDate="{Binding EditingTransactionClone.PaycheckOccurrenceDate}"
                                                             Margin="5">
                                                     <DatePicker.Visibility>
@@ -643,7 +644,7 @@
                                                     </DatePicker.Visibility>
                                                 </DatePicker>
 
-                                                <StackPanel Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="4"
+                                                <StackPanel Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="4"
                                                             Orientation="Horizontal" Margin="5">
                                                     <CheckBox Content="Principal Only (Mortgage/Loan Extra)"
                                                               IsChecked="{Binding EditingTransactionClone.IsPrincipalOnly}"

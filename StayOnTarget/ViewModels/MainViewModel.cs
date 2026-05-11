@@ -569,7 +569,7 @@ public class MainViewModel : ViewModelBase {
 
     private void Transaction_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not Transaction t) return;
-        _budgetService.UpsertTransaction(t);
+        Task.Run(async () => await _budgetService.UpsertTransactionAsync(t)); // Run async work
         LoadPeriodData();
         CalculateProjections();
     }
@@ -981,7 +981,7 @@ public class MainViewModel : ViewModelBase {
         IsEditingTransaction = true;
     }
 
-    private void SaveTransaction() {
+    private async Task SaveTransaction() {
         if (EditingTransactionClone == null) return;
         
         if (EditingTransactionClone.AccountId == 0) EditingTransactionClone.AccountId = null;
@@ -991,10 +991,10 @@ public class MainViewModel : ViewModelBase {
 
         if (SelectedTransaction != null) {
             UpdateTransactionFromClone(SelectedTransaction, EditingTransactionClone);
-            _budgetService.UpsertTransaction(SelectedTransaction);
+            await _budgetService.UpsertTransactionAsync(SelectedTransaction);
         }
         else {
-            _budgetService.UpsertTransaction(EditingTransactionClone);
+            await _budgetService.UpsertTransactionAsync(EditingTransactionClone);
         }
 
         IsEditingTransaction = false;
@@ -1644,7 +1644,7 @@ public class MainViewModel : ViewModelBase {
         var transactions = _budgetService.GetTransactions(CurrentPeriodDate).ToList();
         transactions = transactions.OrderBy(pb => pb.Date).ToList();
         CurrentPeriodTransactions = new ObservableCollection<Transaction>(transactions);
-        foreach (var t in CurrentPeriodTransactions) t.PropertyChanged += Transaction_PropertyChanged;
+        //foreach (var t in CurrentPeriodTransactions) t.PropertyChanged += Transaction_PropertyChanged;
     }
 
     private void InitializePeriod() {

@@ -213,8 +213,8 @@ public class ReconciliationService {
             else if (transaction.ToAccountId == accountId) {
                 transaction.ToAccountReconciledId = reconciliation.Id;
             }
-
-            _budgetService.UpsertTransaction(transaction);
+            //no dates or amounts are changing.
+            Task.Run(async () => await _budgetService.UpsertTransactionAsync(transaction, false)); // Run async work
         }
     }
 }
