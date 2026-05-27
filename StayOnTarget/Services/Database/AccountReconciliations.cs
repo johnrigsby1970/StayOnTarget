@@ -135,17 +135,17 @@ public partial class BudgetService
         using var conn = _db.GetConnection();
 
         // First, clear any transaction references to this reconciliation
-        conn.ExecuteAsync(@"
+        await conn.ExecuteAsync(@"
             UPDATE Transactions
             SET FromAccountReconciledId = NULL
             WHERE FromAccountReconciledId = @id", new { id });
 
-        conn.ExecuteAsync(@"
+        await conn.ExecuteAsync(@"
             UPDATE Transactions
             SET ToAccountReconciledId = NULL
             WHERE ToAccountReconciledId = @id", new { id });
 
         // Then delete the reconciliation
-        conn.ExecuteAsync("DELETE FROM AccountReconciliations WHERE Id = @id", new { id });
+        await conn.ExecuteAsync("DELETE FROM AccountReconciliations WHERE Id = @id", new { id });
     }
 }

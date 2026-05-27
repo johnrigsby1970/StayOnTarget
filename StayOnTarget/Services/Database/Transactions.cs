@@ -71,90 +71,41 @@ WHERE a.Id=d.Id AND ((t.AccountId=a.Id AND FromAccountReconciledId IS NULL) OR (
     public async Task<bool> UpsertTransactionAsync(Transaction t, bool showConfirmationOfImpactToExistingReconciliations = true) {
         using var conn = _db.GetConnection();
 
-        // Check if transaction date changed to a date that would invalidate reconciliation
         if (t.Id != 0) {
-            List<int> reconciliationsToAccountToIgnore = new List<int>();
-            if(t.ToAccountReconciledId.HasValue) reconciliationsToAccountToIgnore.Add(t.ToAccountReconciledId.Value);
+            var oldTransaction = conn.QueryFirstOrDefault<Transaction>(
+                "SELECT * FROM Transactions WHERE Id = @id", new { id = t.Id });
 
-            List<int> reconciliationsFromAccountToIgnore = new List<int>();
-            if(t.FromAccountReconciledId.HasValue) reconciliationsFromAccountToIgnore.Add(t.FromAccountReconciledId.Value);
+            if (oldTransaction != null && (oldTransaction.Date != t.Date || oldTransaction.Amount != t.Amount)) {
+                // Use the earlier of old/new date: reconciliations from that point forward may be wrong.
+                // Handles all cases: amount-only change (effectiveDate = oldDate), date moving forward
+                // (effectiveDate = oldDate), and date moving backward (effectiveDate = newDate).
+                var effectiveDate = oldTransaction.Date <= t.Date ? oldTransaction.Date : t.Date;
 
+                var fromImpacted = t.AccountId.HasValue &&
+                    WillInvalidateReconciliationsAfterDate(t.AccountId.Value, effectiveDate);
+                var toImpacted = t.ToAccountId.HasValue &&
+                    WillInvalidateReconciliationsAfterDate(t.ToAccountId.Value, effectiveDate);
 
-            var willInvalidateFromRecociliations = t.AccountId.HasValue && WillInvalidateReconciliationsAfterDate(t.AccountId.Value, t.Date, reconciliationsFromAccountToIgnore);
-            var willInvalidateToReconciliations = t.ToAccountId.HasValue && WillInvalidateReconciliationsAfterDate(t.ToAccountId.Value, t.Date, reconciliationsToAccountToIgnore); 
-            
-            if (t.ToAccountReconciledId > 0 || t.FromAccountReconciledId > 0 ||
-                willInvalidateFromRecociliations || willInvalidateToReconciliations) {
-                
-                MessageBoxResult result = showConfirmationOfImpactToExistingReconciliations? MessageBox.Show(
-                    "The change in date will invalidate reconciliations for this account. Are you sure you want to proceed?",
-                    "Confirmation",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question) : MessageBoxResult.Yes;
+                if (fromImpacted || toImpacted) {
+                    MessageBoxResult result = showConfirmationOfImpactToExistingReconciliations
+                        ? MessageBox.Show(
+                            "This change will invalidate reconciliations for this account. Are you sure you want to proceed?",
+                            "Confirmation",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Question)
+                        : MessageBoxResult.Yes;
 
-                if (result == MessageBoxResult.Yes) {
-                    // Perform the action
-                    var oldTransaction = conn.QueryFirstOrDefault<Transaction>(
-                        "SELECT * FROM Transactions WHERE Id = @id", new { id = t.Id });
+                    if (result != MessageBoxResult.Yes) return false;
 
-                    if (oldTransaction != null &&
-                        (oldTransaction.Date != t.Date || oldTransaction.Amount != t.Amount)) {
-                        //Date or amount of this transaction is changing
-                        // Check if this affects reconciliations for AccountId
-                        if (t.AccountId.HasValue && t.FromAccountReconciledId.HasValue) {
-                            var recon = conn.QueryFirstOrDefault<AccountReconciliation>(
-                                "SELECT * FROM AccountReconciliations WHERE Id = @id",
-                                new { id = t.FromAccountReconciledId.Value });
-
-                            //was this transaction within the reconciliation period and is it now outside?
-                            if (oldTransaction.Amount != t.Amount) {
-                                await InvalidateReconciliationsAfterDate(t.AccountId.Value, t.Date);
-                                t.FromAccountReconciledId = null;
-                            }
-                            else {
-                                if (recon != null && oldTransaction.Date != t.Date &&
-                                    oldTransaction.Date <= recon.ReconciledAsOfDate &&
-                                    t.Date > recon.ReconciledAsOfDate) {
-                                    // Invalidate this reconciliation
-                                    await InvalidateReconciliationsAfterDate(t.AccountId.Value, t.Date);
-                                    t.FromAccountReconciledId = null;
-                                }
-                            }
-                        }
-
-                        // Check if this affects reconciliations for ToAccountId
-                        if (t.ToAccountId.HasValue && t.ToAccountReconciledId.HasValue) {
-                            var recon = conn.QueryFirstOrDefault<AccountReconciliation>(
-                                "SELECT * FROM AccountReconciliations WHERE Id = @id",
-                                new { id = t.ToAccountReconciledId.Value });
-
-                            //was this transaction within the reconciliation period and is it now outside?
-                            if (oldTransaction.Amount != t.Amount) {
-                                await InvalidateReconciliationsAfterDate(t.ToAccountId.Value, t.Date);
-                                t.FromAccountReconciledId = null;
-                            }
-                            else {
-                                if (recon != null && oldTransaction.Date <= recon.ReconciledAsOfDate &&
-                                    t.Date > recon.ReconciledAsOfDate) {
-                                    // Invalidate this reconciliation
-                                    await InvalidateReconciliationsAfterDate(t.ToAccountId.Value, t.Date);
-                                    t.ToAccountReconciledId = null;
-                                }
-                            }
-                        }
-
-                        if (willInvalidateFromRecociliations) {
-                            await InvalidateReconciliationsAfterDate(t.AccountId.Value, t.Date);
-                        }
-                        
-                        if (willInvalidateToReconciliations) {
-                            await InvalidateReconciliationsAfterDate(t.ToAccountId.Value, t.Date);
-                        }
+                    if (fromImpacted) {
+                        await InvalidateReconciliationsAfterDate(t.AccountId.Value, effectiveDate);
+                        t.FromAccountReconciledId = null;
                     }
-                }
-                else {
-                    // Do nothing or handle cancellation
-                    return false;
+
+                    if (toImpacted) {
+                        await InvalidateReconciliationsAfterDate(t.ToAccountId.Value, effectiveDate);
+                        t.ToAccountReconciledId = null;
+                    }
                 }
             }
         }
