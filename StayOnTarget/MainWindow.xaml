@@ -1397,7 +1397,13 @@
                         </StackPanel>
                         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
                             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
-                                <Label Content="Target date:" Margin="5,0,0,5" />
+                                <Label Content="Start:" Margin="5,0,0,5" />
+                                <DatePicker SelectedDate="{Binding ProjectionStartDate, 
+                           Mode=TwoWay, 
+                           UpdateSourceTrigger=PropertyChanged, 
+                           TargetNullValue=''}"
+                                            Margin="5,0,0,5" />
+                                <Label Content="End:" Margin="5,0,0,5" />
                                 <DatePicker DisplayDateStart="{x:Static System:DateTime.Today}"
                                             SelectedDate="{Binding ProjectionEndDate}"
                                             Margin="5,0,0,5" />
@@ -1405,23 +1411,23 @@
                             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center"  VerticalAlignment="Center" Margin="5,0,0,5">
                                 <TextBlock Margin="5,0,0,5">
                                     <Hyperlink Command="{Binding SetOneYearCommand}">
-                                        1 year
+                                        1 yr
                                     </Hyperlink>
                                 </TextBlock>
                                 <TextBlock Margin="5,0,0,5">
                                     <Hyperlink Command="{Binding SetFiveYearCommand}">
-                                        5 year
+                                        5 yr
                                     </Hyperlink>
                                 </TextBlock>
 
                                 <TextBlock Margin="5,0,0,5">
                                     <Hyperlink Command="{Binding SetTenYearCommand}">
-                                        10 year
+                                        10 yr
                                     </Hyperlink>
                                 </TextBlock>
                                 <TextBlock Margin="5,0,0,5">
                                     <Hyperlink Command="{Binding SetThirtyYearCommand}">
-                                        30 year
+                                        30 yr
                                     </Hyperlink>
                                 </TextBlock>
 

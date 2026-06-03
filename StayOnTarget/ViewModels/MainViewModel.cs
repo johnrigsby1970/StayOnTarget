@@ -54,6 +54,7 @@ public class MainViewModel : ViewModelBase {
     private bool _showReconciled;
     private string _toggleReconciliationText = "Show Reconciled";
     private DateTime _projectionEndDate = DateTime.Today.AddYears(1);
+    private DateTime? _projectionStartDate = null;
     #region Properties
 
     public bool IsCalculatingProjections => _isCalculatingProjections;
@@ -197,6 +198,15 @@ public class MainViewModel : ViewModelBase {
         get => _projectionEndDate;
         set {
             if (SetProperty(ref _projectionEndDate, value)) {
+                CalculateProjections();
+            }
+        }
+    }
+    
+    public DateTime? ProjectionStartDate {
+        get => _projectionStartDate;
+        set {
+            if (SetProperty(ref _projectionStartDate, value)) {
                 CalculateProjections();
             }
         }
@@ -1370,6 +1380,7 @@ public class MainViewModel : ViewModelBase {
             var reconciliations = !ShowReconciled ? _budgetService.GetAllAccountReconciliations() : null;
 
             var start = CurrentPeriodDate == DateTime.MinValue ? DateTime.Today : CurrentPeriodDate;
+            if(ProjectionStartDate.HasValue) start = ProjectionStartDate.Value;
             var end = ProjectionEndDate;
             if(end < start) end = start.AddYears(1);
             // start = new DateTime(2026, 2, 19);
