@@ -8,6 +8,7 @@ public class PeriodBill : ViewModelBase
     private DateTime _periodDate; // Usually the paycheck date this period starts
     private DateTime _dueDate;
     private decimal _actualAmount;
+    private decimal _transactionAmount;
     private bool _isPaid;
 
     public int Id { get; set; }
@@ -35,6 +36,12 @@ public class PeriodBill : ViewModelBase
     {
         get => _actualAmount;
         set => SetProperty(ref _actualAmount, value);
+    }
+
+    public decimal TransactionAmount
+    {
+        get => _transactionAmount;
+        set => SetProperty(ref _transactionAmount, value);
     }
 
     public bool IsPaid

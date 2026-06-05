@@ -7,6 +7,7 @@ public class PeriodBucket : ViewModelBase
     private int _bucketId;
     private DateTime _periodDate;
     private decimal _actualAmount;
+    private decimal _transactionAmount;
     private bool _isPaid;
 
     public int Id { get; set; }
@@ -28,6 +29,12 @@ public class PeriodBucket : ViewModelBase
     {
         get => _actualAmount;
         set => SetProperty(ref _actualAmount, value);
+    }
+
+    public decimal TransactionAmount
+    {
+        get => _transactionAmount;
+        set => SetProperty(ref _transactionAmount, value);
     }
 
     public bool IsPaid

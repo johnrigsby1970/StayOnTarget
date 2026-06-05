@@ -234,9 +234,12 @@
                                                 <DataGridTextColumn Header="Due Date"
                                                                     Binding="{Binding DueDate, StringFormat=d}"
                                                                     IsReadOnly="False" Width="80" />
-                                                <DataGridTextColumn Header="Actual Amount"
+                                                <DataGridTextColumn Header="Expected Amount"
                                                                     Binding="{Binding ActualAmount, StringFormat=C}"
                                                                     Width="100" />
+                                                 <DataGridTextColumn Header="Actual" 
+                                                                     Binding="{Binding TransactionAmount, StringFormat=C}" 
+                                                                     IsReadOnly="True" Width="100" /> 
                                                 <!-- <DataGridTemplateColumn Width="80"> -->
                                                 <!--     <DataGridTemplateColumn.CellTemplate> -->
                                                 <!--         <DataTemplate> -->
@@ -354,9 +357,12 @@
                                                 <!--                         Width="40" /> -->
                                                 <DataGridTextColumn Header="Envelope" Binding="{Binding BucketName}"
                                                                     IsReadOnly="True" Width="*" />
-                                                <DataGridTextColumn Header="Actual Amount"
+                                                <DataGridTextColumn Header="Expected Amount"
                                                                     Binding="{Binding ActualAmount, StringFormat=C}"
                                                                     Width="100" />
+                                                <DataGridTextColumn Header="Actual"
+                                                                    Binding="{Binding TransactionAmount, StringFormat=C}"
+                                                                    IsReadOnly="True" Width="100" />
                                                 <!-- <DataGridTemplateColumn Width="80"> -->
                                                 <!--     <DataGridTemplateColumn.CellTemplate> -->
                                                 <!--         <DataTemplate> -->

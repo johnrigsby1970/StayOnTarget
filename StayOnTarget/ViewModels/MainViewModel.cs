@@ -565,6 +565,7 @@ public class MainViewModel : ViewModelBase {
 
     private void PeriodBill_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBill pb) return;
+        if (e.PropertyName == nameof(PeriodBill.TransactionAmount)) return;
         _budgetService.UpsertPeriodBill(pb);
         LoadPeriodData();
         CalculateProjections();
@@ -572,6 +573,7 @@ public class MainViewModel : ViewModelBase {
 
     private void PeriodBucket_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBucket pb) return;
+        if (e.PropertyName == nameof(PeriodBucket.TransactionAmount)) return;
         _budgetService.UpsertPeriodBucket(pb);
         LoadPeriodData();
         CalculateProjections();
@@ -1602,6 +1604,32 @@ public class MainViewModel : ViewModelBase {
         LoadPeriodBills();
         LoadPeriodBuckets();
         LoadPeriodTransactions();
+        ApplyTransactionAmounts();
+    }
+
+    private void ApplyTransactionAmounts() {
+        foreach (var pb in CurrentPeriodBills) {
+            try{
+            pb.TransactionAmount = CurrentPeriodTransactions
+                .Where(t => t.BillId == pb.BillId)
+                .Sum(t => t.Amount);
+            }
+            catch (Exception e) {
+                var s = "";
+            }
+        }
+
+
+        foreach (var pb in CurrentPeriodBuckets) {
+            try {
+                pb.TransactionAmount = CurrentPeriodTransactions
+                    .Where(t => t.BucketId == pb.BucketId)
+                    .Sum(t => t.Amount);
+            }
+            catch (Exception e) {
+                var s = "";
+            }
+        }
     }
 
     private void LoadPeriodBills() {
