@@ -566,6 +566,7 @@ public class MainViewModel : ViewModelBase {
     private void PeriodBill_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBill pb) return;
         if (e.PropertyName == nameof(PeriodBill.TransactionAmount)) return;
+        if (e.PropertyName == nameof(PeriodBill.HasActualAmount)) return;
         _budgetService.UpsertPeriodBill(pb);
         LoadPeriodData();
         CalculateProjections();
@@ -574,6 +575,7 @@ public class MainViewModel : ViewModelBase {
     private void PeriodBucket_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBucket pb) return;
         if (e.PropertyName == nameof(PeriodBucket.TransactionAmount)) return;
+        if (e.PropertyName == nameof(PeriodBill.HasActualAmount)) return;
         _budgetService.UpsertPeriodBucket(pb);
         LoadPeriodData();
         CalculateProjections();

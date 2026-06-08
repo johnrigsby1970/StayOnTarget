@@ -41,8 +41,14 @@ public class PeriodBill : ViewModelBase
     public decimal TransactionAmount
     {
         get => _transactionAmount;
-        set => SetProperty(ref _transactionAmount, value);
+        set
+        {
+            SetProperty(ref _transactionAmount, value);
+            OnPropertyChanged(nameof(HasActualAmount));
+        }
     }
+
+    public bool HasActualAmount => _transactionAmount != 0;
 
     public bool IsPaid
     {

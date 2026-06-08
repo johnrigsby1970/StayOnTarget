@@ -222,6 +222,15 @@
                                                   SelectedItem="{Binding SelectedPeriodBill}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False">
+                                            <DataGrid.RowStyle>
+                                                <Style TargetType="{x:Type DataGridRow}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasActualAmount}" Value="True">
+                                                            <Setter Property="Background" Value="#CCFFCC" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </DataGrid.RowStyle>
                                             <DataGrid.InputBindings>
                                                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditPeriodBillCommand}" />
                                             </DataGrid.InputBindings>
@@ -348,6 +357,15 @@
                                                   SelectedItem="{Binding SelectedPeriodBucket}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False">
+                                            <DataGrid.RowStyle>
+                                                <Style TargetType="{x:Type DataGridRow}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasActualAmount}" Value="True">
+                                                            <Setter Property="Background" Value="#CCFFCC" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </DataGrid.RowStyle>
                                             <DataGrid.InputBindings>
                                                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditPeriodBucketCommand}" />
                                             </DataGrid.InputBindings>
