@@ -111,6 +111,7 @@ public static class ProjectionEngineExtensions {
         List<ProjectionGridItem> sortedEvents,
         DateTime current
     ) {
+        if (allValidReconciliations.Count == 0) return;
         foreach (var acc in accounts) {
             var effectiveBalanceDate = acc.BalanceAsOf;
             var effectiveBalance = acc.Balance;
@@ -610,7 +611,12 @@ public static class ProjectionEngineExtensions {
         DateTime endDate) {
         var primaryChecking = accounts.FirstOrDefault(a => a.Type == AccountType.Checking)?.Id;
 
+        //bills are just like envelopes, except there is only one. We don't want to account for bills from
+        //the past in a project, or bills that have been paid.
         foreach (var bill in bills) {
+            if (bill.ExpectedAmount == 500) {
+                var x = "";
+            }
             var nextDue = bill.NextDueDate ?? current;
             if (bill.NextDueDate == null) {
                 nextDue = new DateTime(current.Year, current.Month,
@@ -635,21 +641,25 @@ public static class ProjectionEngineExtensions {
                     //bill has been paid by a logged transaction. We will use the logged transaction instead of the expected bill or paid period bill entry.
                     var amountToUse = (pb != null) ? pb.ActualAmount : bill.ExpectedAmount;
                     var dueDate = (pb != null) ? pb.DueDate : nextDue;
-                    var paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
+                    if (dueDate >= DateTime.Today) {
+                        var paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
 
-                    var fromAccId = bill.AccountId ?? primaryChecking;
-                    if (amountToUse != 0) {
-                        if (bill.ToAccountId.HasValue) {
-                            events.Add(new ProjectionGridItem(dueDate, amountToUse,
-                                $"Transfer: {bill.Name}{paidSuffix}", fromAccId,
-                                bill.ToAccountId.Value, null, null, null, ProjectionEngine.ProjectionEventType.Transfer,
-                                false, false,
-                                false, false));
-                        }
-                        else {
-                            events.Add(new ProjectionGridItem(dueDate, -amountToUse, $"Bill: {bill.Name}{paidSuffix}",
-                                fromAccId, null, null, null,
-                                null, ProjectionEngine.ProjectionEventType.Bill, false, false, false, false));
+                        var fromAccId = bill.AccountId ?? primaryChecking;
+                        if (amountToUse != 0) {
+                            if (bill.ToAccountId.HasValue) {
+                                events.Add(new ProjectionGridItem(dueDate, amountToUse,
+                                    $"Transfer: {bill.Name}{paidSuffix}", fromAccId,
+                                    bill.ToAccountId.Value, null, null, null,
+                                    ProjectionEngine.ProjectionEventType.Transfer,
+                                    false, false,
+                                    false, false));
+                            }
+                            else {
+                                events.Add(new ProjectionGridItem(dueDate, -amountToUse,
+                                    $"Bill: {bill.Name}{paidSuffix}",
+                                    fromAccId, null, null, null,
+                                    null, ProjectionEngine.ProjectionEventType.Bill, false, false, false, false));
+                            }
                         }
                     }
                 }

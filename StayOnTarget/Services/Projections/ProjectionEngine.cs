@@ -226,7 +226,7 @@ public class ProjectionEngine : IProjectionEngine {
         }
 
         var primaryChecking = accounts.FirstOrDefault(a => a.Type == AccountType.Checking)?.Id;
-
+        futureEvents = futureEvents.OrderBy(e => e.Date).ToList();
         foreach (var e in futureEvents) {
 
             ProjectionEngineExtensions.AccountForGrowthInAccountsDuringProjectedEvents(
@@ -293,7 +293,9 @@ public class ProjectionEngine : IProjectionEngine {
                     currentEventAmount = -Math.Max(0, projectedAmount - spent);
                 }
             }
-
+            if ((e.FromAccountId != null && e.FromAccountId.Value == 1) || (e.ToAccountId != null && e.ToAccountId.Value == 1)) {
+                var s = "";
+            }
             // Handle ToAccountId balance update
             if (e.ToAccountId.HasValue && accountBalances.ContainsKey(e.ToAccountId.Value)) {
                 var toAcc = accounts.FirstOrDefault(a => a.Id == e.ToAccountId.Value);
@@ -335,6 +337,10 @@ public class ProjectionEngine : IProjectionEngine {
                 else {
                     accountBalances[e.ToAccountId.Value] += amountChange;
                 }
+                
+                if ((e.FromAccountId != null && e.FromAccountId.Value == 1) || (e.ToAccountId != null && e.ToAccountId.Value == 1)) {
+                    var s = amountChange;
+                }
             }
 
             // Handle FromAccountId balance update
@@ -349,6 +355,10 @@ public class ProjectionEngine : IProjectionEngine {
                 }
                 else {
                     accountBalances[effectiveFromAccountId.Value] -= amountChange;
+                }
+                
+                if ((e.FromAccountId != null && e.FromAccountId.Value == 1) || (e.ToAccountId != null && e.ToAccountId.Value == 1)) {
+                    var s = amountChange;
                 }
             }
 
