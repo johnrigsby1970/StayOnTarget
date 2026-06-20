@@ -165,6 +165,7 @@ public class DatabaseContext
             CREATE TABLE IF NOT EXISTS Transactions (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Description TEXT,
+                Memo TEXT,
                 Amount DECIMAL NOT NULL,
                 Date TEXT NOT NULL,
                 AccountId INTEGER,
@@ -221,21 +222,21 @@ public class DatabaseContext
             );
         ");
   
-        // var columnExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='BillId'");
-        //
-        // if (columnExists == 0)
-        // {
-        //     // If the table exists but the column doesn't, add it. 
-        //     // We check if table exists first.
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Transactions ADD COLUMN BillId INTEGER REFERENCES Bills(Id)");
-        //     }
-        // }
+        var columnExists = connection.ExecuteScalar<int>(@"
+            SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='Memo'");
+        
+        if (columnExists == 0)
+        {
+            // If the table exists but the column doesn't, add it. 
+            // We check if table exists first.
+            var tableExists = connection.ExecuteScalar<int>(@"
+                SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
+            
+            if (tableExists > 0)
+            {
+                connection.Execute("ALTER TABLE Transactions ADD COLUMN Memo Text");
+            }
+        }
         
         // // Check if BalanceAsOf exists in Accounts table
         // var balanceAsOfExists = connection.ExecuteScalar<int>(@"

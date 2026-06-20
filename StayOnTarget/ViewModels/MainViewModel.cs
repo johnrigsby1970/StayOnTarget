@@ -968,7 +968,7 @@ public class MainViewModel : ViewModelBase {
 
     private void AddTransaction() {
         EditingTransactionClone = new Transaction
-            { Description = "", Amount = 0, Date = DateTime.Today, PeriodDate = CurrentPeriodDate };
+            { Description = "", Memo = "", Amount = 0, Date = DateTime.Today, PeriodDate = CurrentPeriodDate };
         SelectedTransaction = null;
         IsEditingTransaction = true;
     }
@@ -979,6 +979,7 @@ public class MainViewModel : ViewModelBase {
         EditingTransactionClone = new Transaction {
             Id = SelectedTransaction.Id,
             Description = SelectedTransaction.Description,
+            Memo = SelectedTransaction.Memo,
             Amount = SelectedTransaction.Amount,
             Date = SelectedTransaction.Date,
             AccountId = SelectedTransaction.AccountId,
@@ -1020,6 +1021,7 @@ public class MainViewModel : ViewModelBase {
 
     private void UpdateTransactionFromClone(Transaction target, Transaction clone) {
         target.Description = clone.Description;
+        target.Memo = clone.Memo;
         target.Amount = clone.Amount;
         target.Date = clone.Date;
         target.AccountId = clone.AccountId == 0 ? null : clone.AccountId;

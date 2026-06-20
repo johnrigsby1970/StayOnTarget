@@ -113,6 +113,7 @@ WHERE a.Id=d.Id AND ((t.AccountId=a.Id AND FromAccountReconciledId IS NULL) OR (
         var param = new {
             t.Id,
             t.Description,
+            t.Memo,
             t.Amount,
             Date = t.Date.ToString("yyyy-MM-dd"),
             t.AccountId,
@@ -129,12 +130,12 @@ WHERE a.Id=d.Id AND ((t.AccountId=a.Id AND FromAccountReconciledId IS NULL) OR (
         };
         if (t.Id == 0) {
             conn.Execute(
-                @"INSERT INTO Transactions (Description, Amount, Date, AccountId, ToAccountId, BillId, BucketId, PeriodDate, IsPrincipalOnly, FitId, PaycheckId, PaycheckOccurrenceDate, FromAccountReconciledId, ToAccountReconciledId)
+                @"INSERT INTO Transactions (Description, Memo, Amount, Date, AccountId, ToAccountId, BillId, BucketId, PeriodDate, IsPrincipalOnly, FitId, PaycheckId, PaycheckOccurrenceDate, FromAccountReconciledId, ToAccountReconciledId)
                            VALUES (@Description, @Amount, @Date, @AccountId, @ToAccountId, @BillId, @BucketId, @PeriodDate, @IsPrincipalOnly, @FitId, @PaycheckId, @PaycheckOccurrenceDate, @FromAccountReconciledId, @ToAccountReconciledId)",
                 param);
         }
         else {
-            conn.Execute(@"UPDATE Transactions SET Description=@Description, Amount=@Amount, Date=@Date,
+            conn.Execute(@"UPDATE Transactions SET Description=@Description, Memo=@Memo, Amount=@Amount, Date=@Date,
                            AccountId=@AccountId, ToAccountId=@ToAccountId, BillId=@BillId, BucketId=@BucketId, PeriodDate=@PeriodDate, IsPrincipalOnly=@IsPrincipalOnly, PaycheckId=@PaycheckId, PaycheckOccurrenceDate=@PaycheckOccurrenceDate, FromAccountReconciledId=@FromAccountReconciledId, ToAccountReconciledId=@ToAccountReconciledId WHERE Id=@Id",
                 param);
         }
