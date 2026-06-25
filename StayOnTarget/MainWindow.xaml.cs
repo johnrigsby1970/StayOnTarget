@@ -63,7 +63,8 @@ public partial class MainWindow : Window {
                     ConverterParameter = accountName,
                     StringFormat = "C"
                 },
-                Width = 90
+                Width = 90,
+                IsReadOnly = true
             };
             ProjectionGrid.Columns.Add(column);
         }
