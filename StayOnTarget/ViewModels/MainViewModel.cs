@@ -55,6 +55,7 @@ public class MainViewModel : ViewModelBase {
     private string _toggleReconciliationText = "Show Reconciled";
     private DateTime _projectionEndDate = DateTime.Today.AddYears(1);
     private DateTime? _projectionStartDate = null;
+
     #region Properties
 
     public bool IsCalculatingProjections => _isCalculatingProjections;
@@ -63,7 +64,7 @@ public class MainViewModel : ViewModelBase {
         get => _isBucketDescriptionExpanded;
         set => SetProperty(ref _isBucketDescriptionExpanded, value);
     }
-    
+
     public bool IsBillDescriptionExpanded {
         get => _isBillDescriptionExpanded;
         set => SetProperty(ref _isBillDescriptionExpanded, value);
@@ -90,12 +91,12 @@ public class MainViewModel : ViewModelBase {
         get => _paychecks;
         set => SetProperty(ref _paychecks, value);
     }
-    
+
     public ObservableCollection<Paycheck> PaychecksWithNone {
         get => _paychecksWithNone;
         set => SetProperty(ref _paychecksWithNone, value);
     }
-    
+
     public ObservableCollection<Account> Accounts {
         get => _accounts;
         set => SetProperty(ref _accounts, value);
@@ -147,7 +148,7 @@ public class MainViewModel : ViewModelBase {
         get => _toggleReconciliationText;
         set => SetProperty(ref _toggleReconciliationText, value);
     }
-    
+
     public bool ShowReconciled {
         get => _showReconciled;
         set {
@@ -156,7 +157,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public bool ShowByMonth {
         get => _showByMonth;
         set {
@@ -202,7 +203,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public DateTime? ProjectionStartDate {
         get => _projectionStartDate;
         set {
@@ -211,7 +212,7 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public DateTime CurrentPeriodDate {
         get => _currentPeriodDate;
         set {
@@ -221,13 +222,15 @@ public class MainViewModel : ViewModelBase {
             }
         }
     }
-    
+
     public Bill? SelectedBill {
         get => _selectedBill;
         set {
-            if (_selectedBill != value && IsEditingBill && EditingBillClone != null && EditingBillClone?.Id != value?.Id) {
+            if (_selectedBill != value && IsEditingBill && EditingBillClone != null &&
+                EditingBillClone?.Id != value?.Id) {
                 CancelBill();
             }
+
             if (SetProperty(ref _selectedBill, value)) {
                 OnPropertyChanged(nameof(CanEditBill));
             }
@@ -237,9 +240,11 @@ public class MainViewModel : ViewModelBase {
     public PeriodBill? SelectedPeriodBill {
         get => _selectedPeriodBill;
         set {
-            if (_selectedPeriodBill != value && IsEditingPeriodBill && EditingPeriodBillClone != null && EditingPeriodBillClone?.Id != value?.Id) {
+            if (_selectedPeriodBill != value && IsEditingPeriodBill && EditingPeriodBillClone != null &&
+                EditingPeriodBillClone?.Id != value?.Id) {
                 CancelPeriodBill();
             }
+
             if (SetProperty(ref _selectedPeriodBill, value)) {
                 OnPropertyChanged(nameof(CanEditPeriodBill));
             }
@@ -249,9 +254,11 @@ public class MainViewModel : ViewModelBase {
     public BudgetBucket? SelectedBucket {
         get => _selectedBucket;
         set {
-            if (_selectedBucket != value && IsEditingBucket && EditingBucketClone != null && EditingBucketClone?.Id != value?.Id) {
+            if (_selectedBucket != value && IsEditingBucket && EditingBucketClone != null &&
+                EditingBucketClone?.Id != value?.Id) {
                 CancelBucket();
             }
+
             if (SetProperty(ref _selectedBucket, value)) {
                 OnPropertyChanged(nameof(CanEditBucket));
             }
@@ -261,9 +268,11 @@ public class MainViewModel : ViewModelBase {
     public PeriodBucket? SelectedPeriodBucket {
         get => _selectedPeriodBucket;
         set {
-            if (_selectedPeriodBucket != value && IsEditingPeriodBucket && EditingPeriodBucketClone != null && EditingPeriodBucketClone?.Id != value?.Id) {
+            if (_selectedPeriodBucket != value && IsEditingPeriodBucket && EditingPeriodBucketClone != null &&
+                EditingPeriodBucketClone?.Id != value?.Id) {
                 CancelPeriodBucket();
             }
+
             if (SetProperty(ref _selectedPeriodBucket, value)) {
                 OnPropertyChanged(nameof(CanEditPeriodBucket));
             }
@@ -274,9 +283,11 @@ public class MainViewModel : ViewModelBase {
     public Account? SelectedAccount {
         get => _selectedAccount;
         set {
-            if (_selectedAccount != value && IsEditingAccount && EditingAccountClone != null && EditingAccountClone?.Id != value?.Id) {
+            if (_selectedAccount != value && IsEditingAccount && EditingAccountClone != null &&
+                EditingAccountClone?.Id != value?.Id) {
                 CancelAccount();
             }
+
             if (SetProperty(ref _selectedAccount, value)) {
                 OnPropertyChanged(nameof(CanEditAccount));
             }
@@ -286,9 +297,11 @@ public class MainViewModel : ViewModelBase {
     public Transaction? SelectedTransaction {
         get => _selectedTransaction;
         set {
-            if (_selectedTransaction != value && IsEditingTransaction && EditingTransactionClone != null && EditingTransactionClone?.Id != value?.Id) {
+            if (_selectedTransaction != value && IsEditingTransaction && EditingTransactionClone != null &&
+                EditingTransactionClone?.Id != value?.Id) {
                 CancelTransaction();
             }
+
             if (SetProperty(ref _selectedTransaction, value)) {
                 OnPropertyChanged(nameof(CanEditTransaction));
             }
@@ -298,9 +311,11 @@ public class MainViewModel : ViewModelBase {
     public Paycheck? SelectedPaycheck {
         get => _selectedPaycheck;
         set {
-            if (_selectedPaycheck != value && IsEditingPaycheck && EditingPaycheckClone != null && EditingPaycheckClone?.Id != value?.Id) {
+            if (_selectedPaycheck != value && IsEditingPaycheck && EditingPaycheckClone != null &&
+                EditingPaycheckClone?.Id != value?.Id) {
                 CancelPaycheck();
             }
+
             if (SetProperty(ref _selectedPaycheck, value)) {
                 OnPropertyChanged(nameof(CanEditPaycheck));
             }
@@ -438,7 +453,7 @@ public class MainViewModel : ViewModelBase {
     }
 
     #endregion
-    
+
     #region Commands
 
     public ICommand AddBillCommand => new RelayCommand(_ => AddBill(), _ => IsNotEditingBill);
@@ -520,22 +535,25 @@ public class MainViewModel : ViewModelBase {
     public ICommand SetFiveYearCommand => new RelayCommand(_ => SetProjectionEndDate(5));
 
     public ICommand SetTenYearCommand => new RelayCommand(_ => SetProjectionEndDate(10));
-    
-    public ICommand SetThirtyYearCommand => new RelayCommand(_ => SetProjectionEndDate(30));
-    public ICommand ToggleBucketDescriptionCommand => new RelayCommand(_ => IsBucketDescriptionExpanded = !IsBucketDescriptionExpanded);
-    public ICommand ToggleBillDescriptionCommand => new RelayCommand(_ => IsBillDescriptionExpanded = !IsBillDescriptionExpanded);
 
-    private void SetProjectionEndDate(int years)
-    {
+    public ICommand SetThirtyYearCommand => new RelayCommand(_ => SetProjectionEndDate(30));
+
+    public ICommand ToggleBucketDescriptionCommand =>
+        new RelayCommand(_ => IsBucketDescriptionExpanded = !IsBucketDescriptionExpanded);
+
+    public ICommand ToggleBillDescriptionCommand =>
+        new RelayCommand(_ => IsBillDescriptionExpanded = !IsBillDescriptionExpanded);
+
+    private void SetProjectionEndDate(int years) {
         ProjectionEndDate = DateTime.Now.AddYears(years);
     }
-    
+
     #endregion
 
     private bool _isLoadingData;
-    
+
     #region Events
-    
+
     private void Item_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (_isLoadingData) return;
         switch (sender) {
@@ -792,8 +810,8 @@ public class MainViewModel : ViewModelBase {
         CancelBucket();
         if (SelectedBucket == null) return;
         EditingBucketClone = new BudgetBucket {
-            Id = SelectedBucket.Id, 
-            Name = SelectedBucket.Name, 
+            Id = SelectedBucket.Id,
+            Name = SelectedBucket.Name,
             ExpectedAmount = SelectedBucket.ExpectedAmount,
             AccountId = SelectedBucket.AccountId,
             PaycheckId = SelectedBucket.PaycheckId
@@ -806,7 +824,7 @@ public class MainViewModel : ViewModelBase {
 
         if (EditingBucketClone.AccountId == 0) EditingBucketClone.AccountId = null;
         if (EditingBucketClone.PaycheckId == 0) EditingBucketClone.PaycheckId = null;
-        
+
         if (SelectedBucket != null) {
             UpdateBucketFromClone(SelectedBucket, EditingBucketClone);
             _budgetService.UpsertBucket(SelectedBucket);
@@ -967,8 +985,11 @@ public class MainViewModel : ViewModelBase {
     #region Transaction CRUD
 
     private void AddTransaction() {
-        EditingTransactionClone = new Transaction
-            { Description = "", Memo = "", Amount = 0, Date = DateTime.Today, PeriodDate = CurrentPeriodDate };
+        var guid = Guid.NewGuid();
+        EditingTransactionClone = new Transaction {
+            Description = "", Memo = "", Amount = 0, TransactionDate = DateTime.Today, PeriodDate = CurrentPeriodDate,
+            FitId = guid
+        };
         SelectedTransaction = null;
         IsEditingTransaction = true;
     }
@@ -981,7 +1002,7 @@ public class MainViewModel : ViewModelBase {
             Description = SelectedTransaction.Description,
             Memo = SelectedTransaction.Memo,
             Amount = SelectedTransaction.Amount,
-            Date = SelectedTransaction.Date,
+            TransactionDate = SelectedTransaction.TransactionDate,
             AccountId = SelectedTransaction.AccountId,
             ToAccountId = SelectedTransaction.ToAccountId,
             BucketId = SelectedTransaction.BucketId,
@@ -991,14 +1012,18 @@ public class MainViewModel : ViewModelBase {
             PaycheckId = SelectedTransaction.PaycheckId,
             BillId = SelectedTransaction.BillId,
             BillName = SelectedTransaction.BillName,
-            PaycheckOccurrenceDate = SelectedTransaction.PaycheckOccurrenceDate
+            PaycheckOccurrenceDate = SelectedTransaction.PaycheckOccurrenceDate,
+            FitId = SelectedTransaction.FitId,
+            TransactionId = SelectedTransaction.TransactionId,
+            FromAccountReconciledId = SelectedTransaction.FromAccountReconciledId,
+            ToAccountReconciledId = SelectedTransaction.ToAccountReconciledId
         };
         IsEditingTransaction = true;
     }
 
     private async Task SaveTransaction() {
         if (EditingTransactionClone == null) return;
-        
+
         if (EditingTransactionClone.AccountId == 0) EditingTransactionClone.AccountId = null;
         if (EditingTransactionClone.ToAccountId == 0) EditingTransactionClone.ToAccountId = null;
         if (EditingTransactionClone.BillId == 0) EditingTransactionClone.BillId = null;
@@ -1020,10 +1045,12 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void UpdateTransactionFromClone(Transaction target, Transaction clone) {
+        target.TransactionId = clone.TransactionId; // Keep the Guid chain bound
+        target.FitId = clone.FitId; // Keep the Guid chain bound
         target.Description = clone.Description;
         target.Memo = clone.Memo;
         target.Amount = clone.Amount;
-        target.Date = clone.Date;
+        target.TransactionDate = clone.TransactionDate;
         target.AccountId = clone.AccountId == 0 ? null : clone.AccountId;
         target.ToAccountId = clone.ToAccountId == 0 ? null : clone.ToAccountId;
         target.BucketId = clone.BucketId == 0 ? null : clone.BucketId;
@@ -1033,10 +1060,12 @@ public class MainViewModel : ViewModelBase {
         target.IsRebalance = clone.IsRebalance;
         target.PaycheckId = clone.PaycheckId;
         target.PaycheckOccurrenceDate = clone.PaycheckOccurrenceDate;
+        target.FromAccountReconciledId = clone.FromAccountReconciledId;
+        target.ToAccountReconciledId = clone.ToAccountReconciledId;
     }
 
     private void CancelTransaction() {
-        if (SelectedTransaction is { Id: 0 }) {
+        if (SelectedTransaction != null && SelectedTransaction.TransactionId == Guid.Empty) {
             CurrentPeriodTransactions.Remove(SelectedTransaction);
         }
 
@@ -1076,7 +1105,7 @@ public class MainViewModel : ViewModelBase {
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
             // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeleteTransaction(EditingTransactionClone.Id);
+            _budgetService.DeleteTransaction(EditingTransactionClone.TransactionId);
             IsEditingTransaction = false;
             EditingTransactionClone = null;
             LoadPeriodData();
@@ -1264,7 +1293,9 @@ public class MainViewModel : ViewModelBase {
 
     private void SaveAccount() {
         if (EditingAccountClone != null) {
-            if (EditingAccountClone.Type == AccountType.Checking && (EditingAccountClone.AccountAprHistory == null || EditingAccountClone.AccountAprHistory.Count == 0)) {
+            if (EditingAccountClone.Type == AccountType.Checking && (EditingAccountClone.AccountAprHistory == null ||
+                                                                     EditingAccountClone.AccountAprHistory.Count ==
+                                                                     0)) {
                 MessageBox.Show(
                     "Before you can save this credit card, you need to set up your interest rates.", // Message
                     "Incomplete Setup", // Title
@@ -1274,6 +1305,7 @@ public class MainViewModel : ViewModelBase {
                 SetAccountAprRatesCommand.Execute(EditingAccountClone);
                 return;
             }
+
             if (SelectedAccount != null) {
                 UpdateAccountFromClone(SelectedAccount, EditingAccountClone);
                 _budgetService.UpsertAccount(SelectedAccount);
@@ -1376,32 +1408,54 @@ public class MainViewModel : ViewModelBase {
         if (_isCalculatingProjections) return;
         _isCalculatingProjections = true;
         try {
-            var accounts = _budgetService.GetAllAccounts().ToList();
+            
             var paychecks = _budgetService.GetAllPaychecks();
             var bills = _budgetService.GetAllBills();
             var buckets = _budgetService.GetAllBuckets();
             var periodBills = _budgetService.GetAllPeriodBills();
             var periodBuckets = _budgetService.GetAllPeriodBuckets();
-            var transactions = ShowReconciled ? _budgetService.GetAllTransactions() : _budgetService.GetAllUnreconciledTransactions();
+            var transactions = ShowReconciled
+                ? _budgetService.GetAllTransactions()
+                : _budgetService.GetAllUnreconciledTransactions();
             var reconciliations = !ShowReconciled ? _budgetService.GetAllAccountReconciliations() : null;
-
+            reconciliations = null;
             var start = CurrentPeriodDate == DateTime.MinValue ? DateTime.Today : CurrentPeriodDate;
-            if(ProjectionStartDate.HasValue) start = ProjectionStartDate.Value;
+            if (ProjectionStartDate.HasValue) start = ProjectionStartDate.Value;
+            var accounts = _budgetService.GetAllAccountsAsOf(start.AddDays(-1)).ToList();
             var end = ProjectionEndDate;
-            if(end < start) end = start.AddYears(1);
+            if (end < start) end = start.AddYears(1);
             // start = new DateTime(2026, 2, 19);
             // end = new DateTime(2027, 2, 19);
             var allPaycheckTransactions = _budgetService.GetAllPaycheckTransactions();
             var allBillTransactions = _budgetService.GetBillTransactions();
             var allBucketTransactions = _budgetService.GetBucketTransactions();
             var allTransactions = _budgetService.GetAllTransactions().ToList();
+            var paycheckTransactions = allPaycheckTransactions.ToList();
+            
+            #region Massage paycheck transaction date
+            //Whatever date the paycheck may have come in on, for purposes of this projection, it came in on its expected date.
+            //So that it can be attributed to the pay period.
+            foreach (var allPaycheckTransaction in paycheckTransactions) {
+                if (allPaycheckTransaction.PaycheckOccurrenceDate != null && allPaycheckTransaction.TransactionDate!=allPaycheckTransaction.PaycheckOccurrenceDate) {
+                    allPaycheckTransaction.TransactionDate = allPaycheckTransaction.PaycheckOccurrenceDate.Value;
+                }
+            }
+
+            allTransactions.Where(x => x.PaycheckId != null).ToList().ForEach(x => {
+                if (x.PaycheckOccurrenceDate != null && x.TransactionDate != x.PaycheckOccurrenceDate) {
+                    x.TransactionDate = x.PaycheckOccurrenceDate.Value;
+                }
+            });
+            #endregion
             
             var results = _projectionEngine.CalculateProjections(
-                allPaycheckTransactions.ToList(), 
-                allBillTransactions.ToList(), 
+                paycheckTransactions,
+                allBillTransactions.ToList(),
                 allBucketTransactions.ToList(),
                 allTransactions,
-                start, end, accounts.ToList(), paychecks.ToList(), bills.ToList(), buckets.ToList(), periodBills.ToList(), periodBuckets.ToList(), transactions.ToList(), reconciliations?.ToList(), ShowReconciled, true);
+                start, end, accounts.ToList(), paychecks.ToList(), bills.ToList(), buckets.ToList(),
+                periodBills.ToList(), periodBuckets.ToList(), transactions.ToList(), reconciliations?.ToList(),
+                ShowReconciled, true);
 
             var resultList = results.ToList();
             Projections = new ObservableCollection<ProjectionItem>(resultList);
@@ -1418,7 +1472,8 @@ public class MainViewModel : ViewModelBase {
             }
 
             if (negativeAccounts.Any()) {
-                string message = $"Warning: The following accounts go negative in the projection: {string.Join(", ", negativeAccounts)}";
+                string message =
+                    $"Warning: The following accounts go negative in the projection: {string.Join(", ", negativeAccounts)}";
                 ShowToast(message);
             }
         }
@@ -1431,10 +1486,9 @@ public class MainViewModel : ViewModelBase {
         Application.Current.Dispatcher.Invoke(() => {
             // Avoid duplicate toasts with the same message
             if (Toasts.Any(t => t.Message == message)) return;
-            
-            var toast = new ToastViewModel(message, t => {
-                Application.Current.Dispatcher.Invoke(() => Toasts.Remove(t));
-            });
+
+            var toast = new ToastViewModel(message,
+                t => { Application.Current.Dispatcher.Invoke(() => Toasts.Remove(t)); });
             Toasts.Add(toast);
         });
     }
@@ -1555,7 +1609,7 @@ public class MainViewModel : ViewModelBase {
             accounts = accounts.OrderBy(b => b.Name).ToList();
             foreach (var a in accounts) a.PropertyChanged += Item_PropertyChanged;
             Accounts = new ObservableCollection<Account>(accounts);
-            
+
             var accountsWithNone = new List<Account> { new Account { Id = 0, Name = "(None)" } };
             accountsWithNone.AddRange(accounts);
             AccountsWithNone = new ObservableCollection<Account>(accountsWithNone);
@@ -1564,7 +1618,7 @@ public class MainViewModel : ViewModelBase {
             bills = bills.OrderBy(b => b.DueDay).ThenBy(b => b.Name).ToList();
             foreach (var b in bills) b.PropertyChanged += Item_PropertyChanged;
             Bills = new ObservableCollection<Bill>(bills);
-            
+
             var billsWithNone = new List<Bill> { new Bill { Id = 0, Name = "(None)" } };
             billsWithNone.AddRange(bills);
             BillsWithNone = new ObservableCollection<Bill>(billsWithNone);
@@ -1577,12 +1631,12 @@ public class MainViewModel : ViewModelBase {
             var paychecksWithNone = new List<Paycheck> { new Paycheck { Id = 0, Name = "(None)" } };
             paychecksWithNone.AddRange(paychecks);
             PaychecksWithNone = new ObservableCollection<Paycheck>(paychecksWithNone);
-            
+
             var buckets = _budgetService.GetAllBuckets();
             buckets = buckets.OrderBy(b => b.Name).ToList();
             foreach (var b in buckets) b.PropertyChanged += Item_PropertyChanged;
             Buckets = new ObservableCollection<BudgetBucket>(buckets);
-            
+
             var bucketsWithNone = new List<BudgetBucket> { new BudgetBucket { Id = 0, Name = "(None)" } };
             bucketsWithNone.AddRange(buckets);
             BucketsWithNone = new ObservableCollection<BudgetBucket>(bucketsWithNone);
@@ -1613,26 +1667,16 @@ public class MainViewModel : ViewModelBase {
 
     private void ApplyTransactionAmounts() {
         foreach (var pb in CurrentPeriodBills) {
-            try{
             pb.TransactionAmount = CurrentPeriodTransactions
                 .Where(t => t.BillId == pb.BillId)
                 .Sum(t => t.Amount);
-            }
-            catch (Exception e) {
-                var s = "";
-            }
         }
 
 
         foreach (var pb in CurrentPeriodBuckets) {
-            try {
-                pb.TransactionAmount = CurrentPeriodTransactions
-                    .Where(t => t.BucketId == pb.BucketId)
-                    .Sum(t => t.Amount);
-            }
-            catch (Exception e) {
-                var s = "";
-            }
+            pb.TransactionAmount = CurrentPeriodTransactions
+                .Where(t => t.BucketId == pb.BucketId)
+                .Sum(t => t.Amount);
         }
     }
 
@@ -1644,15 +1688,14 @@ public class MainViewModel : ViewModelBase {
 
         foreach (var pb in projectedBillsForPeriod) {
             if (!pBills.Any(existing =>
-                    existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date)) {
-            }
+                    existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date)) { }
             else {
                 var periodBill = pBills.SingleOrDefault(existing =>
                     existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date);
                 UpdatePeriodBillFromClone(pb, periodBill!);
             }
         }
-        
+
         projectedBillsForPeriod = projectedBillsForPeriod.OrderBy(pb => pb.DueDate).ToList();
 
         CurrentPeriodBills = new ObservableCollection<PeriodBill>(projectedBillsForPeriod);
@@ -1685,9 +1728,8 @@ public class MainViewModel : ViewModelBase {
 
     private void LoadPeriodTransactions() {
         var transactions = _budgetService.GetTransactions(CurrentPeriodDate).ToList();
-        transactions = transactions.OrderBy(pb => pb.Date).ToList();
+        transactions = transactions.OrderBy(pb => pb.TransactionDate).ToList();
         CurrentPeriodTransactions = new ObservableCollection<Transaction>(transactions);
-        //foreach (var t in CurrentPeriodTransactions) t.PropertyChanged += Transaction_PropertyChanged;
     }
 
     private void InitializePeriod() {
@@ -1740,16 +1782,16 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void ReconcileAccount() {
-        if(EditingAccountClone==null) return;
+        if (EditingAccountClone == null) return;
         var window = new ReconciliationWindow(EditingAccountClone, _budgetService) {
             Owner = Application.Current.MainWindow
         };
         window.ShowDialog();
         CalculateProjections();
     }
-    
+
     private void SetAccountAprRates() {
-        if(EditingAccountClone is not { Type: AccountType.CreditCard }) return;
+        if (EditingAccountClone is not { Type: AccountType.CreditCard }) return;
         EditingAccountClone.AccountAprHistory ??= [];
         var window = new AccountAprHistoryWindow(EditingAccountClone, _budgetService) {
             Owner = Application.Current.MainWindow
@@ -1757,8 +1799,8 @@ public class MainViewModel : ViewModelBase {
         window.ShowDialog();
         CalculateProjections();
     }
-    
-    
+
+
     private void RefreshPaychecks() {
         var allPaychecks = Paychecks.ToList();
         if (allPaychecks.Count == 0) {
@@ -1768,7 +1810,7 @@ public class MainViewModel : ViewModelBase {
 
         PeriodPaychecks = new ObservableCollection<Paycheck>(allPaychecks);
     }
-    
+
     private void SetCurrentPeriodDate(int? id = null) {
         var allPaychecks = Paychecks.ToList();
         if (allPaychecks.Count == 0) {

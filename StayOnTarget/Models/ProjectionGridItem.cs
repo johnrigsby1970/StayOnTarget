@@ -6,7 +6,7 @@ namespace StayOnTarget.Models;
 
 public class ProjectionGridItem : ViewModelBase {
     public ProjectionGridItem(
-        DateTime date, 
+        DateTime transactionDate, 
         decimal amount, 
         string description, 
         int? fromAccountId, 
@@ -21,7 +21,7 @@ public class ProjectionGridItem : ViewModelBase {
         bool isReconciled,
         int? transactionId = null
         ) {
-        Date = date;
+        Date = transactionDate;
         Amount = amount;
         Description = description;
         FromAccountId = fromAccountId;

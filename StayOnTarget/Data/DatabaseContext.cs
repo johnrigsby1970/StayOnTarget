@@ -167,18 +167,18 @@ public class DatabaseContext
                 Description TEXT,
                 Memo TEXT,
                 Amount DECIMAL NOT NULL,
-                Date TEXT NOT NULL,
-                AccountId INTEGER,
-                ToAccountId INTEGER,
+                TransactionDate TEXT NOT NULL,
+                AccountId INTEGER NOT NULL,
                 BucketId INTEGER REFERENCES Buckets(Id),
                 PeriodDate TEXT NOT NULL,
                 IsPrincipalOnly INTEGER DEFAULT 0,
+                TransactionId TEXT NOT NULL,
                 FitId TEXT NOT NULL,
                 PaycheckId INTEGER REFERENCES Paychecks(Id),
                 PaycheckOccurrenceDate TEXT,
                 BillId INTEGER REFERENCES Bills(Id),
-                FOREIGN KEY(AccountId) REFERENCES Accounts(Id),
-                FOREIGN KEY(ToAccountId) REFERENCES Accounts(Id)
+                ReconciliationId INTEGER REFERENCES AccountReconciliations(Id),
+                FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
             );
 
             CREATE TABLE IF NOT EXISTS Buckets (
@@ -204,8 +204,8 @@ public class DatabaseContext
             CREATE TABLE IF NOT EXISTS AccountReconciliations (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 AccountId INTEGER NOT NULL,
-                ReconciledAsOfDate TEXT NOT NULL,
-                ReconciledBalance DECIMAL NOT NULL,
+                ReconciledAsOfDate TEXT NOT NULL, --StatementEndingBalance
+                ReconciledBalance DECIMAL NOT NULL, --StatementEndingBalance
                 ReconciledOnDate TEXT NOT NULL,
                 IsInvalidated INTEGER DEFAULT 0,
                 FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
@@ -237,213 +237,6 @@ public class DatabaseContext
                 connection.Execute("ALTER TABLE Transactions ADD COLUMN Memo Text");
             }
         }
-        
-        // // Check if BalanceAsOf exists in Accounts table
-        // var balanceAsOfExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Accounts') WHERE name='BalanceAsOf'");
-        //
-        // if (balanceAsOfExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Accounts'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Accounts ADD COLUMN BalanceAsOf TEXT DEFAULT '2026-02-19'");
-        //     }
-        // }
-        //
-        // // Check if IsBalanced exists in Paychecks table
-        // var isBalancedExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Paychecks') WHERE name='IsBalanced'");
-        //
-        // if (isBalancedExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Paychecks'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Paychecks ADD COLUMN IsBalanced INTEGER DEFAULT 0");
-        //     }
-        // }
-        //
-        // Check if ToAccountId exists in Bills table
-        // var columnExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('CreditCardDetails') WHERE name='DueDay'");
-        //
-        // if (columnExists == 0)
-        // {
-        //     // If the table exists but the column doesn't, add it. 
-        //     // We check if table exists first.
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='CreditCardDetails'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE CreditCardDetails ADD COLUMN DueDay INTEGER");
-        //     }
-        // }
-        //
-        // // Check if IncludeInTotal exists in Accounts table
-        // var includeInTotalExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Accounts') WHERE name='IncludeInTotal'");
-        //
-        // if (includeInTotalExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Accounts'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Accounts ADD COLUMN IncludeInTotal INTEGER DEFAULT 1");
-        //     }
-        // }
-        //
-        // // Check if PaymentDate exists in MortgageDetails table
-        // var paymentDateExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('MortgageDetails') WHERE name='PaymentDate'");
-        //
-        // if (paymentDateExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='MortgageDetails'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE MortgageDetails ADD COLUMN PaymentDate TEXT");
-        //     }
-        // }
-        //
-        // // Check if IsPrincipalOnly exists in Transactions table
-        // var isPrincipalOnlyExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='IsPrincipalOnly'");
-        //
-        // if (isPrincipalOnlyExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Transactions ADD COLUMN IsPrincipalOnly INTEGER DEFAULT 0");
-        //     }
-        // }
-        //
-        // // Check if BucketId exists in Transactions table
-        // var bucketIdExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='BucketId'");
-        //
-        // if (bucketIdExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Transactions ADD COLUMN BucketId INTEGER REFERENCES Buckets(Id)");
-        //     }
-        // }
-        //
-        // // Check if EndDate exists in Paychecks table
-        // var endDateExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Paychecks') WHERE name='EndDate'");
-        //
-        // if (endDateExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Paychecks'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Paychecks ADD COLUMN EndDate TEXT");
-        //     }
-        // }
-        //
-        // // Check if AccountId exists in Paychecks table
-        // var paycheckAccountIdExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Paychecks') WHERE name='AccountId'");
-        //
-        // if (paycheckAccountIdExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Paychecks'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Paychecks ADD COLUMN AccountId INTEGER REFERENCES Accounts(Id)");
-        //     }
-        // }
-        //
-        // // Ensure FITID columns exist in Transactions, PeriodBills, PeriodBuckets
-        // var transactionFitIdExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='FitId'");
-        // if (transactionFitIdExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Transactions ADD COLUMN FitId TEXT");
-        //     }
-        // }
-        //
-        // var periodBillFitIdExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('PeriodBills') WHERE name='FitId'");
-        // if (periodBillFitIdExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='PeriodBills'");
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE PeriodBills ADD COLUMN FitId TEXT");
-        //     }
-        // }
-        //
-        // var periodBucketFitIdExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('PeriodBuckets') WHERE name='FitId'");
-        // if (periodBucketFitIdExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='PeriodBuckets'");
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE PeriodBuckets ADD COLUMN FitId TEXT");
-        //     }
-        // }
-        //
-        // // Populate missing FITIDs for existing rows
-        // var transactionIds = connection.Query<int>("SELECT Id FROM Transactions WHERE FitId IS NULL OR FitId = ''");
-        // foreach (var id in transactionIds)
-        // {
-        //     connection.Execute("UPDATE Transactions SET FitId = @fitId WHERE Id = @id", new { id, fitId = Guid.NewGuid().ToString() });
-        // }
-        // var periodBillIds = connection.Query<int>("SELECT Id FROM PeriodBills WHERE FitId IS NULL OR FitId = ''");
-        // foreach (var id in periodBillIds)
-        // {
-        //     connection.Execute("UPDATE PeriodBills SET FitId = @fitId WHERE Id = @id", new { id, fitId = Guid.NewGuid().ToString() });
-        // }
-        // var periodBucketIds = connection.Query<int>("SELECT Id FROM PeriodBuckets WHERE FitId IS NULL OR FitId = ''");
-        // foreach (var id in periodBucketIds)
-        // {
-        //     connection.Execute("UPDATE PeriodBuckets SET FitId = @fitId WHERE Id = @id", new { id, fitId = Guid.NewGuid().ToString() });
-        // }
-        //
-        // // Check if PaycheckId exists in Transactions table
-        // var paycheckIdExists = connection.ExecuteScalar<int>(@"
-        //     SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='PaycheckId'");
-        //
-        // if (paycheckIdExists == 0)
-        // {
-        //     var tableExists = connection.ExecuteScalar<int>(@"
-        //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-        //     
-        //     if (tableExists > 0)
-        //     {
-        //         connection.Execute("ALTER TABLE Transactions ADD COLUMN PaycheckId INTEGER REFERENCES Paychecks(Id)");
-        //         connection.Execute("ALTER TABLE Transactions ADD COLUMN PaycheckOccurrenceDate TEXT");
-        //     }
-        // }
 
         // Check if CreditCardDetails table exists
         var ccDetailsTableExists = connection.ExecuteScalar<int>(@"

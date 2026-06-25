@@ -41,7 +41,7 @@
                       >
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Date"
-                                        Binding="{Binding Date, StringFormat=d}" Width="80" />
+                                        Binding="{Binding TransactionDate, StringFormat=d}" Width="80" />
                     <DataGridTextColumn Header="Description"
                                         Binding="{Binding Description}" Width="*" />
                     

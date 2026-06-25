@@ -37,7 +37,7 @@ namespace StayOnTarget.Tests
                     Id = 101, 
                     Description = "Actual Salary", 
                     Amount = 2100, 
-                    Date = new DateTime(2026, 2, 20), 
+                    TransactionDate = new DateTime(2026, 2, 20), 
                     PaycheckId = 1, 
                     PaycheckOccurrenceDate = new DateTime(2026, 2, 20),
                     ToAccountId = 1
@@ -59,7 +59,7 @@ namespace StayOnTarget.Tests
 
             // Assert
             // We expect one paycheck entry on 2/20. Since we have an transaction override, the "Pay: Salary" should be missing and replaced by "Actual Salary".
-            var salaryEntries = results.Where(r => r.Date == new DateTime(2026, 2, 20)).ToList();
+            var salaryEntries = results.Where(r => r.TransactionDate == new DateTime(2026, 2, 20)).ToList();
             
             Assert.AreEqual(1, salaryEntries.Count, "Should only have one entry for the paycheck date");
             Assert.AreEqual("Actual Salary", salaryEntries[0].Description);
@@ -87,7 +87,7 @@ namespace StayOnTarget.Tests
                     Id = 101, 
                     Description = "Pay: Salary", 
                     Amount = 2100, 
-                    Date = new DateTime(2026, 2, 20), 
+                    TransactionDate = new DateTime(2026, 2, 20), 
                     ToAccountId = 1
                 }
             };
@@ -105,7 +105,7 @@ namespace StayOnTarget.Tests
 
             // Assert
             // Since the heuristic is removed, we expect BOTH the projected "Pay: Salary" and the transactioon "Pay: Salary".
-            var salaryEntries = results.Where(r => r.Date == new DateTime(2026, 2, 20)).ToList();
+            var salaryEntries = results.Where(r => r.TransactionDate == new DateTime(2026, 2, 20)).ToList();
             
             Assert.AreEqual(2, salaryEntries.Count, "Should have two entries for the paycheck date because heuristic was removed");
             Assert.IsTrue(salaryEntries.Any(r => r.Description == "Expected Pay: Salary" && r.Amount == 2000), "Missing projected paycheck");
@@ -319,7 +319,7 @@ namespace StayOnTarget.Tests
 
             var transactions = new List<Transaction>
             {
-                new Transaction { Date = new DateTime(2026, 3, 4), Amount = 14.40m, AccountId = 1, Description = "Small Purchase" }
+                new Transaction { TransactionDate = new DateTime(2026, 3, 4), Amount = 14.40m, AccountId = 1, Description = "Small Purchase" }
             };
 
             var startDate = new DateTime(2026, 2, 5);
@@ -340,12 +340,12 @@ namespace StayOnTarget.Tests
             //               balance remains 14.40. PaidInFull = false.
             // 4/5 statement: interest SHOULD accrue on 14.40 (ADB = 14.40).
             
-            var marchStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 3, 5));
+            var marchStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.TransactionDate == new DateTime(2026, 3, 5));
             Assert.IsNotNull(marchStatement, "March statement (3/5) should exist");
             Assert.AreEqual(0m, marchStatement.Amount, "Interest on 3/5 should be 0 due to grace period");
             Assert.AreEqual(14.40m, marchStatement.AccountBalances["CreditCard"]);
 
-            var aprilStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 4, 5));
+            var aprilStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.TransactionDate == new DateTime(2026, 4, 5));
             Assert.IsNotNull(aprilStatement, "April statement (4/5) should exist");
             
             // Expected interest for April:
@@ -355,15 +355,15 @@ namespace StayOnTarget.Tests
             // In our current simulation, if we don't have a payment by the due date, we lose grace for the NEXT month.
             // So interest would show up on 5/5.
             
-            var mayStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 5, 5));
+            var mayStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.TransactionDate == new DateTime(2026, 5, 5));
             Assert.IsNotNull(mayStatement, "May statement (5/5) should exist");
             Assert.IsTrue(mayStatement.Amount > 0, $"May interest (5/5) should be > 0, but was {mayStatement.Amount}");
             Assert.IsTrue(mayStatement.AccountBalances["CreditCard"] > 14.40m, "Balance should increase due to interest");
 
-            var octStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 10, 5));
+            var octStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.TransactionDate == new DateTime(2026, 10, 5));
             Assert.IsNotNull(octStatement, "October statement (10/5) should exist");
 
-            var novStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.Date == new DateTime(2026, 11, 5));
+            var novStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.TransactionDate == new DateTime(2026, 11, 5));
             Assert.IsNotNull(novStatement, "November statement (11/5) should exist");
             Assert.IsTrue(novStatement.AccountBalances["CreditCard"] > octStatement.AccountBalances["CreditCard"], "Balance should continue to increase month over month");
         }
@@ -405,7 +405,7 @@ namespace StayOnTarget.Tests
             // New purchase on Feb 5
             var transactions = new List<Transaction>
             {
-                new Transaction { Date = new DateTime(2026, 2, 5), Amount = 500, AccountId = 1, Description = "Purchase" }
+                new Transaction { TransactionDate = new DateTime(2026, 2, 5), Amount = 500, AccountId = 1, Description = "Purchase" }
             };
 
             var startDate = new DateTime(2026, 2, 1);
@@ -462,7 +462,7 @@ namespace StayOnTarget.Tests
             // New purchase on Feb 5
             var transactions = new List<Transaction>
             {
-                new Transaction { Date = new DateTime(2026, 2, 5), Amount = 500, AccountId = 1, Description = "Purchase" }
+                new Transaction { TransactionDate = new DateTime(2026, 2, 5), Amount = 500, AccountId = 1, Description = "Purchase" }
             };
 
             var startDate = new DateTime(2026, 2, 1);
@@ -521,7 +521,7 @@ namespace StayOnTarget.Tests
             {
                 new Transaction 
                 { 
-                    Date = new DateTime(2026, 2, 10), 
+                    TransactionDate = new DateTime(2026, 2, 10), 
                     Amount = 25, 
                     AccountId = 1, 
                     IsInterestAdjustment = true,
@@ -582,11 +582,11 @@ namespace StayOnTarget.Tests
 
             // Period 2: 2/15 onwards. Events: Pay1 (2000), Pay2 (2000), Bill1 (-500). Total = 3500.
             // Since they are on the same day, Pay: Pay1 should be the first item and have the PeriodNet.
-            var pay1SecondOccurrence = results.FirstOrDefault(r => r.Description == "Expected Pay: Pay1" && r.Date == new DateTime(2026, 2, 15));
+            var pay1SecondOccurrence = results.FirstOrDefault(r => r.Description == "Expected Pay: Pay1" && r.TransactionDate == new DateTime(2026, 2, 15));
             Assert.IsNotNull(pay1SecondOccurrence);
             Assert.AreEqual(3500m, pay1SecondOccurrence.PeriodNet);
 
-            var pay2Entry = results.FirstOrDefault(r => r.Description == "Expected Pay: Pay2" && r.Date == new DateTime(2026, 2, 15));
+            var pay2Entry = results.FirstOrDefault(r => r.Description == "Expected Pay: Pay2" && r.TransactionDate == new DateTime(2026, 2, 15));
             Assert.IsNotNull(pay2Entry);
             Assert.IsNull(pay2Entry.PeriodNet);
         }
@@ -622,7 +622,7 @@ namespace StayOnTarget.Tests
                     Id = 101,
                     Description = "Actual Interest",
                     Amount = 950,
-                    Date = new DateTime(2026, 2, 15),
+                    TransactionDate = new DateTime(2026, 2, 15),
                     ToAccountId = 1,
                     IsRebalance = true
                 }
@@ -641,7 +641,7 @@ namespace StayOnTarget.Tests
 
             // Assert
             // We expect "Actual Interest" to exist and "Interest: Mortgage" to be missing.
-            var interestEntries = results.Where(r => r.Date == new DateTime(2026, 2, 15)).ToList();
+            var interestEntries = results.Where(r => r.TransactionDate == new DateTime(2026, 2, 15)).ToList();
             
             Assert.AreEqual(1, interestEntries.Count, "Should only have one entry on the interest date");
             Assert.AreEqual("Actual Interest", interestEntries[0].Description);
@@ -681,7 +681,7 @@ namespace StayOnTarget.Tests
                     Id = 101,
                     Description = "Manual Interest",
                     Amount = 1000,
-                    Date = new DateTime(2026, 2, 10),
+                    TransactionDate = new DateTime(2026, 2, 10),
                     ToAccountId = 1,
                     IsInterestAdjustment = true
                 }
@@ -733,7 +733,7 @@ namespace StayOnTarget.Tests
                     Id = 101,
                     Description = "Store Purchase",
                     Amount = 200,
-                    Date = baseDate.AddDays(4),
+                    TransactionDate = baseDate.AddDays(4),
                     AccountId = 1,
                     BucketId = 1
                 }
@@ -788,7 +788,7 @@ namespace StayOnTarget.Tests
                     Id = 101,
                     Description = "Big Grocery Run",
                     Amount = 600,
-                    Date = baseDate.AddDays(4),
+                    TransactionDate = baseDate.AddDays(4),
                     AccountId = 1,
                     BucketId = 1
                 }
@@ -838,7 +838,7 @@ namespace StayOnTarget.Tests
             };
             var transactions = new List<Transaction>
             {
-                new Transaction { Id = 101, Description = "Grayson Transaction", Amount = 500, Date = new DateTime(2026, 2, 20), BucketId = 1, AccountId = 1 }
+                new Transaction { Id = 101, Description = "Grayson Transaction", Amount = 500, TransactionDate = new DateTime(2026, 2, 20), BucketId = 1, AccountId = 1 }
             };
 
             var startDate = DateTime.Today; //new DateTime(2026, 2, 19);
@@ -905,7 +905,7 @@ namespace StayOnTarget.Tests
                     Id = 101,
                     Description = "Mortgage Payment",
                     Amount = 1500,
-                    Date = new DateTime(2026, 2, 15),
+                    TransactionDate = new DateTime(2026, 2, 15),
                     AccountId = 2, // From Checking
                     ToAccountId = 1 // To Mortgage
                 }
@@ -968,7 +968,7 @@ namespace StayOnTarget.Tests
                     Id = 101,
                     Description = "Mortgage Rebalance",
                     Amount = 1500,
-                    Date = new DateTime(2026, 2, 15),
+                    TransactionDate = new DateTime(2026, 2, 15),
                     ToAccountId = 1, // To Mortgage
                     IsRebalance = true
                 }

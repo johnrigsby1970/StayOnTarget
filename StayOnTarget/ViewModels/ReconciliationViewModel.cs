@@ -75,7 +75,7 @@ public class ReconciliationViewModel : ViewModelBase {
         }
 
         var transactions = _budgetService.GetAllUnreconciledTransactionsSinceLastReconciliation(_account.Id);
-        transactions = transactions.OrderBy(b => b.Date).ToList();
+        transactions = transactions.OrderBy(b => b.TransactionDate).ToList();
         string json = JsonConvert.SerializeObject(transactions.ToList());
         var reconciliationTransactions = JsonConvert.DeserializeObject<List<ReconciliationTransaction>>(json);
         EndingBalance = _reconciliationService.CalculateRunningBalance(_account.Id, reconciliationTransactions!,
@@ -87,11 +87,11 @@ public class ReconciliationViewModel : ViewModelBase {
         DateTime? newReconciledDate = null;
         bool hasNewReconciled = false;
         bool notReconciledAfterLastReconciled = true;
-        foreach (var t in reconciliationTransactions!.OrderBy(b => b.Date)) {
+        foreach (var t in reconciliationTransactions!.OrderBy(b => b.TransactionDate)) {
             if (t.IsReconciled) {
                 if (!notReconciledAfterLastReconciled) {
                     newReconciledBalance = t.Amount;
-                    newReconciledDate = t.Date;
+                    newReconciledDate = t.TransactionDate;
                     hasNewReconciled = true;
                 }
             }
@@ -113,7 +113,7 @@ public class ReconciliationViewModel : ViewModelBase {
         bool hasNewReconciled = false;
         bool notReconciledAfterLastReconciled = false;
         bool changed = false;
-        foreach (var t in ReconciliationTransactions.OrderBy(b => b.Date)) {
+        foreach (var t in ReconciliationTransactions.OrderBy(b => b.TransactionDate)) {
             if (t.IsReconciled) {
                 if (!notReconciledAfterLastReconciled) {
                     hasNewReconciled = true;
@@ -132,10 +132,10 @@ public class ReconciliationViewModel : ViewModelBase {
             }
         }
 
-        foreach (var t in ReconciliationTransactions.OrderBy(b => b.Date)) {
+        foreach (var t in ReconciliationTransactions.OrderBy(b => b.TransactionDate)) {
             if (t.IsReconciled) {
                 newReconciledBalance = t.RunningBalance;
-                newReconciledDate = t.Date;
+                newReconciledDate = t.TransactionDate;
             }
         }
 
@@ -155,11 +155,11 @@ public class ReconciliationViewModel : ViewModelBase {
         DateTime? newReconciledDate = null;
         bool hasNewReconciled = false;
         bool notReconciledAfterLastReconciled = false;
-        foreach (var t in ReconciliationTransactions.OrderBy(b => b.Date)) {
+        foreach (var t in ReconciliationTransactions.OrderBy(b => b.TransactionDate)) {
             if (t.IsReconciled) {
                 if (!notReconciledAfterLastReconciled) {
                     newReconciledBalance = t.RunningBalance;
-                    newReconciledDate = t.Date;
+                    newReconciledDate = t.TransactionDate;
                     hasNewReconciled = true;
                 }
             }

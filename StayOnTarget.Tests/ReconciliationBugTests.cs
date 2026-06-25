@@ -1,9 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using StayOnTarget.Models;
-using StayOnTarget.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using StayOnTarget.Services.Projections;
 
 namespace StayOnTarget.Tests
@@ -40,7 +36,7 @@ namespace StayOnTarget.Tests
             // A transaction on Feb 1st that should be "overridden" by the Feb 15th reconciliation
             var transactions = new List<Transaction>
             {
-                new Transaction { Id = 1, AccountId = 1, Amount = -100, Date = new DateTime(2026, 2, 1), Description = "Gas" }
+                new Transaction { Id = 1, AccountId = 1, Amount = -100, TransactionDate = new DateTime(2026, 2, 1), Description = "Gas" }
             };
 
             var startDate = new DateTime(2026, 1, 1);
@@ -58,7 +54,7 @@ namespace StayOnTarget.Tests
 
             // Assert
             // Find a date after Feb 15
-            var afterFeb15 = results.FirstOrDefault(r => r.Date >= new DateTime(2026, 2, 15));
+            var afterFeb15 = results.FirstOrDefault(r => r.TransactionDate >= new DateTime(2026, 2, 15));
             Assert.IsNotNull(afterFeb15, "Should have results after Feb 15");
             
             // Expected behavior: 
@@ -116,7 +112,7 @@ namespace StayOnTarget.Tests
                 reconciliations).ToList();
 
             // Assert
-            var afterJan15 = results.FirstOrDefault(r => r.Date >= new DateTime(2026, 1, 15));
+            var afterJan15 = results.FirstOrDefault(r => r.TransactionDate >= new DateTime(2026, 1, 15));
             Assert.IsNotNull(afterJan15);
             Assert.AreEqual(500m, afterJan15.AccountBalances["CreditCard"]);
             // Debt of 500 should mean total balance is -500

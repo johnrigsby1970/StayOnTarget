@@ -7,7 +7,7 @@ public class Transaction : ViewModelBase
     private string _description = string.Empty;
     private string _memo = string.Empty;
     private decimal _amount;
-    private DateTime _date = DateTime.Today;
+    private DateTime _transactionDate = DateTime.Today;
     private int? _accountId;
     private int? _toAccountId; // For transfers
     private int? _paycheckId; // For associating with a projected paycheck
@@ -17,6 +17,7 @@ public class Transaction : ViewModelBase
     private DateTime _periodDate;
     private bool _isPrincipalOnly;
     private bool _isRebalance;
+    private bool _isReconciled;
     private bool _isCashAdvance;
     private bool _isBalanceTransfer;
     private bool _isInterestAdjustment;
@@ -25,7 +26,8 @@ public class Transaction : ViewModelBase
 
     public int Id { get; set; }
     public Guid FitId { get; set; } = Guid.NewGuid();
-
+    public Guid TransactionId { get; set; } = Guid.NewGuid();
+    
     public string Description
     {
         get => _description;
@@ -38,10 +40,10 @@ public class Transaction : ViewModelBase
         set => SetProperty(ref _amount, value);
     }
 
-    public DateTime Date
+    public DateTime TransactionDate
     {
-        get => _date;
-        set => SetProperty(ref _date, value);
+        get => _transactionDate;
+        set => SetProperty(ref _transactionDate, value);
     }
 
     public int? AccountId

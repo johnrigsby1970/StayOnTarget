@@ -12,6 +12,7 @@ public partial class BudgetService
 
         // Populate account names for UI
         var accounts = GetAllAccounts().ToDictionary(a => a.Id, a => a.Name);
+
         foreach (var recon in reconciliations)
         {
             if (accounts.TryGetValue(recon.AccountId, out var accountName))
@@ -132,20 +133,21 @@ public partial class BudgetService
     
     public async Task DeleteAccountReconciliationAsync(int id)
     {
+        
         using var conn = _db.GetConnection();
 
         // First, clear any transaction references to this reconciliation
         await conn.ExecuteAsync(@"
             UPDATE Transactions
-            SET FromAccountReconciledId = NULL
-            WHERE FromAccountReconciledId = @id", new { id });
-
-        await conn.ExecuteAsync(@"
-            UPDATE Transactions
-            SET ToAccountReconciledId = NULL
-            WHERE ToAccountReconciledId = @id", new { id });
-
-        // Then delete the reconciliation
-        await conn.ExecuteAsync("DELETE FROM AccountReconciliations WHERE Id = @id", new { id });
+            SET ReconciliationId = NULL
+            WHERE ReconciliationId = @id", new { id });
+        
+        try {
+            // Then delete the reconciliation
+            await conn.ExecuteAsync("DELETE FROM AccountReconciliations WHERE Id = @id", new { id });
+        }
+        catch (Exception ex) {
+            throw;
+        }
     }
 }

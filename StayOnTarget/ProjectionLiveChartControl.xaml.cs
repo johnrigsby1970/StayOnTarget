@@ -110,7 +110,7 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
             return;
         }
 
-        var projections = Projections.OrderBy(p => p.Date).ToList();
+        var projections = Projections.OrderBy(p => p.TransactionDate).ToList();
         var accounts = Accounts?.Where(a => a.IncludeInTotal).ToList() ?? new List<Account>();
 
         var seriesList = new List<ISeries>();
@@ -119,7 +119,7 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
         seriesList.Add(new LineSeries<DateTimePoint>
         {
             Name = "Total Balance",
-            Values = projections.Select(p => new DateTimePoint(p.Date, (double)p.Balance)).ToArray(),
+            Values = projections.Select(p => new DateTimePoint(p.TransactionDate, (double)p.Balance)).ToArray(),
             Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
             Fill = null,
             GeometrySize = 0,
@@ -145,7 +145,7 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
             seriesList.Add(new LineSeries<DateTimePoint>
             {
                 Name = acc.Name,
-                Values = projections.Select(p => new DateTimePoint(p.Date, (double)p.GetAccountBalance(acc.Name))).ToArray(),
+                Values = projections.Select(p => new DateTimePoint(p.TransactionDate, (double)p.GetAccountBalance(acc.Name))).ToArray(),
                 Stroke = paint,
                 Fill = null,
                 GeometrySize = 0,

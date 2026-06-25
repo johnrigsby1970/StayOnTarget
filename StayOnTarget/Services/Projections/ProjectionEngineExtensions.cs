@@ -13,7 +13,7 @@ public static class ProjectionEngineExtensions {
         Dictionary<int, DateTime> accountBalanceDates,
         Dictionary<int, decimal> accumulatedGrowth,
         Dictionary<int, bool> ccGraceActive,
-        Dictionary<int, List<(DateTime Date, decimal Balance, decimal InterestAccruingBalance)>> ccDailyBalances,
+        Dictionary<int, List<(DateTime TransactionDate, decimal Balance, decimal InterestAccruingBalance)>> ccDailyBalances,
         HashSet<int> includedTotalAccounts) {
         
         var days = (e.Date - lastDate).Days;
@@ -309,7 +309,7 @@ public static class ProjectionEngineExtensions {
                 }
 
                 list.Add(new ProjectionItem {
-                    Date = e.Date,
+                    TransactionDate = e.Date,
                     Description = e.Description,
                     Amount = interest,
                     Balance = runningBalance,
@@ -369,7 +369,7 @@ public static class ProjectionEngineExtensions {
                     dailyBalances.Clear();
 
                     list.Add(new ProjectionItem {
-                        Date = e.Date,
+                        TransactionDate = e.Date,
                         Description = e.Description,
                         Amount = totalInterest,
                         Balance = runningBalance,
@@ -407,7 +407,7 @@ public static class ProjectionEngineExtensions {
                     var periodStart = nextInterest.AddMonths(-1);
                     var hasInterestTransaction = transactions.Any(t =>
                         (t.AccountId == acc.Id || t.ToAccountId == acc.Id) &&
-                        t.Date > periodStart && t.Date <= nextInterest &&
+                        t.TransactionDate > periodStart && t.TransactionDate <= nextInterest &&
                         (t.IsInterestAdjustment || t.Description.Contains("Interest", StringComparison.OrdinalIgnoreCase)));
 
                     if (!hasInterestTransaction) {
@@ -436,7 +436,7 @@ public static class ProjectionEngineExtensions {
                     var periodStart = nextStatement.AddMonths(-1);
                     var hasInterestAdjustment = transactions.Any(t =>
                         (t.AccountId == acc.Id) &&
-                        t.Date > periodStart && t.Date <= nextStatement &&
+                        t.TransactionDate > periodStart && t.TransactionDate <= nextStatement &&
                         (t.IsInterestAdjustment || t.Description.Contains("Interest", StringComparison.OrdinalIgnoreCase)));
 
                     if (!hasInterestAdjustment) {
@@ -490,7 +490,10 @@ public static class ProjectionEngineExtensions {
                     }
                 }
 
-                events.Add(new ProjectionGridItem(transaction.Date, transaction.Amount, transaction.Description,
+                if (Math.Abs(transaction.Amount) == 1750) {
+                    var s = "";
+                }
+                events.Add(new ProjectionGridItem(transaction.TransactionDate, transaction.Amount, transaction.Description,
                     accountId, toAcountId, transaction.BucketId,
                     transaction.PaycheckId, transaction.PaycheckOccurrenceDate,
                     ProjectionEngine.ProjectionEventType.Transaction,
@@ -631,11 +634,11 @@ public static class ProjectionEngineExtensions {
                         new DateTime(nextDue.Year, nextDue.Month, DateTime.DaysInMonth(nextDue.Year, nextDue.Month)))));
                 var isPaid = (pb != null && allBillTransactions.Any(t =>
                                  t.BillId == bill.Id &&
-                                 (t.Date >= nextDue || (Math.Abs((t.Date - nextDue).TotalDays) <= 14)) &&
-                                 t.Date >= pb.PeriodDate && t.Date <= pb.PeriodDate.AddDays(28)))
+                                 (t.TransactionDate >= nextDue || (Math.Abs((t.TransactionDate - nextDue).TotalDays) <= 14)) &&
+                                 t.TransactionDate >= pb.PeriodDate && t.TransactionDate <= pb.PeriodDate.AddDays(28)))
                              || (pb == null && allBillTransactions.Any(t =>
                                  t.BillId == bill.Id &&
-                                 ((Math.Abs((t.Date - nextDue).TotalDays) <= 14)))); //some arbitrary thresholds
+                                 ((Math.Abs((t.TransactionDate - nextDue).TotalDays) <= 14)))); //some arbitrary thresholds
 
                 if (!isPaid) {
                     //bill has been paid by a logged transaction. We will use the logged transaction instead of the expected bill or paid period bill entry.
@@ -647,7 +650,7 @@ public static class ProjectionEngineExtensions {
                         var fromAccId = bill.AccountId ?? primaryChecking;
                         if (amountToUse != 0) {
                             if (bill.ToAccountId.HasValue) {
-                                events.Add(new ProjectionGridItem(dueDate, amountToUse,
+                                events.Add(new ProjectionGridItem(dueDate, -amountToUse,
                                     $"Transfer: {bill.Name}{paidSuffix}", fromAccId,
                                     bill.ToAccountId.Value, null, null, null,
                                     ProjectionEngine.ProjectionEventType.Transfer,
@@ -699,7 +702,7 @@ public static class ProjectionEngineExtensions {
                     var transactionOverride = allPaycheckTransactions.FirstOrDefault(a =>
                         a.PaycheckId == pay.Id &&
                         (a.PaycheckOccurrenceDate?.Date ==
-                        nextPay.Date || (Math.Abs((nextPay - a.Date).TotalDays) <= 3))); // && a.Date >= nextPay && a.Date < endPay); //&& a.PaycheckOccurrenceDate?.Date == nextPay.Date);
+                        nextPay.Date || (Math.Abs((nextPay - a.TransactionDate).TotalDays) <= 3))); // && a.Date >= nextPay && a.Date < endPay); //&& a.PaycheckOccurrenceDate?.Date == nextPay.Date);
 
                     if (transactionOverride == null) {
                         var toAccountId = pay.AccountId ?? cashAccount?.Id;

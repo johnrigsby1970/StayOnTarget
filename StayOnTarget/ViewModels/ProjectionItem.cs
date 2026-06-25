@@ -2,7 +2,7 @@
 
 public class ProjectionItem : ViewModelBase
 {
-    private DateTime _date;
+    private DateTime _transactionDate;
     private string _description = string.Empty;
     private decimal _amount;
     private decimal _balance;
@@ -11,7 +11,7 @@ public class ProjectionItem : ViewModelBase
     private int? _paycheckId;
     private Dictionary<string, decimal> _accountBalances = new();
 
-    public DateTime Date { get => _date; set => SetProperty(ref _date, value); }
+    public DateTime TransactionDate { get => _transactionDate; set => SetProperty(ref _transactionDate, value); }
     public string Description { get => _description; set => SetProperty(ref _description, value); }
     public int? PaycheckId { get => _paycheckId; set => SetProperty(ref _paycheckId, value); }
     public bool NeedsAttention { get => _paycheckId.HasValue;  }

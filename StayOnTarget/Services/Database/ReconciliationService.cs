@@ -16,14 +16,14 @@ public class ReconciliationService {
             // Money leaving the account (AccountId matches)
             return allTransactions
                 .Where(t => t.AccountId == accountId && !t.FromAccountReconciledId.HasValue)
-                .OrderBy(t => t.Date)
+                .OrderBy(t => t.TransactionDate)
                 .ToList();
         }
         else {
             // Money entering the account (ToAccountId matches)
             return allTransactions
                 .Where(t => t.ToAccountId == accountId && !t.ToAccountReconciledId.HasValue)
-                .OrderBy(t => t.Date)
+                .OrderBy(t => t.TransactionDate)
                 .ToList();
         }
     }
@@ -126,7 +126,7 @@ public class ReconciliationService {
         DateTime startDate = latestRecon?.ReconciledAsOfDate ?? account.BalanceAsOf;
 
         // Apply transactions after the reconciliation date
-        var orderedTransactions = transactions.Where(t => t.Date >= startDate).OrderBy(t => t.Date).ToList();
+        var orderedTransactions = transactions.Where(t => t.TransactionDate >= startDate).OrderBy(t => t.TransactionDate).ToList();
 
         foreach (var transaction in orderedTransactions) {
             decimal amount = Math.Abs(transaction.Amount);
@@ -188,7 +188,7 @@ public class ReconciliationService {
             }
         }
 
-        lastTransactionDate = orderedTransactions.LastOrDefault()?.Date;
+        lastTransactionDate = orderedTransactions.LastOrDefault()?.TransactionDate;
         return balance;
     }
 
@@ -214,7 +214,7 @@ public class ReconciliationService {
                 transaction.ToAccountReconciledId = reconciliation.Id;
             }
             //no dates or amounts are changing.
-            Task.Run(async () => await _budgetService.UpsertTransactionAsync(transaction, false)); // Run async work
+            Task.Run(async () => await _budgetService.UpdateTransactionForReconciliation(transaction)); // Run async work
         }
     }
 }

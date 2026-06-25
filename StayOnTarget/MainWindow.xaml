@@ -12,6 +12,7 @@
         mc:Ignorable="d"
         Title="Stay On Target" Height="600" Width="1000">
     <Window.Resources>
+        <local:AbsoluteValueConverter x:Key="AbsoluteValueConverter" />
         <local:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
         <local:NegativeToRedConverter x:Key="NegativeToRedConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -160,6 +161,261 @@
                             </StackPanel>
                         </StackPanel>
                         <TabControl>
+                            
+                            <TabItem Header="Transaction">
+                                <DockPanel>
+                                    <Grid DockPanel.Dock="Bottom">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left"
+                                                    Margin="0,5,0,0">
+                                            <Button Content="Delete"
+                                                    Command="{Binding DeleteTransactionCommand}"
+                                                    Width="80"
+                                                    Margin="2"
+                                                    Background="Red"
+                                                    Foreground="White">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger
+                                                                Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                                Value="Collapsed">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsEditingTransaction}"
+                                                                         Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                            <!-- Use MultiDataTrigger for multiple conditions -->
+                                                            <!-- <MultiDataTrigger> -->
+                                                            <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
+                                                            <!--     <MultiDataTrigger.Conditions> -->
+                                                            <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
+                                                            <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
+                                                            <!--     </MultiDataTrigger.Conditions> -->
+                                                            <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
+                                                            <!--     <Setter Property="Visibility" Value="Visible" /> -->
+                                                            <!-- </MultiDataTrigger> -->
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+
+                                            </Button>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                                    HorizontalAlignment="Right"
+                                                    Margin="0,5,0,0">
+                                            <Button Content="Add"
+                                                    Command="{Binding AddTransactionCommand}"
+                                                    Visibility="{Binding IsNotEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                    Width="80"
+                                                    Margin="2" />
+                                            <Button Content="Edit" Command="{Binding EditTransactionCommand}"
+                                                    Visibility="{Binding CanEditTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                    Width="80"
+                                                    Margin="2" />
+                                            <Button Content="Cancel"
+                                                    Command="{Binding CancelTransactionCommand}"
+                                                    Width="80"
+                                                    Margin="2"
+                                                    Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <Button Content="Save" Command="{Binding SaveTransactionCommand}"
+                                                    Width="80"
+                                                    Margin="2"
+                                                    Background=" CornflowerBlue"
+                                                    Foreground="White"
+                                                    Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <DataGrid Grid.Row="0"
+                                                  ItemsSource="{Binding Source={StaticResource SortedCurrentPeriodTransactions}}"
+                                                  SelectedItem="{Binding SelectedTransaction}"
+                                                  AutoGenerateColumns="False" 
+                                                  HorizontalScrollBarVisibility="Auto"
+                                                  CanUserAddRows="False" 
+                                                  IsReadOnly="True">
+                                            <DataGrid.InputBindings>
+                                                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditTransactionCommand}" />
+                                            </DataGrid.InputBindings>
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Date"
+                                                                    Binding="{Binding TransactionDate, StringFormat=d}" Width="80" MinWidth="80" />
+                                                <DataGridTextColumn Header="Description"
+                                                                    Binding="{Binding Description}" Width="Auto" MinWidth="100" />
+                                                <DataGridTextColumn Header="Amount"
+                                                                    Binding="{Binding Amount, StringFormat=C}"
+                                                                    Width="80" MinWidth="80" />
+                                                <DataGridTextColumn Header="From" Binding="{Binding AccountName}"
+                                                                    Width="Auto" MinWidth="100" />
+                                                <DataGridTextColumn Header="To" Binding="{Binding ToAccountName}"
+                                                                    Width="Auto" MinWidth="100" />
+                                                <DataGridTextColumn Header="Memo"
+                                                                    Binding="{Binding Memo}" Width="Auto" MinWidth="100" />
+
+                                                <!-- <DataGridTemplateColumn Width="80"> -->
+                                                <!--     <DataGridTemplateColumn.CellTemplate> -->
+                                                <!--         <DataTemplate> -->
+                                                <!--             <Button Content="Remove" -->
+                                                <!--                     Background="Red" -->
+                                                <!--                     Foreground="White" -->
+                                                <!--                     Command="{Binding DataContext.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
+                                                <!--                     CommandParameter="{Binding}" -->
+                                                <!--                     Visibility="{Binding DataContext.IsNotEditingTransaction, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" /> -->
+                                                <!--         </DataTemplate> -->
+                                                <!--     </DataGridTemplateColumn.CellTemplate> -->
+                                                <!-- </DataGridTemplateColumn> -->
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+
+                                        <StackPanel Grid.Row="1" Margin="5">
+                                            <TextBlock Text="Edit Transaction Item" FontWeight="Bold" Margin="0,5"
+                                                       Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <Grid
+                                                Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <Label Grid.Column="0" Grid.Row="0" Content="Date:" />
+                                                <DatePicker Grid.Column="1" Grid.Row="0"
+                                                            SelectedDate="{Binding EditingTransactionClone.TransactionDate}"
+                                                            Margin="5" />
+
+                                                <Label Grid.Column="0" Grid.Row="1" Content="Description:" />
+                                                <ComboBox Grid.Column="1" Grid.Row="1"
+                                                          ItemsSource="{Binding BillsWithNone}"
+                                                          DisplayMemberPath="Name"
+                                                          SelectedValuePath="Id"
+                                                          SelectedValue="{Binding EditingTransactionClone.BillId, UpdateSourceTrigger=PropertyChanged}"
+                                                          Text="{Binding EditingTransactionClone.Description, UpdateSourceTrigger=PropertyChanged}"
+                                                          IsEditable="True"
+                                                          IsTextSearchEnabled="True"
+                                                          Margin="5" />
+                                                <Label Grid.Column="2" Grid.Row="1" Content="Memo:" />
+                                                <TextBox Grid.Column="3" Grid.Row="1"
+                                                         Text="{Binding EditingTransactionClone.Memo}"
+                                                         Margin="5" />
+                                                
+                                                <Label Grid.Column="0" Grid.Row="2" Content="Amount:" />
+                                                <TextBox Grid.Column="1" Grid.Row="2"
+                                                         Text="{Binding EditingTransactionClone.Amount, Converter={StaticResource AbsoluteValueConverter}, StringFormat={}{0:0.00;-0.00;''}}"
+                                                         Margin="5" />
+
+                                                <Label Grid.Column="0" Grid.Row="3" Content="From Account:" />
+                                                <ComboBox Grid.Column="1" Grid.Row="3" x:Name="FromAccountComboBox" ItemsSource="{Binding AccountsWithNone}"
+                                                          SelectedValue="{Binding EditingTransactionClone.AccountId}"
+                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
+
+                                                <Label Grid.Column="2" Grid.Row="3" Content="To Account:" />
+                                                <ComboBox Grid.Column="3" Grid.Row="3" x:Name="ToAccountComboBox"
+                                                          ItemsSource="{Binding AccountsWithNone}"
+                                                          SelectedValue="{Binding EditingTransactionClone.ToAccountId}"
+                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
+
+                                                <Label Grid.Column="0" Grid.Row="4" Content="Bill:" />
+                                                <ComboBox Grid.Column="1" Grid.Row="4"
+                                                          x:Name="BillComboBox" 
+                                                          ItemsSource="{Binding BillsWithNone}"
+                                                          SelectedValue="{Binding EditingTransactionClone.BillId}"
+                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
+
+                                                <Label Grid.Column="2" Grid.Row="4" Content="Bucket:" />
+                                                <ComboBox Grid.Column="3" Grid.Row="4" 
+                                                          x:Name="BucketComboBox" 
+                                                          ItemsSource="{Binding BucketsWithNone}"
+                                                          SelectedValue="{Binding EditingTransactionClone.BucketId}"
+                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
+
+                                                <Label Grid.Column="0" Grid.Row="5" Content="Paycheck:">
+                                                    <Label.Visibility>
+                                                        <MultiBinding
+                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
+                                                            FallbackValue="Collapsed">
+                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
+                                                            <Binding Path="Accounts" />
+                                                        </MultiBinding>
+                                                    </Label.Visibility>
+                                                </Label>
+                                                <ComboBox Grid.Column="1" Grid.Row="5"
+                                                          ItemsSource="{Binding Paychecks}"
+                                                          SelectedValue="{Binding EditingTransactionClone.PaycheckId}"
+                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5">
+                                                    <ComboBox.Visibility>
+                                                        <MultiBinding
+                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
+                                                            FallbackValue="Collapsed">
+                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
+                                                            <Binding Path="Accounts" />
+                                                        </MultiBinding>
+                                                    </ComboBox.Visibility>
+                                                </ComboBox>
+
+                                                <Label Grid.Column="2" Grid.Row="5" Content="Payroll Date:">
+                                                    <Label.Visibility>
+                                                        <MultiBinding
+                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
+                                                            FallbackValue="Collapsed">
+                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
+                                                            <Binding Path="Accounts" />
+                                                        </MultiBinding>
+                                                    </Label.Visibility>
+                                                </Label>
+                                                <DatePicker Grid.Column="3" Grid.Row="5"
+                                                            SelectedDate="{Binding EditingTransactionClone.PaycheckOccurrenceDate}"
+                                                            Margin="5">
+                                                    <DatePicker.Visibility>
+                                                        <MultiBinding
+                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
+                                                            FallbackValue="Collapsed">
+                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
+                                                            <Binding Path="Accounts" />
+                                                        </MultiBinding>
+                                                    </DatePicker.Visibility>
+                                                </DatePicker>
+
+                                                <StackPanel Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="4"
+                                                            Orientation="Horizontal" Margin="5">
+                                                    <CheckBox Content="Principal Only (Mortgage/Loan Extra)"
+                                                              IsChecked="{Binding EditingTransactionClone.IsPrincipalOnly}"
+                                                              VerticalAlignment="Center" Margin="0,0,10,0"
+                                                              Visibility="{Binding SelectedItem, ElementName=ToAccountComboBox, ConverterParameter='Mortgage|PersonalLoan', Converter={StaticResource AccountTypeToVisibilityConverter}, FallbackValue=Collapsed}" />
+                                                    <CheckBox Content="Rebalance (Adds to Debt)"
+                                                              IsChecked="{Binding EditingTransactionClone.IsRebalance}"
+                                                              VerticalAlignment="Center"
+                                                              Visibility="{Binding SelectedItem, ElementName=ToAccountComboBox, ConverterParameter='Mortgage|PersonalLoan', Converter={StaticResource AccountTypeToVisibilityConverter}, FallbackValue=Collapsed}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
+                                </DockPanel>
+                            </TabItem>
                             <TabItem Header="Bills">
                                 <DockPanel>
                                     <Grid DockPanel.Dock="Bottom">
@@ -433,260 +689,6 @@
                                             <!--             Margin="2"  -->
                                             <!--             /> -->
                                             <!-- </StackPanel> -->
-                                        </StackPanel>
-                                    </Grid>
-                                </DockPanel>
-                            </TabItem>
-                            <TabItem Header="Transaction">
-                                <DockPanel>
-                                    <Grid DockPanel.Dock="Bottom">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left"
-                                                    Margin="0,5,0,0">
-                                            <Button Content="Delete"
-                                                    Command="{Binding DeleteTransactionCommand}"
-                                                    Width="80"
-                                                    Margin="2"
-                                                    Background="Red"
-                                                    Foreground="White">
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger
-                                                                Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
-                                                                Value="Collapsed">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding IsEditingTransaction}"
-                                                                         Value="False">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                            <!-- Use MultiDataTrigger for multiple conditions -->
-                                                            <!-- <MultiDataTrigger> -->
-                                                            <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
-                                                            <!--     <MultiDataTrigger.Conditions> -->
-                                                            <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
-                                                            <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
-                                                            <!--     </MultiDataTrigger.Conditions> -->
-                                                            <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
-                                                            <!--     <Setter Property="Visibility" Value="Visible" /> -->
-                                                            <!-- </MultiDataTrigger> -->
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-
-                                            </Button>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal"
-                                                    HorizontalAlignment="Right"
-                                                    Margin="0,5,0,0">
-                                            <Button Content="Add"
-                                                    Command="{Binding AddTransactionCommand}"
-                                                    Visibility="{Binding IsNotEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                    Width="80"
-                                                    Margin="2" />
-                                            <Button Content="Edit" Command="{Binding EditTransactionCommand}"
-                                                    Visibility="{Binding CanEditTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                    Width="80"
-                                                    Margin="2" />
-                                            <Button Content="Cancel"
-                                                    Command="{Binding CancelTransactionCommand}"
-                                                    Width="80"
-                                                    Margin="2"
-                                                    Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Button Content="Save" Command="{Binding SaveTransactionCommand}"
-                                                    Width="80"
-                                                    Margin="2"
-                                                    Background=" CornflowerBlue"
-                                                    Foreground="White"
-                                                    Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="*" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-
-                                        <DataGrid Grid.Row="0"
-                                                  ItemsSource="{Binding Source={StaticResource SortedCurrentPeriodTransactions}}"
-                                                  SelectedItem="{Binding SelectedTransaction}"
-                                                  AutoGenerateColumns="False" 
-                                                  HorizontalScrollBarVisibility="Auto"
-                                                  CanUserAddRows="False" 
-                                                  IsReadOnly="True">
-                                            <DataGrid.InputBindings>
-                                                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditTransactionCommand}" />
-                                            </DataGrid.InputBindings>
-                                            <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Date"
-                                                                    Binding="{Binding Date, StringFormat=d}" Width="80" MinWidth="80" />
-                                                <DataGridTextColumn Header="Description"
-                                                                    Binding="{Binding Description}" Width="Auto" MinWidth="100" />
-                                                <DataGridTextColumn Header="Amount"
-                                                                    Binding="{Binding Amount, StringFormat=C}"
-                                                                    Width="80" MinWidth="80" />
-                                                <DataGridTextColumn Header="From" Binding="{Binding AccountName}"
-                                                                    Width="Auto" MinWidth="100" />
-                                                <DataGridTextColumn Header="To" Binding="{Binding ToAccountName}"
-                                                                    Width="Auto" MinWidth="100" />
-                                                <DataGridTextColumn Header="Memo"
-                                                                    Binding="{Binding Memo}" Width="Auto" MinWidth="100" />
-
-                                                <!-- <DataGridTemplateColumn Width="80"> -->
-                                                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                                                <!--         <DataTemplate> -->
-                                                <!--             <Button Content="Remove" -->
-                                                <!--                     Background="Red" -->
-                                                <!--                     Foreground="White" -->
-                                                <!--                     Command="{Binding DataContext.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                <!--                     CommandParameter="{Binding}" -->
-                                                <!--                     Visibility="{Binding DataContext.IsNotEditingTransaction, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" /> -->
-                                                <!--         </DataTemplate> -->
-                                                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                                                <!-- </DataGridTemplateColumn> -->
-                                            </DataGrid.Columns>
-                                        </DataGrid>
-
-                                        <StackPanel Grid.Row="1" Margin="5">
-                                            <TextBlock Text="Edit Transaction Item" FontWeight="Bold" Margin="0,5"
-                                                       Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Grid
-                                                Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                </Grid.RowDefinitions>
-
-                                                <Label Grid.Column="0" Grid.Row="0" Content="Date:" />
-                                                <DatePicker Grid.Column="1" Grid.Row="0"
-                                                            SelectedDate="{Binding EditingTransactionClone.Date}"
-                                                            Margin="5" />
-
-                                                <Label Grid.Column="0" Grid.Row="1" Content="Description:" />
-                                                <ComboBox Grid.Column="1" Grid.Row="1"
-                                                          ItemsSource="{Binding BillsWithNone}"
-                                                          DisplayMemberPath="Name"
-                                                          SelectedValuePath="Id"
-                                                          SelectedValue="{Binding EditingTransactionClone.BillId, UpdateSourceTrigger=PropertyChanged}"
-                                                          Text="{Binding EditingTransactionClone.Description, UpdateSourceTrigger=PropertyChanged}"
-                                                          IsEditable="True"
-                                                          IsTextSearchEnabled="True"
-                                                          Margin="5" />
-                                                <Label Grid.Column="2" Grid.Row="1" Content="Memo:" />
-                                                <TextBox Grid.Column="3" Grid.Row="1"
-                                                         Text="{Binding EditingTransactionClone.Memo}"
-                                                         Margin="5" />
-                                                
-                                                <Label Grid.Column="0" Grid.Row="2" Content="Amount:" />
-                                                <TextBox Grid.Column="1" Grid.Row="2"
-                                                         Text="{Binding EditingTransactionClone.Amount, StringFormat={}{0:0.00;-0.00;''}}"
-                                                         Margin="5" />
-
-                                                <Label Grid.Column="0" Grid.Row="3" Content="From Account:" />
-                                                <ComboBox Grid.Column="1" Grid.Row="3" x:Name="FromAccountComboBox" ItemsSource="{Binding AccountsWithNone}"
-                                                          SelectedValue="{Binding EditingTransactionClone.AccountId}"
-                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
-
-                                                <Label Grid.Column="2" Grid.Row="3" Content="To Account:" />
-                                                <ComboBox Grid.Column="3" Grid.Row="3" x:Name="ToAccountComboBox"
-                                                          ItemsSource="{Binding AccountsWithNone}"
-                                                          SelectedValue="{Binding EditingTransactionClone.ToAccountId}"
-                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
-
-                                                <Label Grid.Column="0" Grid.Row="4" Content="Bill:" />
-                                                <ComboBox Grid.Column="1" Grid.Row="4"
-                                                          x:Name="BillComboBox" 
-                                                          ItemsSource="{Binding BillsWithNone}"
-                                                          SelectedValue="{Binding EditingTransactionClone.BillId}"
-                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
-
-                                                <Label Grid.Column="2" Grid.Row="4" Content="Bucket:" />
-                                                <ComboBox Grid.Column="3" Grid.Row="4" 
-                                                          x:Name="BucketComboBox" 
-                                                          ItemsSource="{Binding BucketsWithNone}"
-                                                          SelectedValue="{Binding EditingTransactionClone.BucketId}"
-                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
-
-                                                <Label Grid.Column="0" Grid.Row="5" Content="Paycheck:">
-                                                    <Label.Visibility>
-                                                        <MultiBinding
-                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
-                                                            FallbackValue="Collapsed">
-                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
-                                                            <Binding Path="Accounts" />
-                                                        </MultiBinding>
-                                                    </Label.Visibility>
-                                                </Label>
-                                                <ComboBox Grid.Column="1" Grid.Row="5"
-                                                          ItemsSource="{Binding Paychecks}"
-                                                          SelectedValue="{Binding EditingTransactionClone.PaycheckId}"
-                                                          SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5">
-                                                    <ComboBox.Visibility>
-                                                        <MultiBinding
-                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
-                                                            FallbackValue="Collapsed">
-                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
-                                                            <Binding Path="Accounts" />
-                                                        </MultiBinding>
-                                                    </ComboBox.Visibility>
-                                                </ComboBox>
-
-                                                <Label Grid.Column="2" Grid.Row="5" Content="Payroll Date:">
-                                                    <Label.Visibility>
-                                                        <MultiBinding
-                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
-                                                            FallbackValue="Collapsed">
-                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
-                                                            <Binding Path="Accounts" />
-                                                        </MultiBinding>
-                                                    </Label.Visibility>
-                                                </Label>
-                                                <DatePicker Grid.Column="3" Grid.Row="5"
-                                                            SelectedDate="{Binding EditingTransactionClone.PaycheckOccurrenceDate}"
-                                                            Margin="5">
-                                                    <DatePicker.Visibility>
-                                                        <MultiBinding
-                                                            Converter="{StaticResource PaycheckFieldVisibilityConverter}"
-                                                            FallbackValue="Collapsed">
-                                                            <Binding Path="EditingTransactionClone.ToAccountId" />
-                                                            <Binding Path="Accounts" />
-                                                        </MultiBinding>
-                                                    </DatePicker.Visibility>
-                                                </DatePicker>
-
-                                                <StackPanel Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="4"
-                                                            Orientation="Horizontal" Margin="5">
-                                                    <CheckBox Content="Principal Only (Mortgage/Loan Extra)"
-                                                              IsChecked="{Binding EditingTransactionClone.IsPrincipalOnly}"
-                                                              VerticalAlignment="Center" Margin="0,0,10,0"
-                                                              Visibility="{Binding SelectedItem, ElementName=ToAccountComboBox, ConverterParameter='Mortgage|PersonalLoan', Converter={StaticResource AccountTypeToVisibilityConverter}, FallbackValue=Collapsed}" />
-                                                    <CheckBox Content="Rebalance (Adds to Debt)"
-                                                              IsChecked="{Binding EditingTransactionClone.IsRebalance}"
-                                                              VerticalAlignment="Center"
-                                                              Visibility="{Binding SelectedItem, ElementName=ToAccountComboBox, ConverterParameter='Mortgage|PersonalLoan', Converter={StaticResource AccountTypeToVisibilityConverter}, FallbackValue=Collapsed}" />
-                                                </StackPanel>
-                                            </Grid>
                                         </StackPanel>
                                     </Grid>
                                 </DockPanel>
@@ -1484,7 +1486,7 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}"
+                            <DataGridTextColumn Header="Date" Binding="{Binding TransactionDate, StringFormat=d}"
                                                 IsReadOnly="True" Width="80" />
 
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="True"

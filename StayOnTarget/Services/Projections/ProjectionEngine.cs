@@ -195,7 +195,7 @@ public class ProjectionEngine : IProjectionEngine {
             var bal = accountBalances[a.Id];
             return (a.Type == AccountType.Mortgage || a.Type == AccountType.PersonalLoan ||
                     a.Type == AccountType.CreditCard)
-                ? -bal
+                ? bal //now signed as a debt already in the database, negative
                 : bal;
         });
 
@@ -216,7 +216,7 @@ public class ProjectionEngine : IProjectionEngine {
         var bucketSpending = new Dictionary<(DateTime PeriodDate, int BucketId), decimal>();
         foreach (var transaction in allBucketTransactions) {
             if (transaction.BucketId.HasValue) {
-                var periodDate = paycheckDates.LastOrDefault(d => d <= transaction.Date);
+                var periodDate = paycheckDates.LastOrDefault(d => d <= transaction.TransactionDate);
                 if (periodDate != DateTime.MinValue) {
                     var key = (periodDate, transaction.BucketId.Value);
                     if (!bucketSpending.ContainsKey(key)) bucketSpending[key] = 0;
@@ -314,19 +314,19 @@ public class ProjectionEngine : IProjectionEngine {
                     if (!isPrincipalOnly && toAcc.MortgageDetails != null) {
                         var escrowAndInsurance = toAcc.MortgageDetails.Escrow + toAcc.MortgageDetails.MortgageInsurance;
                         principal = Math.Max(0, amountChange - escrowAndInsurance);
-                        if (accountBalances[e.ToAccountId.Value] <= principal) {
+                        if (Math.Abs(accountBalances[e.ToAccountId.Value]) <= principal) {
                             principal = accountBalances[e.ToAccountId.Value];
                             mortgagePaidOff[e.ToAccountId.Value] = true;
-                            currentEventAmount = -(principal + escrowAndInsurance);
+                            currentEventAmount = (principal + escrowAndInsurance);
                         }
                     }
-                    accountBalances[e.ToAccountId.Value] -= principal;
+                    accountBalances[e.ToAccountId.Value] += principal;
                 }
                 else if (toAcc?.Type == AccountType.PersonalLoan && isPrincipalOnly) {
-                    accountBalances[e.ToAccountId.Value] -= amountChange;
+                    accountBalances[e.ToAccountId.Value] += amountChange;
                 }
                 else if (toAcc?.Type == AccountType.CreditCard) {
-                    accountBalances[e.ToAccountId.Value] -= amountChange;
+                    accountBalances[e.ToAccountId.Value] += e.FromAccountId==null ? currentEventAmount : -currentEventAmount;
                     if (ccPaidThisCycle.ContainsKey(e.ToAccountId.Value)) {
                         ccPaidThisCycle[e.ToAccountId.Value] += amountChange;
                     }
@@ -337,7 +337,9 @@ public class ProjectionEngine : IProjectionEngine {
                 else {
                     accountBalances[e.ToAccountId.Value] += amountChange;
                 }
-                
+                if (e.ToAccountId.Value == 1) {
+                    var s = "";
+                }
                 if ((e.FromAccountId != null && e.FromAccountId.Value == 1) || (e.ToAccountId != null && e.ToAccountId.Value == 1)) {
                     var s = amountChange;
                 }
@@ -347,14 +349,16 @@ public class ProjectionEngine : IProjectionEngine {
             var effectiveFromAccountId = e.FromAccountId ?? ((e.Type == ProjectionEventType.Bill || e.Type == ProjectionEventType.Bucket || e.Type == ProjectionEventType.Transfer) ? primaryChecking : null);
             if (effectiveFromAccountId.HasValue && accountBalances.ContainsKey(effectiveFromAccountId.Value)) {
                 var fromAcc = accounts.FirstOrDefault(a => a.Id == effectiveFromAccountId.Value);
-                var amountChange = Math.Abs(currentEventAmount);
+                var amountChange = currentEventAmount;//Math.Abs(currentEventAmount);
                 var isDebt = fromAcc != null && (fromAcc.Type == AccountType.Mortgage || fromAcc.Type == AccountType.PersonalLoan || fromAcc.Type == AccountType.CreditCard);
-                
+                if (effectiveFromAccountId.Value == 1) {
+                    var s = "";
+                }
                 if (isDebt) {
                     accountBalances[effectiveFromAccountId.Value] += amountChange;
                 }
                 else {
-                    accountBalances[effectiveFromAccountId.Value] -= amountChange;
+                    accountBalances[effectiveFromAccountId.Value] += amountChange;
                 }
                 
                 if ((e.FromAccountId != null && e.FromAccountId.Value == 1) || (e.ToAccountId != null && e.ToAccountId.Value == 1)) {
@@ -367,12 +371,12 @@ public class ProjectionEngine : IProjectionEngine {
                 var bal = accountBalances[a.Id];
                 return (a.Type == AccountType.Mortgage || a.Type == AccountType.PersonalLoan ||
                         a.Type == AccountType.CreditCard)
-                    ? -bal
+                    ? bal //now properly signed in the database as a debt, negative already
                     : bal;
             });
 
             var item = new ProjectionItem {
-                Date = e.Date,
+                TransactionDate = e.Date,
                 Description = e.Description,
                 PaycheckId = e.PaycheckId,
                 Amount = currentEventAmount,
@@ -386,7 +390,7 @@ public class ProjectionEngine : IProjectionEngine {
         for (var i = 0; i < paycheckDates.Count; i++) {
             var start = paycheckDates[i];
             var next = (i + 1 < paycheckDates.Count) ? paycheckDates[i + 1] : endDate;
-            var periodItems = list.Where(item => item.Date >= start && item.Date < next).ToList();
+            var periodItems = list.Where(item => item.TransactionDate >= start && item.TransactionDate < next).ToList();
             if (periodItems.Count != 0) {
                 periodItems.First().PeriodNet = periodItems.Sum(item => item.Amount);
             }
@@ -406,7 +410,7 @@ public class ProjectionEngine : IProjectionEngine {
                 includedTotalAccounts);
 
             list.Add(new ProjectionItem {
-                Date = endDate,
+                TransactionDate = endDate,
                 Description = "End of Projection",
                 Amount = 0,
                 Balance = runningBalance,

@@ -22,6 +22,39 @@ public partial class BudgetService
                     "SELECT * FROM AccountAprHistory WHERE AccountId = @Id", new { acc.Id }).ToList();
             }
         }
+        accounts.ForEach(x => { x.Balance = 0;});
+        return accounts;
+    }
+    
+    public IEnumerable<Account> GetAllAccountsAsOf(DateTime asOfDate)
+    {
+        using var conn = _db.GetConnection();
+        var accounts = conn.Query<Account>("SELECT * FROM Accounts").ToList();
+        foreach (var acc in accounts)
+        {
+            if (acc.Type == AccountType.Mortgage)
+            {
+                acc.MortgageDetails = conn.QueryFirstOrDefault<MortgageDetails>("SELECT * FROM MortgageDetails WHERE AccountId = @Id", new { acc.Id });
+            }
+            if (acc.Type == AccountType.CreditCard)
+            {
+                acc.CreditCardDetails = conn.QueryFirstOrDefault<CreditCardDetails>("SELECT * FROM CreditCardDetails WHERE AccountId = @Id", new { acc.Id });
+                acc.AccountAprHistory = conn.Query<AccountAprHistory>(
+                    "SELECT * FROM AccountAprHistory WHERE AccountId = @Id", new { acc.Id }).ToList();
+            }
+        }
+        
+        //Because our projection massages the paycheck date to be that of its expected date, we will do the same here
+        var accountBalances = conn.Query<Account>("SELECT AccountId AS Id, ROUND(SUM(Amount), 2) AS Balance FROM Transactions WHERE (TransactionDate <= @asOfDate AND PayCheckId IS NULL) OR (PaycheckOccurrenceDate <= @asOfDate AND NOT PayCheckId IS NULL) Group By AccountId", new { asOfDate = asOfDate.ToString("yyyy-MM-dd") }).ToList();
+
+        accounts.ForEach(x => { x.Balance = 0;});
+        foreach (var account in accounts) {
+            if (accountBalances.Any(x => x.Id == account.Id)) {
+                account.Balance = accountBalances.FirstOrDefault(x => x.Id == account.Id).Balance;
+                account.BalanceAsOf = asOfDate;
+            }
+        }
+        
         return accounts;
     }
 
