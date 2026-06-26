@@ -132,12 +132,12 @@ public class ProjectionEngine : IProjectionEngine {
 
         // 3. Create events for Buckets
         events.AddBucketEvents(accounts, paychecks, buckets, periodBuckets, current, endDate);
-
+        var test = events.Where(x => x.Amount == -500).ToList();
         // 4. Create events for Transactions
         // We always use uniqueTransactions to build the events list for simulation.
         // This ensures consistent balance reconstruction between ShowReconciled modes.
         events.AddTransactionEvents(uniqueTransactions, showReconciled);
-
+        var test8 = events.Where(x => x.Amount == -500).ToList();
         // 5. Create events or Interest & Growth Setup
         // Use all transactions for interest calculation to correctly identify manual adjustments
         events.AddInterestEvents(accounts, uniqueTransactions, startDate, endDate);
@@ -154,7 +154,7 @@ public class ProjectionEngine : IProjectionEngine {
                 e.Type == ProjectionEventType.Paycheck || (e.PaycheckId.HasValue && e.ToAccountId.HasValue))
             .ThenByDescending(e => e.Type == ProjectionEventType.Paycheck)
             .ToList();
-
+        var test2 = events.Where(x => x.Amount == -500).ToList();
         // Tracking variables
         var accountBalanceDates = accounts.ToDictionary(a => a.Id, a => a.BalanceAsOf);
         var accumulatedGrowth = accounts.ToDictionary(a => a.Id, a => 0m);
@@ -351,7 +351,7 @@ public class ProjectionEngine : IProjectionEngine {
                 var fromAcc = accounts.FirstOrDefault(a => a.Id == effectiveFromAccountId.Value);
                 var amountChange = currentEventAmount;//Math.Abs(currentEventAmount);
                 var isDebt = fromAcc != null && (fromAcc.Type == AccountType.Mortgage || fromAcc.Type == AccountType.PersonalLoan || fromAcc.Type == AccountType.CreditCard);
-                if (effectiveFromAccountId.Value == 1) {
+                if (e.FromAccountId == 7) {
                     var s = "";
                 }
                 if (isDebt) {

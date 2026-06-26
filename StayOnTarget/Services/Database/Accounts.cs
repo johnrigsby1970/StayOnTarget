@@ -45,12 +45,46 @@ public partial class BudgetService
         }
         
         //Because our projection massages the paycheck date to be that of its expected date, we will do the same here
-        var accountBalances = conn.Query<Account>("SELECT AccountId AS Id, ROUND(SUM(Amount), 2) AS Balance FROM Transactions WHERE (TransactionDate <= @asOfDate AND PayCheckId IS NULL) OR (PaycheckOccurrenceDate <= @asOfDate AND NOT PayCheckId IS NULL) Group By AccountId", new { asOfDate = asOfDate.ToString("yyyy-MM-dd") }).ToList();
+        string query = """
+                       SELECT 
+                           t.AccountId AS Id, 
+                           ROUND(
+                               SUM(
+                                   CASE 
+                                       -- If it's principal-only, the entire amount goes to the balance
+                                       -- If the amount is negative, it is not a payment, its interest or some adjustment
+                                       WHEN t.IsPrincipalOnly = 1 OR t.Amount < 0 THEN t.Amount
+                                       -- Otherwise, subtract the escrow amount active at the time of the transaction
+                                       ELSE t.Amount - COALESCE(
+                                           (
+                                               SELECT md.Escrow 
+                                               FROM MortgageDetails md
+                                               WHERE md.AccountId = t.AccountId -- Ensures we match the specific account
+                                                 AND md.PaymentDate <= COALESCE(t.PaycheckOccurrenceDate, t.TransactionDate)
+                                               ORDER BY md.PaymentDate DESC
+                                               LIMIT 1
+                                           ), 
+                                           0
+                                       )
+                                   END
+                               ), 
+                               2
+                           ) AS Balance 
+                       FROM Transactions t
+                       WHERE (t.TransactionDate <= @asOfDate AND t.PayCheckId IS NULL) 
+                          OR (t.PaycheckOccurrenceDate <= @asOfDate AND t.PayCheckId IS NOT NULL) 
+                       GROUP BY t.AccountId;
+                       """;
+        
+        var accountBalances = conn.Query<Account>(query, new { asOfDate = asOfDate.ToString("yyyy-MM-dd") }).ToList();
 
         accounts.ForEach(x => { x.Balance = 0;});
         foreach (var account in accounts) {
             if (accountBalances.Any(x => x.Id == account.Id)) {
                 account.Balance = accountBalances.FirstOrDefault(x => x.Id == account.Id).Balance;
+                // if (account.MortgageDetails != null) {
+                //     account.Balance = account.Balance - account.MortgageDetails.Escrow;
+                // }
                 account.BalanceAsOf = asOfDate;
             }
         }

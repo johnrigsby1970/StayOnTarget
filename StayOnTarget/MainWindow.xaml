@@ -1419,15 +1419,15 @@
                         <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
-                            <TextBlock x:Name="ToggleTextBlock" Text="Show reconciled transactions"
-                                       HorizontalAlignment="Center" Margin="0,5,0,5" />
-                            <ToggleButton Style="{StaticResource ToggleButtonStyle}"
-                                          Margin="0,0,0,0"
-                                          ToolTip="{Binding Path=ToggleReconciliationText}"
-                                          IsChecked="{Binding Path=ShowReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Width="50" Height="15" />
-                        </StackPanel>
+                        <!-- <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
+                        <!--     <TextBlock x:Name="ToggleTextBlock" Text="Show reconciled transactions" -->
+                        <!--                HorizontalAlignment="Center" Margin="0,5,0,5" /> -->
+                        <!--     <ToggleButton Style="{StaticResource ToggleButtonStyle}" -->
+                        <!--                   Margin="0,0,0,0" -->
+                        <!--                   ToolTip="{Binding Path=ToggleReconciliationText}" -->
+                        <!--                   IsChecked="{Binding Path=ShowReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" -->
+                        <!--                   Width="50" Height="15" /> -->
+                        <!-- </StackPanel> -->
                         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
                             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
                                 <Label Content="Start:" Margin="5,0,0,5" />

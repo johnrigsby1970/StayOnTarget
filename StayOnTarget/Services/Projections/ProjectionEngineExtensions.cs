@@ -480,17 +480,17 @@ public static class ProjectionEngineExtensions {
                 //with regard to this transaction since the bank has not posted it yet.
                 var accountId = transaction.AccountId;
                 var toAcountId = transaction.ToAccountId;
-                if (!showReconciled) {
-                    if (transaction.AccountId.HasValue && transaction.FromAccountReconciledId.HasValue) {
-                        accountId = null;
-                    }
+                // if (!showReconciled) {
+                //     if (transaction.AccountId.HasValue && transaction.FromAccountReconciledId.HasValue) {
+                //         accountId = null;
+                //     }
+                //
+                //     if (transaction.ToAccountId.HasValue && transaction.ToAccountReconciledId.HasValue) {
+                //         toAcountId = null;
+                //     }
+                // }
 
-                    if (transaction.ToAccountId.HasValue && transaction.ToAccountReconciledId.HasValue) {
-                        toAcountId = null;
-                    }
-                }
-
-                if (Math.Abs(transaction.Amount) == 1750) {
+                if (Math.Abs(transaction.Amount) == 500) {
                     var s = "";
                 }
                 events.Add(new ProjectionGridItem(transaction.TransactionDate, transaction.Amount, transaction.Description,
@@ -646,7 +646,9 @@ public static class ProjectionEngineExtensions {
                     var dueDate = (pb != null) ? pb.DueDate : nextDue;
                     if (dueDate >= DateTime.Today) {
                         var paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
-
+                        if (bill.ExpectedAmount == 500) {
+                            var x = "";
+                        }
                         var fromAccId = bill.AccountId ?? primaryChecking;
                         if (amountToUse != 0) {
                             if (bill.ToAccountId.HasValue) {

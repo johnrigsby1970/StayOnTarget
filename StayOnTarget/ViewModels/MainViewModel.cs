@@ -51,7 +51,7 @@ public class MainViewModel : ViewModelBase {
     private ObservableCollection<ToastViewModel> _toasts = new();
     private bool _isEditingPaycheck;
     private Paycheck? _selectedPaycheck;
-    private bool _showReconciled;
+    private bool _showReconciled = true;
     private string _toggleReconciliationText = "Show Reconciled";
     private DateTime _projectionEndDate = DateTime.Today.AddYears(1);
     private DateTime? _projectionStartDate = null;
