@@ -83,6 +83,7 @@ public partial class BudgetService {
     }
 
     public async Task<bool> UpdateTransactionForReconciliation(Transaction transaction) {
+        try {
         using var conn = _db.GetConnection();
 
         //Note, it is possible this transaction has two parts but only one part has been sent in for a change specific to reconciliation.
@@ -139,6 +140,7 @@ public partial class BudgetService {
             }
         }
         
+        await conn.OpenAsync();
         await using var tx = conn.BeginTransaction();
         try {
             if (transaction.AccountId.HasValue) {
@@ -168,6 +170,13 @@ public partial class BudgetService {
         }
         finally {
             if (conn.State == ConnectionState.Open) await conn.CloseAsync();
+        } 
+        }
+        catch(Exception ex) {
+            throw;
+        }
+        finally {
+
         }
     }
 
