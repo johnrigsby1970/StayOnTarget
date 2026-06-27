@@ -51,6 +51,15 @@ public partial class BudgetService {
         return MergeDbRowsToUiTransactions(dbRows);
     }
 
+    public List<string> GetAlreadyImportedBankIds(int accountId) {
+        using var conn = _db.GetConnection();
+        var dbRows = conn
+            .Query<string>(
+                "SELECT FitId FROM Transactions WHERE AccountId=@accountId", new { accountId })
+            .ToList();
+        return dbRows;
+    }
+
     public IEnumerable<Transaction> GetAllUnreconciledTransactions() {
         using var conn = _db.GetConnection();
         var dbRows = conn
@@ -84,82 +93,117 @@ public partial class BudgetService {
 
     public async Task<bool> UpdateTransactionForReconciliation(Transaction transaction) {
         try {
-        using var conn = _db.GetConnection();
+            using var conn = _db.GetConnection();
 
-        //Note, it is possible this transaction has two parts but only one part has been sent in for a change specific to reconciliation.
-        if (transaction.AccountId.HasValue) {
-            
-            var oldRows = (await conn.QueryAsync<dynamic>(
-                "SELECT AccountId, TransactionDate FROM Transactions WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId AND (NOT ReconciliationId IS NULL AND NOT ReconciliationId=@ReconciliationId)",
-                new {
-                    AccountId = transaction.AccountId, TransactionId = transaction.TransactionId.ToString(),
-                    ReconciliationId = transaction.FromAccountReconciledId
-                })).ToList();
-
-            if (oldRows.Any()) {
-                //its already reconciled and with a different id
-                MessageBoxResult result = MessageBox.Show(
-                    $"This change will invalidate reconciliations for {transaction.AccountName}. You will need to redo your reconciliation request after first reverting prior reconciliation. Revert prior reconciliation?",
-                    "Confirmation",
-                    MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                if (result != MessageBoxResult.Yes) return false;
-
-                // Execute historical drops
-                await InvalidateReconciliationsAfterDate(transaction.AccountId.Value, transaction.TransactionDate);
-
-                if (transaction.FromAccountReconciledId.HasValue) {
-                    transaction.FromAccountReconciledId = null;
-                }
-            }
-        }
-
-        if (transaction.ToAccountId.HasValue) {
-            var oldRows = (await conn.QueryAsync<dynamic>(
-                "SELECT AccountId, TransactionDate FROM Transactions WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId AND (NOT ReconciliationId IS NULL AND NOT ReconciliationId=@ReconciliationId)",
-                new {
-                    AccountId = transaction.ToAccountId, TransactionId = transaction.TransactionId.ToString(),
-                    ReconciliationId = transaction.ToAccountReconciledId
-                })).ToList();
-
-            if (oldRows.Any()) {
-                //its already reconciled and with a different id
-                MessageBoxResult result = MessageBox.Show(
-                    $"This change will invalidate reconciliations for {transaction.ToAccountName}. You will need to redo your reconciliation request after first reverting prior reconciliation. Revert prior reconciliation?",
-                    "Confirmation",
-                    MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                if (result != MessageBoxResult.Yes) return false;
-
-                // Execute historical drops
-                await InvalidateReconciliationsAfterDate(transaction.ToAccountId.Value, transaction.TransactionDate);
-
-                if (transaction.ToAccountReconciledId.HasValue) {
-                    transaction.ToAccountReconciledId = null;
-                }
-            }
-        }
-        
-        await conn.OpenAsync();
-        await using var tx = conn.BeginTransaction();
-        try {
+            //Note, it is possible this transaction has two parts but only one part has been sent in for a change specific to reconciliation.
             if (transaction.AccountId.HasValue) {
-                await conn.ExecuteAsync(
-                    @"UPDATE Transactions SET ReconciliationId=@ReconciliationId WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId",
+                var oldRows = (await conn.QueryAsync<dynamic>(
+                    "SELECT AccountId, TransactionDate FROM Transactions WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId AND (NOT ReconciliationId IS NULL AND NOT ReconciliationId=@ReconciliationId)",
                     new {
-                        AccountId = transaction.AccountId, ReconciliationId = transaction.FromAccountReconciledId,
-                        TransactionId = transaction.TransactionId.ToString()
-                    });
+                        AccountId = transaction.AccountId, TransactionId = transaction.TransactionId.ToString(),
+                        ReconciliationId = transaction.FromAccountReconciledId
+                    })).ToList();
+
+                if (oldRows.Any()) {
+                    //its already reconciled and with a different id
+                    MessageBoxResult result = MessageBox.Show(
+                        $"This change will invalidate reconciliations for {transaction.AccountName}. You will need to redo your reconciliation request after first reverting prior reconciliation. Revert prior reconciliation?",
+                        "Confirmation",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (result != MessageBoxResult.Yes) return false;
+
+                    // Execute historical drops
+                    await InvalidateReconciliationsAfterDate(transaction.AccountId.Value, transaction.TransactionDate);
+
+                    if (transaction.FromAccountReconciledId.HasValue) {
+                        transaction.FromAccountReconciledId = null;
+                    }
+                }
             }
 
             if (transaction.ToAccountId.HasValue) {
-                await conn.ExecuteAsync(
-                    @"UPDATE Transactions SET ReconciliationId=@ReconciliationId WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId",
+                var oldRows = (await conn.QueryAsync<dynamic>(
+                    "SELECT AccountId, TransactionDate FROM Transactions WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId AND (NOT ReconciliationId IS NULL AND NOT ReconciliationId=@ReconciliationId)",
                     new {
-                        AccountId = transaction.ToAccountId, ReconciliationId = transaction.ToAccountReconciledId,
-                        TransactionId = transaction.TransactionId.ToString()
-                    });
+                        AccountId = transaction.ToAccountId, TransactionId = transaction.TransactionId.ToString(),
+                        ReconciliationId = transaction.ToAccountReconciledId
+                    })).ToList();
+
+                if (oldRows.Any()) {
+                    //its already reconciled and with a different id
+                    MessageBoxResult result = MessageBox.Show(
+                        $"This change will invalidate reconciliations for {transaction.ToAccountName}. You will need to redo your reconciliation request after first reverting prior reconciliation. Revert prior reconciliation?",
+                        "Confirmation",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (result != MessageBoxResult.Yes) return false;
+
+                    // Execute historical drops
+                    await InvalidateReconciliationsAfterDate(transaction.ToAccountId.Value,
+                        transaction.TransactionDate);
+
+                    if (transaction.ToAccountReconciledId.HasValue) {
+                        transaction.ToAccountReconciledId = null;
+                    }
+                }
             }
+
+            await conn.OpenAsync();
+            await using var tx = conn.BeginTransaction();
+            try {
+                if (transaction.AccountId.HasValue) {
+                    await conn.ExecuteAsync(
+                        @"UPDATE Transactions SET ReconciliationId=@ReconciliationId WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId",
+                        new {
+                            AccountId = transaction.AccountId, ReconciliationId = transaction.FromAccountReconciledId,
+                            TransactionId = transaction.TransactionId.ToString()
+                        });
+                }
+
+                if (transaction.ToAccountId.HasValue) {
+                    await conn.ExecuteAsync(
+                        @"UPDATE Transactions SET ReconciliationId=@ReconciliationId WHERE AccountId=@AccountId AND TRANSACTIONID=@TransactionId",
+                        new {
+                            AccountId = transaction.ToAccountId, ReconciliationId = transaction.ToAccountReconciledId,
+                            TransactionId = transaction.TransactionId.ToString()
+                        });
+                }
+
+                tx.Commit();
+                return true;
+            }
+            catch {
+                tx.Rollback();
+                throw;
+            }
+            finally {
+                if (conn.State == ConnectionState.Open) await conn.CloseAsync();
+            }
+        }
+        catch (Exception ex) {
+            throw;
+        }
+        finally { }
+    }
+
+    public async Task<bool> UpdateTransactionForBankFitId(int accountId, string transactionId, string fitId,
+        string bankFitId, DateTime transactionDate, string description) {
+        using var conn = _db.GetConnection();
+
+        await conn.OpenAsync();
+        await using var tx = conn.BeginTransaction();
+        try {
+            await conn.ExecuteAsync(
+                @"UPDATE Transactions SET Description=@description, FitId=@bankFitId, TransactionDate=@transactionDate WHERE AccountId=@accountId AND TRANSACTIONID=@transactionId AND FITID=@fitId",
+                new {
+                    description,
+                    bankFitId,
+                    transactionDate,
+                    accountId,
+                    transactionId,
+                    fitId
+                });
 
             tx.Commit();
             return true;
@@ -170,16 +214,9 @@ public partial class BudgetService {
         }
         finally {
             if (conn.State == ConnectionState.Open) await conn.CloseAsync();
-        } 
-        }
-        catch(Exception ex) {
-            throw;
-        }
-        finally {
-
         }
     }
-
+    
     public async Task<bool> UpsertTransactionAsync(Transaction t,
         bool showConfirmationOfImpactToExistingReconciliations = true) {
         try {
@@ -455,7 +492,7 @@ public partial class BudgetService {
             BucketName = row.BucketName,
             PeriodDate = DateTime.Parse(row.PeriodDate),
             IsPrincipalOnly = row.IsPrincipalOnly == 1,
-            FitId = Guid.Parse(row.FitId?.ToString()),
+            FitId = row.FitId?.ToString(),
             PaycheckId = row.PaycheckId != null ? (int)row.PaycheckId : null,
             PaycheckOccurrenceDate =
                 row.PaycheckOccurrenceDate != null ? DateTime.Parse(row.PaycheckOccurrenceDate) : null,

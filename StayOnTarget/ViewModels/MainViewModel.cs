@@ -4,6 +4,7 @@ using System.Windows.Input;
 using StayOnTarget.Models;
 using StayOnTarget.Services;
 using StayOnTarget.Services.Projections;
+using StayOnTarget.Views;
 
 namespace StayOnTarget.ViewModels;
 
@@ -514,6 +515,8 @@ public class MainViewModel : ViewModelBase {
     public ICommand AddAccountCommand => new RelayCommand(_ => AddAccount(), _ => IsNotEditingAccount);
     public ICommand EditAccountCommand => new RelayCommand(_ => EditAccount(), _ => CanEditAccount);
     public ICommand ReconcileAccountCommand => new RelayCommand(_ => ReconcileAccount(), _ => IsEditingAccount);
+    public ICommand ImportAccountCommand => new RelayCommand(_ => ImportAccount(), _ => IsEditingAccount);
+    
     public ICommand SetAccountAprRatesCommand => new RelayCommand(_ => SetAccountAprRates(), _ => IsEditingAccount);
     public ICommand SaveAccountCommand => new RelayCommand(_ => SaveAccount(), _ => IsEditingAccount);
 
@@ -985,7 +988,7 @@ public class MainViewModel : ViewModelBase {
     #region Transaction CRUD
 
     private void AddTransaction() {
-        var guid = Guid.NewGuid();
+        var guid = Guid.NewGuid().ToString();
         EditingTransactionClone = new Transaction {
             Description = "", Memo = "", Amount = 0, TransactionDate = DateTime.Today, PeriodDate = CurrentPeriodDate,
             FitId = guid
@@ -1784,6 +1787,15 @@ public class MainViewModel : ViewModelBase {
     private void ReconcileAccount() {
         if (EditingAccountClone == null) return;
         var window = new ReconciliationWindow(EditingAccountClone, _budgetService) {
+            Owner = Application.Current.MainWindow
+        };
+        window.ShowDialog();
+        CalculateProjections();
+    }
+    
+    private void ImportAccount() {
+        if (EditingAccountClone == null) return;
+        var window = new ImportReconciliationWindow(EditingAccountClone, _budgetService) {
             Owner = Application.Current.MainWindow
         };
         window.ShowDialog();
