@@ -186,7 +186,7 @@
                                                         <Setter Property="Visibility" Value="Visible" />
                                                         <Style.Triggers>
                                                             <DataTrigger
-                                                                Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                                Binding="{Binding EditingTransactionClone.TransactionId, Converter={StaticResource NullToVisibilityConverter}}"
                                                                 Value="Collapsed">
                                                                 <Setter Property="Visibility" Value="Collapsed" />
                                                             </DataTrigger>
