@@ -6,6 +6,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Windows;
+using CsvHelper;
 
 namespace StayOnTarget.ViewModels;
 
@@ -46,12 +47,31 @@ namespace StayOnTarget.ViewModels;
         public ICommand SaveCommand { get; }
 
         public ICommand ImportQfxCommand { get; }
+        public ICommand ImportCsvCommand { get; }
+
+        private CsvImportMappingViewModel? _csvMapping;
+        public CsvImportMappingViewModel? CsvMapping {
+            get => _csvMapping;
+            set => SetProperty(ref _csvMapping, value);
+        }
+
+        private bool _isMappingVisible;
+        public bool IsMappingVisible {
+            get => _isMappingVisible;
+            set => SetProperty(ref _isMappingVisible, value);
+        }
+
+        public ICommand ConfirmCsvImportCommand { get; }
+        public ICommand CancelCsvImportCommand { get; }
 
         public ImportReconciliationViewModel(Account account, BudgetService budgetService) {
             _account = account;
             _budgetService = budgetService;
 
             ImportQfxCommand = new RelayCommand(param => PromptAndLoadQfx());
+            ImportCsvCommand = new RelayCommand(param => PromptAndLoadCsv());
+            ConfirmCsvImportCommand = new RelayCommand(param => ConfirmCsvImport(), param => CsvMapping?.CanImport == true);
+            CancelCsvImportCommand = new RelayCommand(param => { IsMappingVisible = false; });
             SaveCommand = new RelayCommand(param => Save());
 
             // Use a lambda to capture the parameter (param) and call your method
@@ -121,7 +141,7 @@ namespace StayOnTarget.ViewModels;
 
         private void PromptAndLoadQfx() {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog {
-                Filter = "QFX Files (*.qfx)|*.qfx|OFX Files (*.ofx)|*.ofx|All Files (*.*)|*.*",
+                Filter = "QFX Files (*.qfx)|*.qfx|OFX Files (*.ofx)|*.ofx",
                 Title = "Select Bank QFX File"
             };
 
@@ -129,6 +149,74 @@ namespace StayOnTarget.ViewModels;
                 LastFileName = openFileDialog.FileName;
                 ParseAndPopulateQfx(LastFileName);
             }
+        }
+
+        private void PromptAndLoadCsv() {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog {
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                Title = "Select Bank CSV File"
+            };
+
+            if (openFileDialog.ShowDialog() == true) {
+                LastFileName = openFileDialog.FileName;
+                var mappingPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"mapping_{_account.Id}.json");
+                CsvMapping = new CsvImportMappingViewModel(LastFileName, mappingPath);
+                IsMappingVisible = true;
+            }
+        }
+
+        private void ConfirmCsvImport() {
+            if (CsvMapping == null || !CsvMapping.CanImport) return;
+
+            var mappingPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"mapping_{_account.Id}.json");
+            CsvMapping.SaveMapping(mappingPath);
+            
+            ParseAndPopulateCsv(CsvMapping.FilePath);
+            IsMappingVisible = false;
+        }
+
+        private void ParseAndPopulateCsv(string filePath) {
+            if (!File.Exists(filePath) || CsvMapping == null) return;
+
+            ImportedTransactions.Clear();
+            var processedBankIds = _budgetService.GetAlreadyImportedBankIds(_account.Id);
+
+            using (var reader = new StreamReader(filePath))
+            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture)) {
+                csv.Read();
+                csv.ReadHeader();
+                while (csv.Read()) {
+                    string bankId = csv.GetField(CsvMapping.BankIdHeader!) ?? Guid.NewGuid().ToString();
+                    
+                    if (processedBankIds.Contains(bankId)) {
+                        var rec = UnreconciledManualTransactions.SingleOrDefault(x => x.FitId == bankId);
+                        if (rec != null) {
+                            UnreconciledManualTransactions.Remove(rec);
+                        }
+                        continue;
+                    }
+
+                    string rawDate = csv.GetField(CsvMapping.DateHeader!) ?? "";
+                    string rawAmount = csv.GetField(CsvMapping.AmountHeader!) ?? "";
+                    string payee = csv.GetField(CsvMapping.PayeeHeader!) ?? "";
+
+                    DateTime date = DateTime.Today;
+                    DateTime.TryParse(rawDate, CultureInfo.CurrentCulture, DateTimeStyles.None, out date);
+
+                    decimal amount = 0;
+                    decimal.TryParse(rawAmount, NumberStyles.Any, CultureInfo.InvariantCulture, out amount);
+
+                    ImportedTransactions.Add(new ImportedTransactionViewModel {
+                        BankId = bankId,
+                        Date = date,
+                        Amount = amount,
+                        Payee = payee.Trim(),
+                        Status = "Unmatched"
+                    });
+                }
+            }
+
+            AutoMatchTransactions();
         }
 
         private void ParseAndPopulateQfx(string filePath) {
@@ -201,6 +289,7 @@ namespace StayOnTarget.ViewModels;
                     imported.MatchedManualFitId = match.FitId;
                     imported.MatchedManualTransactionDate = match.TransactionDate;
                     imported.MatchedManualTransactionId = match.TransactionId;
+
                     match.IsMatched = true;
                     // Set selection defaults to help the user review
                     SelectedImported = imported;

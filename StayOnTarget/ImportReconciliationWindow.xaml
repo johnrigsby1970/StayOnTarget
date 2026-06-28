@@ -9,6 +9,10 @@
            Title="Import &amp; Reconcile QFX Transactions" Height="650" Width="900"
            WindowStartupLocation="CenterScreen">
 
+    <av:Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </av:Window.Resources>
+
     <!-- <av:Window.DataContext> -->
     <!--     <local:ImportReconciliationViewModel /> -->
     <!-- </av:Window.DataContext> -->
@@ -101,6 +105,13 @@
                     <Button Content="Open QFX File..."
                             Command="{Binding ImportQfxCommand}"
                             Padding="10,4"
+                            Margin="0,0,10,0"
+                            HorizontalAlignment="Right" />
+
+                    <Button Content="Open CSV File..."
+                            Command="{Binding ImportCsvCommand}"
+                            Padding="10,4"
+                            Margin="0,0,10,0"
                             HorizontalAlignment="Right" />
 
                     <Button Content="Save Changes" 
@@ -111,5 +122,54 @@
                 </StackPanel>
             </av:Grid>
         </DockPanel>
+
+        <!-- CSV Mapping Overlay -->
+        <Grid Background="#80000000" Visibility="{Binding IsMappingVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="White" Width="600" VerticalAlignment="Center" Padding="20" CornerRadius="8" BorderBrush="Gray" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Map CSV Columns" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" />
+                    
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Date Column:" VerticalAlignment="Center" Margin="0,5" />
+                        <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding CsvMapping.AvailableHeaders}" SelectedItem="{Binding CsvMapping.DateHeader}" Margin="0,5" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Amount Column:" VerticalAlignment="Center" Margin="0,5" />
+                        <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding CsvMapping.AvailableHeaders}" SelectedItem="{Binding CsvMapping.AmountHeader}" Margin="0,5" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Payee Column:" VerticalAlignment="Center" Margin="0,5" />
+                        <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding CsvMapping.AvailableHeaders}" SelectedItem="{Binding CsvMapping.PayeeHeader}" Margin="0,5" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="FITID / Reference:" VerticalAlignment="Center" Margin="0,5" />
+                        <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding CsvMapping.AvailableHeaders}" SelectedItem="{Binding CsvMapping.BankIdHeader}" Margin="0,5" />
+                    </Grid>
+
+                    <TextBlock Text="Preview (First 5 Rows):" FontWeight="Bold" Margin="0,10,0,5" />
+                    <DataGrid ItemsSource="{Binding CsvMapping.PreviewRows}" Height="150" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="100" />
+                            <DataGridTextColumn Header="Payee" Binding="{Binding Payee}" Width="*" />
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=C}" Width="100" />
+                            <DataGridTextColumn Header="BankId" Binding="{Binding BankId}" Width="120" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="Cancel" Command="{Binding CancelCsvImportCommand}" Width="80" Margin="0,0,10,0" />
+                        <Button Content="Import" Command="{Binding ConfirmCsvImportCommand}" Width="100" FontWeight="Bold" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </av:Window>

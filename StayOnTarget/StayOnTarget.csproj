@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="CsvHelper" Version="33.1.0" />
       <PackageReference Include="Dapper" Version="2.1.66" />
       <PackageReference Include="LiveChartsCore" Version="2.0.0-rc2" />
       <PackageReference Include="LiveChartsCore.SkiaSharpView" Version="2.0.0-rc2" />

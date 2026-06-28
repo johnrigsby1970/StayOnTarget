@@ -194,10 +194,10 @@ public partial class BudgetService {
         await conn.OpenAsync();
         await using var tx = conn.BeginTransaction();
         try {
+            //Description=@description, 
             await conn.ExecuteAsync(
-                @"UPDATE Transactions SET Description=@description, FitId=@bankFitId, TransactionDate=@transactionDate WHERE AccountId=@accountId AND TRANSACTIONID=@transactionId AND FITID=@fitId",
+                @"UPDATE Transactions SET FitId=@bankFitId, TransactionDate=@transactionDate WHERE AccountId=@accountId AND TRANSACTIONID=@transactionId AND FITID=@fitId",
                 new {
-                    description,
                     bankFitId,
                     transactionDate,
                     accountId,
