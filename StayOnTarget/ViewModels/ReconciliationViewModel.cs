@@ -1,7 +1,9 @@
 ﻿using System.Collections.ObjectModel;
+using System.Windows;
 using Newtonsoft.Json;
 using StayOnTarget.Models;
 using StayOnTarget.Services;
+using StayOnTarget.Views;
 
 namespace StayOnTarget.ViewModels;
 
@@ -64,6 +66,14 @@ public class ReconciliationViewModel : ViewModelBase {
         set => SetProperty(ref _newReconciledDate, value);
     }
 
+    public void ImportAccount() {
+        var window = new ImportReconciliationWindow(_account, _budgetService) {
+            Owner = Application.Current.MainWindow
+        };
+        window.ShowDialog();
+        LoadData();
+    }
+    
     private void LoadData() {
         decimal beginningBalance = _account.Balance;
         DateTime? lastReconciledDate = _account.BalanceAsOf;

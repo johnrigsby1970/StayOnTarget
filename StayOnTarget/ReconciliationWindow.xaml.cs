@@ -4,12 +4,13 @@ using System.Windows.Input;
 using StayOnTarget.Models;
 using StayOnTarget.Services;
 using StayOnTarget.ViewModels;
+using StayOnTarget.Views;
 
 namespace StayOnTarget;
 
 public partial class ReconciliationWindow : Window {
     private readonly ReconciliationViewModel _viewModel;
-
+private readonly BudgetService _budgetService;
     public ReconciliationWindow(Account account, BudgetService budgetService) {
         InitializeComponent();
         _viewModel = new ReconciliationViewModel(account, budgetService);
@@ -29,6 +30,10 @@ public partial class ReconciliationWindow : Window {
         else {
             MessageBox.Show("Reconciliation cancelled.");
         }
+    }
+    
+    public void HandleImportAccount_Click(object sender, RoutedEventArgs e) {
+        _viewModel.ImportAccount();
     }
 
     public void HandleCheck(object sender, RoutedEventArgs e) {
