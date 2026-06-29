@@ -2,7 +2,7 @@
     // A wrapper for the QFX imported transactions
     public class ImportedTransactionViewModel : ViewModelBase {
         public string BankId { get; set; } // The FITID from the QFX
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
         public decimal Amount { get; set; }
         public string Payee { get; set; }
 

@@ -1,11 +1,8 @@
 ﻿using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.IO;
 using System.Text.Json;
-using System.Windows.Input;
 using CsvHelper;
 using System.Globalization;
-using CsvHelper.Configuration;
 
 namespace StayOnTarget.ViewModels;
 

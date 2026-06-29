@@ -11,7 +11,7 @@ public class ReconciliationViewModel : ViewModelBase {
     private readonly BudgetService _budgetService;
     private readonly ReconciliationService _reconciliationService;
     private Account _account;
-
+    
     public ReconciliationViewModel(Account account, BudgetService budgetService) {
         _account = account;
         _budgetService = budgetService;
@@ -37,7 +37,7 @@ public class ReconciliationViewModel : ViewModelBase {
         get => _beginningBalance;
         set => SetProperty(ref _beginningBalance, value);
     }
-
+    
     private decimal _endingBalance;
 
     public decimal EndingBalance {
