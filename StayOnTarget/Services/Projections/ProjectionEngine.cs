@@ -57,7 +57,7 @@ public class ProjectionEngine : IProjectionEngine {
 
         var accountBalances = accounts.ToList().ToDictionary(a => a.Id, a => a.Balance);
         var accountNames = accounts.ToDictionary(a => a.Id, a => a.Name);
-
+        var moneyAccountIds = accounts.Where(x => x.Type == AccountType.Checking || x.Type == AccountType.Savings).Select(x => x.Id).ToList();
         var includedTotalAccounts = new HashSet<int>(accounts.Where(a => a.IncludeInTotal).Select(a => a.Id));
 
         var uniqueTransactions = allTransactions;
@@ -383,14 +383,20 @@ public class ProjectionEngine : IProjectionEngine {
                 Balance = runningBalance,
                 AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value)
             };
+            if(
+                e.FromAccountId != null && moneyAccountIds.Contains(e.FromAccountId.Value) || 
+                 (e.ToAccountId != null && moneyAccountIds.Contains(e.ToAccountId.Value)
+                 )){
+                item.InOrOutOfMoneyAccount = true;
+            }
             list.Add(item);
         }
 
-        //Calculate the net income for this period.
+        //Calculate the net income for this period. Not counting investment accounts unrealized gains/losses.
         for (var i = 0; i < paycheckDates.Count; i++) {
             var start = paycheckDates[i];
             var next = (i + 1 < paycheckDates.Count) ? paycheckDates[i + 1] : endDate;
-            var periodItems = list.Where(item => item.TransactionDate >= start && item.TransactionDate < next).ToList();
+            var periodItems = list.Where(item => item.TransactionDate >= start && item.TransactionDate < next && item.InOrOutOfMoneyAccount).ToList();
             if (periodItems.Count != 0) {
                 periodItems.First().PeriodNet = periodItems.Sum(item => item.Amount);
             }
@@ -408,7 +414,7 @@ public class ProjectionEngine : IProjectionEngine {
                 accountBalanceDates,
                 accumulatedGrowth,
                 includedTotalAccounts);
-
+            
             list.Add(new ProjectionItem {
                 TransactionDate = endDate,
                 Description = "End of Projection",

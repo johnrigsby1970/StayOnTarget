@@ -71,8 +71,8 @@ public partial class BudgetService
                                2
                            ) AS Balance 
                        FROM Transactions t
-                       WHERE (t.TransactionDate <= @asOfDate AND t.PayCheckId IS NULL) 
-                          OR (t.PaycheckOccurrenceDate <= @asOfDate AND t.PayCheckId IS NOT NULL) 
+                       WHERE (date(t.TransactionDate) <= @asOfDate AND t.PayCheckId IS NULL) 
+                          OR (date(t.PaycheckOccurrenceDate) <= @asOfDate AND t.PayCheckId IS NOT NULL) 
                        GROUP BY t.AccountId;
                        """;
         

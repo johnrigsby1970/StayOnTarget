@@ -14,6 +14,7 @@ public class ProjectionItem : ViewModelBase
     public DateTime TransactionDate { get => _transactionDate; set => SetProperty(ref _transactionDate, value); }
     public string Description { get => _description; set => SetProperty(ref _description, value); }
     public int? PaycheckId { get => _paycheckId; set => SetProperty(ref _paycheckId, value); }
+    public bool InOrOutOfMoneyAccount { get; set; }
     public bool NeedsAttention { get => _paycheckId.HasValue;  }
     public decimal Amount 
     { 
