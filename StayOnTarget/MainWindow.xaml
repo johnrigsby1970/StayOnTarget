@@ -259,7 +259,20 @@
                                                                     Binding="{Binding Description}" Width="Auto" MinWidth="100" />
                                                 <DataGridTextColumn Header="Amount"
                                                                     Binding="{Binding Amount, StringFormat=C}"
-                                                                    Width="80" MinWidth="80" />
+                                                                    Width="80" MinWidth="80">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="Black" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger
+                                                                Binding="{Binding Amount, Converter={StaticResource NegativeToRedConverter}}"
+                                                                Value="True">
+                                                                <Setter Property="Foreground" Value="Red" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
                                                 <DataGridTextColumn Header="From" Binding="{Binding AccountName}"
                                                                     Width="Auto" MinWidth="100" />
                                                 <DataGridTextColumn Header="To" Binding="{Binding ToAccountName}"
