@@ -484,6 +484,9 @@
                                                         <DataTrigger Binding="{Binding HasActualAmount}" Value="True">
                                                             <Setter Property="Background" Value="#CCFFCC" />
                                                         </DataTrigger>
+                                                        <DataTrigger Binding="{Binding BudgetExceeded}" Value="True">
+                                                            <Setter Property="Background" Value="#FFCCCC" />
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </DataGrid.RowStyle>
@@ -503,7 +506,7 @@
                                                                     Binding="{Binding ActualAmount, StringFormat=C}"
                                                                     Width="100" />
                                                  <DataGridTextColumn Header="Actual" 
-                                                                     Binding="{Binding TransactionAmount, StringFormat=C}" 
+                                                                     Binding="{Binding TransactionAmount, Converter={StaticResource AbsoluteValueConverter}, StringFormat=C}" 
                                                                      IsReadOnly="True" Width="100" /> 
                                                 <!-- <DataGridTemplateColumn Width="80"> -->
                                                 <!--     <DataGridTemplateColumn.CellTemplate> -->
@@ -619,6 +622,9 @@
                                                         <DataTrigger Binding="{Binding HasActualAmount}" Value="True">
                                                             <Setter Property="Background" Value="#CCFFCC" />
                                                         </DataTrigger>
+                                                        <DataTrigger Binding="{Binding BudgetExceeded}" Value="True">
+                                                            <Setter Property="Background" Value="#FFCCCC" />
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </DataGrid.RowStyle>
@@ -635,7 +641,7 @@
                                                                     Binding="{Binding ActualAmount, StringFormat=C}"
                                                                     Width="100" />
                                                 <DataGridTextColumn Header="Actual"
-                                                                    Binding="{Binding TransactionAmount, StringFormat=C}"
+                                                                    Binding="{Binding TransactionAmount, Converter={StaticResource AbsoluteValueConverter}, StringFormat=C}"
                                                                     IsReadOnly="True" Width="100" />
                                                 <!-- <DataGridTemplateColumn Width="80"> -->
                                                 <!--     <DataGridTemplateColumn.CellTemplate> -->

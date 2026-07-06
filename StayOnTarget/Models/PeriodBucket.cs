@@ -25,10 +25,16 @@ public class PeriodBucket : ViewModelBase
         set => SetProperty(ref _periodDate, value);
     }
 
-    public decimal ActualAmount
-    {
+    public decimal ActualAmount {
         get => _actualAmount;
-        set => SetProperty(ref _actualAmount, value);
+        set {
+            // SetProperty returns true ONLY if the value actually changed
+            if (SetProperty(ref _actualAmount, value)) 
+            {
+                OnPropertyChanged(nameof(HasActualAmount));
+                OnPropertyChanged(nameof(BudgetExceeded));
+            }
+        }
     }
 
     public decimal TransactionAmount
@@ -36,13 +42,17 @@ public class PeriodBucket : ViewModelBase
         get => _transactionAmount;
         set
         {
-            SetProperty(ref _transactionAmount, value);
-            OnPropertyChanged(nameof(HasActualAmount));
+            if (SetProperty(ref _transactionAmount, value))
+            {
+                OnPropertyChanged(nameof(HasActualAmount));
+                OnPropertyChanged(nameof(BudgetExceeded));
+            }
         }
     }
 
     public bool HasActualAmount => _transactionAmount != 0;
-
+    public bool BudgetExceeded => Math.Abs(_transactionAmount) > Math.Abs(_actualAmount);
+    
     public bool IsPaid
     {
         get => _isPaid;

@@ -12,12 +12,15 @@ namespace StayOnTarget.ViewModels;
 
 public class ImportReconciliationViewModel : ViewModelBase {
     private ViewModelBase _activeOverlay;
-    public ViewModelBase ActiveOverlay
-    {
+
+    public ViewModelBase ActiveOverlay {
         get => _activeOverlay;
-        set { _activeOverlay = value; OnPropertyChanged(); }
+        set {
+            _activeOverlay = value;
+            OnPropertyChanged();
+        }
     }
-    
+
     public ObservableCollection<ImportedTransactionViewModel> ImportedTransactions { get; set; } = new();
     public ObservableCollection<ManualTransactionViewModel> UnreconciledManualTransactions { get; set; } = new();
 
@@ -38,14 +41,14 @@ public class ImportReconciliationViewModel : ViewModelBase {
         set => SetProperty(ref _selectedManual, value);
     }
 
-    
+
     private bool? _lastImportAsQfx;
 
     public bool? LastImportAsQfx {
         get => _lastImportAsQfx;
         set => SetProperty(ref _lastImportAsQfx, value);
     }
-    
+
     private string? _lastFileName;
 
     public string? LastFileName {
@@ -55,7 +58,7 @@ public class ImportReconciliationViewModel : ViewModelBase {
 
     public ICommand LinkTransactionsCommand { get; }
     public ICommand ImportAsNewCommand { get; }
-    
+
     public ICommand ClearMatchCommand { get; }
 
     private readonly BudgetService _budgetService;
@@ -102,7 +105,7 @@ public class ImportReconciliationViewModel : ViewModelBase {
         ImportCsvCommand = new RelayCommand(param => PromptAndLoadCsv());
         ConfirmCsvImportCommand = new RelayCommand(param => ConfirmCsvImport(), param => CsvMapping?.CanImport == true);
         CancelCsvImportCommand = new RelayCommand(param => { IsMappingVisible = false; });
-        
+
         SaveCommand = new RelayCommand(param => Save());
 
         // Use a lambda to capture the parameter (param) and call your method
@@ -115,12 +118,12 @@ public class ImportReconciliationViewModel : ViewModelBase {
             param => ImportAsNew(),
             param => SelectedImported != null
         );
-        
+
         ClearMatchCommand = new RelayCommand(
             param => ClearMatch(),
-            param => SelectedImported!=null && SelectedImported.IsReconciled
+            param => SelectedImported != null && SelectedImported.IsReconciled
         );
-        
+
         LoadData(); // Replace with actual QFX parsing logic and DB call
     }
 
@@ -172,11 +175,12 @@ public class ImportReconciliationViewModel : ViewModelBase {
         // 4. Now these run sequentially on the UI thread with accurate database states
         LoadData();
 
-        if (LastImportAsQfx!=null && LastImportAsQfx.Value) {
-            ParseAndPopulateQfx(LastFileName); 
+        if (LastImportAsQfx != null && LastImportAsQfx.Value) {
+            ParseAndPopulateQfx(LastFileName);
         }
-        if (LastImportAsQfx!=null && !LastImportAsQfx.Value) {
-            ParseAndPopulateCsv(LastFileName); 
+
+        if (LastImportAsQfx != null && !LastImportAsQfx.Value) {
+            ParseAndPopulateCsv(LastFileName);
         }
     }
 
@@ -202,7 +206,7 @@ public class ImportReconciliationViewModel : ViewModelBase {
             LastFileName = openFileDialog.FileName;
             var mappingPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"mapping_{_account.Id}.json");
             CsvMapping = new CsvImportMappingViewModel(LastFileName, mappingPath);
-            
+
             IsMappingVisible = true;
         }
     }
@@ -220,7 +224,7 @@ public class ImportReconciliationViewModel : ViewModelBase {
     private void ParseAndPopulateCsv(string filePath) {
         if (!File.Exists(filePath) || CsvMapping == null) return;
         LastImportAsQfx = false;
-        
+
         ImportedTransactions.Clear();
         var processedBankIds = _budgetService.GetAlreadyImportedBankIds(_account.Id);
 
@@ -249,6 +253,7 @@ public class ImportReconciliationViewModel : ViewModelBase {
                 if (date == DateTime.MinValue) {
                     continue;
                 }
+
                 decimal amount = 0;
                 decimal.TryParse(rawAmount, NumberStyles.Any, CultureInfo.InvariantCulture, out amount);
 
@@ -323,17 +328,19 @@ public class ImportReconciliationViewModel : ViewModelBase {
     }
 
     private void AutoMatchTransactions() {
-        foreach (var imported in ImportedTransactions.Where(x=>x.Date!=null)) {
-            if (imported.Date==null || imported.Date == DateTime.MinValue) {
+        foreach (var imported in ImportedTransactions.Where(x => x.Date != null)) {
+            if (imported.Date == null || imported.Date == DateTime.MinValue) {
                 //it is a pending transaction at the bank (BoA as an example)
                 continue;
             }
+
             // Look for a manual entry with the exact amount and a date within a 4-day window
             if (UnreconciledManualTransactions.Count(m =>
                     m.Amount == imported.Amount &&
                     Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) <= 4) > 1) {
                 continue;
             }
+
             var match = UnreconciledManualTransactions.FirstOrDefault(m =>
                 m.Amount == imported.Amount &&
                 Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) <= 4);
@@ -372,15 +379,13 @@ public class ImportReconciliationViewModel : ViewModelBase {
         SelectedImported.MatchedManualFitId = SelectedManual.FitId;
         SelectedImported.MatchedManualTransactionDate = SelectedManual.TransactionDate;
         SelectedImported.MatchedManualTransactionId = SelectedManual.TransactionId;
-        
+
         SelectedManual.IsMatched = true;
         OnPropertyChanged(nameof(SelectedManual));
         OnPropertyChanged(nameof(SelectedImported));
         OnPropertyChanged(nameof(UnreconciledManualTransactions));
-        
-        //UnreconciledManualTransactions.Remove(SelectedManual);
     }
-    
+
     private void ClearMatch() {
         if (SelectedImported == null) return;
 
@@ -393,39 +398,30 @@ public class ImportReconciliationViewModel : ViewModelBase {
             SelectedImported.MatchedManualFitId = null;
             SelectedImported.MatchedManualTransactionDate = null;
             SelectedImported.MatchedManualTransactionId = null;
-        
+
             manual.IsMatched = false;
         }
-        
-        // OnPropertyChanged(nameof(ImportedTransactions));
-        // OnPropertyChanged(nameof(CurrentPeriodBuckets));
-        
-        //UnreconciledManualTransactions.Remove(SelectedManual);
     }
 
     #region Import as new
 
-   private void ImportAsNew() {
-        if (SelectedImported == null || SelectedImported.Date==null) return;
+    private void ImportAsNew() {
+        if (SelectedImported == null || SelectedImported.Date == null) return;
 
-        ActiveOverlay = new NewTransactionViewModel(_account, _budgetService, SelectedImported, (childVm, isSaved) => 
-        {
+        ActiveOverlay = new NewTransactionViewModel(_account, _budgetService, SelectedImported, (childVm, isSaved) => {
             // This code executes when the child calls _closeCallback(...)
-            if (isSaved)
-            {
+            if (isSaved) {
                 ImportedTransactions.Remove(SelectedImported);
             }
-            else
-            {
-                // User cancelled, no actions needed on parent data
+            else {
+                // User canceled, no actions needed on parent data
             }
 
             // CLOSE THE DIALOG: Setting this to null makes the ContentControl disappear
-            ActiveOverlay = null; 
+            ActiveOverlay = null;
         });
-        
     }
-   
+
     #endregion
 
     private void LoadData() {

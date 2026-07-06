@@ -1,65 +1,66 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using StayOnTarget.Models;
 using System.Windows.Input;
 using StayOnTarget.Services;
 
 namespace StayOnTarget.ViewModels;
 
-public class NewTransactionViewModel: ViewModelBase {
+public class NewTransactionViewModel : ViewModelBase {
     private readonly BudgetService _budgetService;
     private Account _account;
     private readonly Action<NewTransactionViewModel, bool> _closeCallback;
-    
+
     private ImportedTransactionViewModel? _selectedImported;
 
     public ImportedTransactionViewModel? SelectedImported {
         get => _selectedImported;
-        set {
-            SetProperty(ref _selectedImported, value);
-        }
+        set { SetProperty(ref _selectedImported, value); }
     }
-    
-    public NewTransactionViewModel(Account account, BudgetService budgetService, ImportedTransactionViewModel SelectedImported, Action<NewTransactionViewModel, bool> closeCallback) {
+
+    public NewTransactionViewModel(Account account, BudgetService budgetService,
+        ImportedTransactionViewModel SelectedImported, Action<NewTransactionViewModel, bool> closeCallback) {
         _account = account;
         _budgetService = budgetService;
         _closeCallback = closeCallback;
-        
+
         CancelNewTransactionCommand = new RelayCommand(param => OnCancel());
         SaveNewTransactionCommand =
             new RelayCommand(param => _ = OnSave(), param => EditingTransactionClone != null);
-        
+
         EditingTransactionClone = new Transaction {
             Description = SelectedImported.Payee,
-            Memo = "", Amount = Math.Abs(SelectedImported.Amount), 
+            Memo = "",
+            Amount = Math.Abs(SelectedImported.Amount),
             TransactionDate = SelectedImported.Date.Value,
-            FitId = SelectedImported.BankId, 
+            FitId = SelectedImported.BankId,
             AccountId = SelectedImported.Amount > 0 ? null : _account.Id,
             AccountName = SelectedImported.Amount > 0 ? null : _account.Name,
+            ToAccountId = SelectedImported.Amount > 0 ? _account.Id : null,
             ToAccountName = SelectedImported.Amount > 0 ? _account.Name : null
         };
-        
+
         LoadPaychecks();
 
         EditingTransactionClone.PeriodDate = CurrentPeriodDate;
-        
+
         Loaded = true;
-        
     }
-    
+
     private bool _loaded;
 
     public bool Loaded {
         get => _loaded;
         set => SetProperty(ref _loaded, value);
     }
-    
+
     public ICommand CancelNewTransactionCommand { get; }
     public ICommand SaveNewTransactionCommand { get; }
-    
+
     private ObservableCollection<Account> _accounts = new();
-    
+
     private ObservableCollection<Paycheck> _paychecks = new();
-    
+
     private ObservableCollection<BudgetBucket> _buckets = new();
     private DateTime _currentPeriodDate = DateTime.MinValue;
 
@@ -127,14 +128,14 @@ public class NewTransactionViewModel: ViewModelBase {
         get => _currentPeriodTransactions;
         set => SetProperty(ref _currentPeriodTransactions, value);
     }
-    
+
     private ObservableCollection<Paycheck> _paychecksWithNone = new();
-    
+
     public ObservableCollection<Paycheck> PaychecksWithNone {
         get => _paychecksWithNone;
         set => SetProperty(ref _paychecksWithNone, value);
     }
-    
+
     private void LoadPeriodData() {
         try {
             var accounts = _budgetService.GetAllAccounts().ToList();
@@ -150,8 +151,6 @@ public class NewTransactionViewModel: ViewModelBase {
             }
 
             accounts = accounts.OrderBy(b => b.Name).ToList();
-            // foreach (var a in accounts) a.PropertyChanged += Item_PropertyChanged;
-            // Accounts = new ObservableCollection<Account>(accounts);
 
             var accountsWithNone = new List<Account> { new Account { Id = 0, Name = "(None)" } };
             accountsWithNone.AddRange(accounts);
@@ -159,8 +158,6 @@ public class NewTransactionViewModel: ViewModelBase {
 
             var bills = _budgetService.GetAllBills();
             bills = bills.OrderBy(b => b.DueDay).ThenBy(b => b.Name).ToList();
-            // foreach (var b in bills) b.PropertyChanged += Item_PropertyChanged;
-            // Bills = new ObservableCollection<Bill>(bills);
 
             var billsWithNone = new List<Bill> { new Bill { Id = 0, Name = "(None)" } };
             billsWithNone.AddRange(bills);
@@ -168,8 +165,6 @@ public class NewTransactionViewModel: ViewModelBase {
 
             var paychecks = _budgetService.GetAllPaychecks();
             paychecks = paychecks.OrderBy(b => b.Name).ToList();
-            // foreach (var p in paychecks) p.PropertyChanged += Item_PropertyChanged;
-            // Paychecks = new ObservableCollection<Paycheck>(paychecks);
 
             var paychecksWithNone = new List<Paycheck> { new Paycheck { Id = 0, Name = "(None)" } };
             paychecksWithNone.AddRange(paychecks);
@@ -177,17 +172,15 @@ public class NewTransactionViewModel: ViewModelBase {
 
             var buckets = _budgetService.GetAllBuckets();
             buckets = buckets.OrderBy(b => b.Name).ToList();
-            // foreach (var b in buckets) b.PropertyChanged += Item_PropertyChanged;
-            // Buckets = new ObservableCollection<BudgetBucket>(buckets);
 
             var bucketsWithNone = new List<BudgetBucket> { new BudgetBucket { Id = 0, Name = "(None)" } };
             bucketsWithNone.AddRange(buckets);
             BucketsWithNone = new ObservableCollection<BudgetBucket>(bucketsWithNone);
         }
-        finally {
-            // _isLoadingData = false;
+        catch (Exception ex) {
+            Debug.WriteLine("Failure while loading data: " + ex.Message);
         }
-        
+
         LoadPeriodBills();
         LoadPeriodBuckets();
         LoadPeriodTransactions();
@@ -221,12 +214,12 @@ public class NewTransactionViewModel: ViewModelBase {
         get => _paychecks;
         set => SetProperty(ref _paychecks, value);
     }
-    
+
     private void LoadPaychecks() {
         var paychecks = _budgetService.GetAllPaychecks();
         paychecks = paychecks.OrderBy(b => b.Name).ToList();
         Paychecks = new ObservableCollection<Paycheck>(paychecks);
-        
+
         var allPaychecks = Paychecks.ToList();
         if (allPaychecks.Count == 0) {
             CurrentPeriodDate = DateTime.Today;
@@ -234,7 +227,7 @@ public class NewTransactionViewModel: ViewModelBase {
         }
 
         PeriodPaychecks = new ObservableCollection<Paycheck>(allPaychecks);
-        
+
         var paychecksWithNone = new List<Paycheck> { new Paycheck { Id = 0, Name = "(None)" } };
         paychecksWithNone.AddRange(paychecks);
         PaychecksWithNone = new ObservableCollection<Paycheck>(paychecksWithNone);
@@ -244,7 +237,7 @@ public class NewTransactionViewModel: ViewModelBase {
 
     private void SetCurrentPeriodDate(int? id = null) {
         if (EditingTransactionClone == null) return;
-        
+
         var allPaychecks = Paychecks.ToList();
         if (allPaychecks.Count == 0) {
             CurrentPeriodDate = DateTime.Today;
@@ -292,13 +285,8 @@ public class NewTransactionViewModel: ViewModelBase {
 
             if (found) currentPeriodPaychecks.Add(pay);
         }
-
-        // if (id == null && currentPeriodPaychecks.Any()) {
-        //     EditingTransactionClone.PaycheckId = currentPeriodPaychecks.First().Id;
-        //     OnPropertyChanged(nameof(EditingTransactionClone));
-        // }
     }
-    
+
     private async Task OnSave() {
         if (EditingTransactionClone == null) return;
 
@@ -307,19 +295,18 @@ public class NewTransactionViewModel: ViewModelBase {
         if (EditingTransactionClone.BillId == 0) EditingTransactionClone.BillId = null;
         if (EditingTransactionClone.BucketId == 0) EditingTransactionClone.BucketId = null;
         if (EditingTransactionClone.PaycheckId == 0) EditingTransactionClone.PaycheckId = null;
-        
+
         await _budgetService.UpsertTransactionAsync(EditingTransactionClone);
         //if(SelectedImported!=null && SelectedImported.BankId==EditingTransactionClone.FitId) {
-            // SelectedImported.IsReconciled = false;//for purposes of this screen. 
-            // SelectedImported.Status = "Created";
-            //ImportedTransactions.Remove(SelectedImported);
-            _closeCallback?.Invoke(this, true);
+        // SelectedImported.IsReconciled = false;//for purposes of this screen. 
+        //SelectedImported.Status = "Created";
+        //ImportedTransactions.Remove(SelectedImported);
+        _closeCallback?.Invoke(this, true);
         //}
         EditingTransactionClone = null;
     }
-    
-    private void OnCancel()
-    {
+
+    private void OnCancel() {
         EditingTransactionClone = null;
         // Tell the parent to close us, passing 'false' because they cancelled
         _closeCallback?.Invoke(this, false);
