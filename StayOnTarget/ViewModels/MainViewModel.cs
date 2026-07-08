@@ -1495,32 +1495,7 @@ public class MainViewModel : ViewModelBase {
             Toasts.Add(toast);
         });
     }
-
-    // public DateTime FindPeriodDateFor(DateTime date) {
-    //     if (ShowByMonth) return new DateTime(date.Year, date.Month, 1);
-    //
-    //     var allPaycheckDates = new List<DateTime>();
-    //     foreach (var pay in Paychecks) {
-    //         DateTime nextPay = pay.StartDate;
-    //         while (nextPay <= date) {
-    //             allPaycheckDates.Add(nextPay);
-    //             nextPay = pay.Frequency switch {
-    //                 Frequency.Weekly => nextPay.AddDays(7),
-    //                 Frequency.BiWeekly => nextPay.AddDays(14),
-    //                 Frequency.Monthly => nextPay.AddMonths(1),
-    //                 _ => nextPay.AddYears(100)
-    //             };
-    //         }
-    //     }
-    //
-    //     return allPaycheckDates.Where(d => d <= date).OrderByDescending(d => d).FirstOrDefault();
-    // }
-
-    // public Transaction? GetForPaycheck(int paycheckId, DateTime date) {
-    //     return _budgetService.GetAllTransactions()
-    //         .FirstOrDefault(a => a.PaycheckId == paycheckId && a.Date.Date == date.Date);
-    // }
-
+    
     public List<PeriodBill> GetProjectedBillsForPeriod(DateTime periodStart) {
         var periodEnd = periodStart.AddDays(14); // Default
         if (ShowByMonth) {

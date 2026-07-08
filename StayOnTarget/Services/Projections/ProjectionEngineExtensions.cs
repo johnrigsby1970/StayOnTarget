@@ -315,6 +315,8 @@ public static class ProjectionEngineExtensions {
                 }
 
                 var item = new ProjectionItem {
+                    ToAccountId = e.ToAccountId,
+                    FromAccountId = e.FromAccountId,
                     TransactionDate = e.Date,
                     Description = e.Description,
                     Amount = interest,
@@ -387,6 +389,8 @@ public static class ProjectionEngineExtensions {
                 dailyBalances.Clear();
 
                 var item = new ProjectionItem {
+                    ToAccountId = e.ToAccountId,
+                    FromAccountId = e.FromAccountId,
                     TransactionDate = e.Date,
                     Description = e.Description,
                     Amount = totalInterest,

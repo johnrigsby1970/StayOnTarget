@@ -6,6 +6,37 @@
         xmlns:local="clr-namespace:StayOnTarget"
         mc:Ignorable="d"
         Title="AccountAprHistoryWindow" Height="450" Width="500">
+    
+    <Window.Resources>
+        <Style TargetType="{x:Type DataGrid}">
+            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0" />
+            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0" />
+        
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="1" />
+        
+            <Setter Property="AlternatingRowBackground" Value="#F8FAFC" />
+        
+            <Setter Property="RowBackground" Value="White" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="GridLinesVisibility" Value="All" />
+        </Style>
+        <Style TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="Background" Value="#E2E8F0" />
+
+            <Setter Property="Foreground" Value="#1E293B" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+
+            <Setter Property="Padding" Value="8,6,8,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+
+            <Setter Property="SeparatorBrush" Value="#CBD5E1" />
+        </Style>
+    </Window.Resources>
     <Grid Margin="10">
         <DockPanel>
             <TextBlock DockPanel.Dock="Top" x:Name="HeaderLabel" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" />

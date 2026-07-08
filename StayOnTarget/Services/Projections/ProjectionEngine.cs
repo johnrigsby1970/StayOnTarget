@@ -376,6 +376,8 @@ public class ProjectionEngine : IProjectionEngine {
             });
 
             var item = new ProjectionItem {
+                ToAccountId = e.ToAccountId,
+                FromAccountId = e.FromAccountId,
                 TransactionDate = e.Date,
                 Description = e.Description,
                 PaycheckId = e.PaycheckId,

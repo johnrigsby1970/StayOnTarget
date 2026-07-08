@@ -11,6 +11,40 @@
            WindowStartupLocation="CenterScreen">
 
     <av:Window.Resources>
+        <Style TargetType="{x:Type DataGrid}">
+            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0" />
+            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0" />
+        
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="1" />
+        
+            <Setter Property="AlternatingRowBackground" Value="#F8FAFC" />
+        
+            <Setter Property="RowBackground" Value="White" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="GridLinesVisibility" Value="All" />
+        </Style>
+        <Style TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="Background" Value="#E2E8F0" />
+        
+            <Setter Property="Foreground" Value="#1E293B" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+        
+            <Setter Property="Padding" Value="8,6,8,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+        
+            <Setter Property="SeparatorBrush" Value="#CBD5E1"/>
+        </Style>
+        <Style x:Key="RightAlignedHeaderStyle" 
+               TargetType="{x:Type DataGridColumnHeader}" 
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+    
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
         <stayOnTarget:AccountTypeToVisibilityConverter x:Key="AccountTypeToVisibilityConverter" />
         <stayOnTarget:AbsoluteValueConverter x:Key="AbsoluteValueConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -168,9 +202,29 @@
                     <TextBlock Text="Preview (First 5 Rows):" FontWeight="Bold" Margin="0,10,0,5" />
                     <DataGrid ItemsSource="{Binding CsvMapping.PreviewRows}" Height="150" AutoGenerateColumns="False" IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="100" />
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat='{}{0:MM/dd/yyyy}'}"
+                                                IsReadOnly="False" Width="90"  >
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Center" />
+                                        <!-- <Setter Property="Padding" Value="0,0,8,0" />  -->
+                    
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="Payee" Binding="{Binding Payee}" Width="*" />
-                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=C}" Width="100" />
+                            <DataGridTextColumn Header="Amount" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                                
+                                                Binding="{Binding Amount, StringFormat=C}" Width="100" >
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                        <Setter Property="Padding" Value="0,0,8,0" /> 
+                                        <!-- <Setter Property="Foreground"  -->
+                                        <!--         Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="BankId" Binding="{Binding BankId}" Width="120" />
                         </DataGrid.Columns>
                     </DataGrid>

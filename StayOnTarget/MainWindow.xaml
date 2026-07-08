@@ -12,6 +12,84 @@
         mc:Ignorable="d"
         Title="Stay On Target" Height="600" Width="1000">
     <Window.Resources>
+        
+        <Style TargetType="{x:Type DataGrid}">
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0" />
+            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0" />
+        
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="1" />
+        
+            <Setter Property="AlternatingRowBackground" Value="#F8FAFC" />
+        
+            <Setter Property="RowBackground" Value="White" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="GridLinesVisibility" Value="All" />
+        </Style>
+        <Style x:Key="ModernUnderlineTabItemStyle" TargetType="{x:Type TabItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TabItem}">
+                        <Grid x:Name="Panel" Background="Transparent" Margin="0,0,14,0" SnapsToDevicePixels="True">
+                            <Border x:Name="Border" Padding="2,4,2,6">
+                                <ContentPresenter x:Name="ContentSite"
+                                                  ContentSource="Header"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"/>
+                            </Border>
+                            <Border x:Name="Underline" Height="2" VerticalAlignment="Bottom" Background="Transparent"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ContentSite" Property="TextElement.Foreground" Value="#0284C7"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ContentSite" Property="TextElement.Foreground" Value="#0F172A"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter TargetName="Underline" Property="Background" Value="#3b82f6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="InnerTabControlStyle" TargetType="{x:Type TabControl}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0,6,0,0"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+        </Style>
+        <Style TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="TextBlock.TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Background" Value="#E2E8F0" />
+        
+            <Setter Property="Foreground" Value="#1E293B" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+        
+            <Setter Property="Padding" Value="8,6,8,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+        
+            <Setter Property="SeparatorBrush" Value="#CBD5E1"/>
+        </Style>
+        <Style x:Key="RightAlignedHeaderStyle" 
+               TargetType="{x:Type DataGridColumnHeader}" 
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+    
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="CenterAlignedHeaderStyle" 
+               TargetType="{x:Type DataGridColumnHeader}" 
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+    
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <local:AmountToBrushConverter x:Key="AmountToBrushConverter" />
         <local:AbsoluteValueConverter x:Key="AbsoluteValueConverter" />
         <local:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
         <local:NegativeToRedConverter x:Key="NegativeToRedConverter" />
@@ -160,8 +238,8 @@
                                 <Button Content=" &gt; " Command="{Binding NextPeriodCommand}" Width="40" Margin="5" />
                             </StackPanel>
                         </StackPanel>
-                        <TabControl>
-                            
+                        <TabControl Style="{StaticResource InnerTabControlStyle}" 
+                            ItemContainerStyle="{StaticResource ModernUnderlineTabItemStyle}">
                             <TabItem Header="Transaction">
                                 <DockPanel>
                                     <Grid DockPanel.Dock="Bottom">
@@ -253,25 +331,43 @@
                                                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditTransactionCommand}" />
                                             </DataGrid.InputBindings>
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Date"
-                                                                    Binding="{Binding TransactionDate, StringFormat=d}" Width="80" MinWidth="80" />
+                                                <DataGridTextColumn Header="Posting Date"
+                                                                    HeaderStyle="{StaticResource CenterAlignedHeaderStyle}"
+                                                                    Binding="{Binding TransactionDate, StringFormat='{}{0:MM/dd/yyyy}'}"
+                                                                    IsReadOnly="False" Width="90"  >
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="TextAlignment" Value="Center" />
+                                                            <!-- <Setter Property="Padding" Value="0,0,8,0" />  -->
+                    
+                                                        </Style>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
                                                 <DataGridTextColumn Header="Description"
                                                                     Binding="{Binding Description}" Width="Auto" MinWidth="100" />
                                                 <DataGridTextColumn Header="Amount"
+                                                                    HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
                                                                     Binding="{Binding Amount, StringFormat=C}"
-                                                                    Width="80" MinWidth="80">
-                                                <DataGridTextColumn.ElementStyle>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="Black" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger
-                                                                Binding="{Binding Amount, Converter={StaticResource NegativeToRedConverter}}"
-                                                                Value="True">
-                                                                <Setter Property="Foreground" Value="Red" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </DataGridTextColumn.ElementStyle>
+                                                                    Width="85" MinWidth="80">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="TextAlignment" Value="Right" />
+                                                            <Setter Property="Padding" Value="0,0,8,0" /> <Setter Property="Foreground" 
+                                                                Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" />
+                                                        </Style>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                    <!-- <DataGridTextColumn.ElementStyle> -->
+                                                <!--     <Style TargetType="TextBlock"> -->
+                                                <!--         <Setter Property="Foreground" Value="Black" /> -->
+                                                <!--         <Style.Triggers> -->
+                                                <!--             <DataTrigger -->
+                                                <!--                 Binding="{Binding Amount, Converter={StaticResource NegativeToRedConverter}}" -->
+                                                <!--                 Value="True"> -->
+                                                <!--                 <Setter Property="Foreground" Value="Red" /> -->
+                                                <!--             </DataTrigger> -->
+                                                <!--         </Style.Triggers> -->
+                                                <!--     </Style> -->
+                                                <!-- </DataGridTextColumn.ElementStyle> -->
                                                 </DataGridTextColumn>
                                                 <DataGridTextColumn Header="From" Binding="{Binding AccountName}"
                                                                     Width="Auto" MinWidth="100" />
@@ -513,26 +609,43 @@
                                                 <DataGridTextColumn Header="Bill" Binding="{Binding BillName}"
                                                                     IsReadOnly="True" Width="*" />
                                                 <DataGridTextColumn Header="Due Date"
-                                                                    Binding="{Binding DueDate, StringFormat=d}"
-                                                                    IsReadOnly="False" Width="80" />
+                                                                    HeaderStyle="{StaticResource CenterAlignedHeaderStyle}"
+                                                                    Binding="{Binding DueDate, StringFormat='{}{0:MM/dd/yyyy}'}"
+                                                                    IsReadOnly="False" Width="80"  >
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="TextAlignment" Value="Center" />
+                                                            <!-- <Setter Property="Padding" Value="0,0,8,0" />  -->
+                    
+                                                        </Style>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                
                                                 <DataGridTextColumn Header="Expected Amount"
                                                                     Binding="{Binding ActualAmount, StringFormat=C}"
-                                                                    Width="100" />
-                                                 <DataGridTextColumn Header="Actual" 
+                                                                    Width="100" >
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="TextAlignment" Value="Right" />
+                                                            <Setter Property="Padding" Value="0,0,8,0" /> 
+                                                            <!-- <Setter Property="Foreground"  -->
+                                                            <!--         Value="{Binding ActualAmount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                    
+                                                        </Style>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                 <DataGridTextColumn Header="Actual Amount" 
                                                                      Binding="{Binding TransactionAmount, Converter={StaticResource AbsoluteValueConverter}, StringFormat=C}" 
-                                                                     IsReadOnly="True" Width="100" /> 
-                                                <!-- <DataGridTemplateColumn Width="80"> -->
-                                                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                                                <!--         <DataTemplate> -->
-                                                <!--             <Button Content="Remove" -->
-                                                <!--                     Background="Red" -->
-                                                <!--                     Foreground="White" -->
-                                                <!--                     Command="{Binding DataContext.DeletePeriodBillCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                <!--                     CommandParameter="{Binding}" -->
-                                                <!--                     Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" /> -->
-                                                <!--         </DataTemplate> -->
-                                                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                                                <!-- </DataGridTemplateColumn> -->
+                                                                     IsReadOnly="True" Width="100" >
+                                                     <DataGridTextColumn.ElementStyle>
+                                                         <Style TargetType="TextBlock">
+                                                             <Setter Property="TextAlignment" Value="Right" />
+                                                             <Setter Property="Padding" Value="0,0,8,0" /> 
+                                                             <!-- <Setter Property="Foreground"  -->
+                                                             <!--         Value="{Binding TransactionAmount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                                                         </Style>
+                                                     </DataGridTextColumn.ElementStyle>
+                                                 </DataGridTextColumn>
                                             </DataGrid.Columns>
                                         </DataGrid>
                                         <StackPanel Grid.Row="2" Margin="10"
@@ -645,29 +758,34 @@
                                                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditPeriodBucketCommand}" />
                                             </DataGrid.InputBindings>
                                             <DataGrid.Columns>
-                                                <!-- <DataGridCheckBoxColumn Header="Paid" -->
-                                                <!--                         Binding="{Binding IsPaid, UpdateSourceTrigger=PropertyChanged}" -->
-                                                <!--                         Width="40" /> -->
                                                 <DataGridTextColumn Header="Envelope" Binding="{Binding BucketName}"
                                                                     IsReadOnly="True" Width="*" />
                                                 <DataGridTextColumn Header="Expected Amount"
                                                                     Binding="{Binding ActualAmount, StringFormat=C}"
-                                                                    Width="100" />
-                                                <DataGridTextColumn Header="Actual"
+                                                                    Width="100" >
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="TextAlignment" Value="Right" />
+                                                            <Setter Property="Padding" Value="0,0,8,0" /> 
+                                                            <!-- <Setter Property="Foreground"  -->
+                                                            <!--         Value="{Binding ActualAmount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                    
+                                                        </Style>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="Actual Amount"
                                                                     Binding="{Binding TransactionAmount, Converter={StaticResource AbsoluteValueConverter}, StringFormat=C}"
-                                                                    IsReadOnly="True" Width="100" />
-                                                <!-- <DataGridTemplateColumn Width="80"> -->
-                                                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                                                <!--         <DataTemplate> -->
-                                                <!--             <Button Content="Remove" -->
-                                                <!--                     Background="Red" -->
-                                                <!--                     Foreground="White" -->
-                                                <!--                     Command="{Binding DataContext.DeletePeriodBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                <!--                     CommandParameter="{Binding}" -->
-                                                <!--                     Visibility="{Binding IsPaid, Converter={StaticResource InverseBooleanToVisibilityConverter}}" /> -->
-                                                <!--         </DataTemplate> -->
-                                                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                                                <!-- </DataGridTemplateColumn> -->
+                                                                    IsReadOnly="True" Width="100" >
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="TextAlignment" Value="Right" />
+                                                            <Setter Property="Padding" Value="0,0,8,0" /> 
+                                                            <!-- <Setter Property="Foreground"  -->
+                                                            <!--         Value="{Binding TransactionAmount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                    
+                                                        </Style>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
                                             </DataGrid.Columns>
                                         </DataGrid>
 
@@ -696,18 +814,6 @@
                                                          Text="{Binding EditingPeriodBucketClone.ActualAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                                                          Margin="5" />
                                             </Grid>
-                                            <!-- <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" -->
-                                            <!--             Margin="0,5,0,0"> -->
-                                            <!--     <Button Content="Save" Command="{Binding SavePeriodBucketCommand}" -->
-                                            <!--             Width="80"  -->
-                                            <!--             Margin="2"  -->
-                                            <!--             /> -->
-                                            <!--     <Button Content="Cancel" -->
-                                            <!--             Command="{Binding CancelPeriodBucketCommand}"  -->
-                                            <!--             Width="80" -->
-                                            <!--             Margin="2"  -->
-                                            <!--             /> -->
-                                            <!-- </StackPanel> -->
                                         </StackPanel>
                                     </Grid>
                                 </DockPanel>
@@ -744,16 +850,6 @@
                                                 <DataTrigger Binding="{Binding IsEditingBucket}" Value="False">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                 </DataTrigger>
-                                                <!-- Use MultiDataTrigger for multiple conditions -->
-                                                <!-- <MultiDataTrigger> -->
-                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
-                                                <!--     <MultiDataTrigger.Conditions> -->
-                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
-                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
-                                                <!--     </MultiDataTrigger.Conditions> -->
-                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
-                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
-                                                <!-- </MultiDataTrigger> -->
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
@@ -787,20 +883,8 @@
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                                     <DataGridTextColumn Header="Budgeted"
                                                         Binding="{Binding ExpectedAmount, StringFormat=C}" Width="100" />
-                                    <!-- <DataGridTemplateColumn Width="80"> -->
-                                    <!--     <DataGridTemplateColumn.CellTemplate> -->
-                                    <!--         <DataTemplate> -->
-                                    <!--             <Button Content="Remove" -->
-                                    <!--                     Background="Red" -->
-                                    <!--                     Foreground="White" -->
-                                    <!--                     Command="{Binding DataContext.DeleteBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                    <!--                     CommandParameter="{Binding}" /> -->
-                                    <!--         </DataTemplate> -->
-                                    <!--     </DataGridTemplateColumn.CellTemplate> -->
-                                    <!-- </DataGridTemplateColumn> -->
                                 </DataGrid.Columns>
                             </DataGrid>
-
                             <StackPanel Grid.Row="1" Margin="10"
                                         Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="Edit Bucket" FontWeight="Bold" Margin="0,0,0,5" />
@@ -835,6 +919,7 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
+                                    
                                     <Label Content="From Account:" />
                                     <ComboBox Grid.Column="1" ItemsSource="{Binding AccountsWithNone}"
                                               SelectedValue="{Binding EditingBucketClone.AccountId}"
@@ -862,7 +947,6 @@
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
                                 <Button Content="Delete" Command="{Binding DeleteBillCommand}" Margin="5" Width="80"
-
                                         Background="Red"
                                         Foreground="White">
                                     <Button.Style>
@@ -877,16 +961,6 @@
                                                 <DataTrigger Binding="{Binding IsEditingBill}" Value="False">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                 </DataTrigger>
-                                                <!-- Use MultiDataTrigger for multiple conditions -->
-                                                <!-- <MultiDataTrigger> -->
-                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
-                                                <!--     <MultiDataTrigger.Conditions> -->
-                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
-                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
-                                                <!--     </MultiDataTrigger.Conditions> -->
-                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
-                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
-                                                <!-- </MultiDataTrigger> -->
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
@@ -910,7 +984,6 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-
                             <DataGrid Grid.Row="0" ItemsSource="{Binding Bills}" SelectedItem="{Binding SelectedBill}"
                                       AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
                                 <DataGrid.InputBindings>
@@ -921,20 +994,8 @@
                                     <DataGridTextColumn Header="Budgeted"
                                                         Binding="{Binding ExpectedAmount, StringFormat=C}" Width="80" />
                                     <DataGridTextColumn Header="Due Day" Binding="{Binding DueDay}" Width="60" />
-                                    <!-- <DataGridTemplateColumn Width="80"> -->
-                                    <!--     <DataGridTemplateColumn.CellTemplate> -->
-                                    <!--         <DataTemplate> -->
-                                    <!--             <Button Content="Remove" -->
-                                    <!--                     Background="Red" -->
-                                    <!--                     Foreground="White" -->
-                                    <!--                     Command="{Binding DataContext.DeleteBillCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                    <!--                     CommandParameter="{Binding}" /> -->
-                                    <!--         </DataTemplate> -->
-                                    <!--     </DataGridTemplateColumn.CellTemplate> -->
-                                    <!-- </DataGridTemplateColumn> -->
                                 </DataGrid.Columns>
                             </DataGrid>
-
                             <StackPanel Grid.Row="1" Margin="10"
                                         Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="Edit Bill" FontWeight="Bold" Margin="0,0,0,5" />
@@ -1009,16 +1070,6 @@
                                                 <DataTrigger Binding="{Binding IsEditingPaycheck}" Value="False">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                 </DataTrigger>
-                                                <!-- Use MultiDataTrigger for multiple conditions -->
-                                                <!-- <MultiDataTrigger> -->
-                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
-                                                <!--     <MultiDataTrigger.Conditions> -->
-                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
-                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
-                                                <!--     </MultiDataTrigger.Conditions> -->
-                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
-                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
-                                                <!-- </MultiDataTrigger> -->
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
@@ -1070,11 +1121,29 @@
                                                         Binding="{Binding Frequency, UpdateSourceTrigger=PropertyChanged}"
                                                         Width="80" MinWidth="80" />
                                     <DataGridTextColumn Header="Start Date"
-                                                        Binding="{Binding StartDate, StringFormat=d, UpdateSourceTrigger=PropertyChanged}"
-                                                        Width="65" MinWidth="65" />
+                                                        HeaderStyle="{StaticResource CenterAlignedHeaderStyle}"
+                                                        Binding="{Binding StartDate, StringFormat='{}{0:MM/dd/yyyy}', UpdateSourceTrigger=PropertyChanged}"
+                                                        Width="90" MinWidth="65"  >
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextAlignment" Value="Center" />
+                                                <!-- <Setter Property="Padding" Value="0,0,8,0" />  -->
+                    
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
                                     <DataGridTextColumn Header="End Date"
-                                                        Binding="{Binding EndDate, StringFormat=d, UpdateSourceTrigger=PropertyChanged}"
-                                                        Width="65" MinWidth="65" />
+                                                        HeaderStyle="{StaticResource CenterAlignedHeaderStyle}"
+                                                        Binding="{Binding EndDate, StringFormat='{}{0:MM/dd/yyyy}', UpdateSourceTrigger=PropertyChanged}"
+                                                        Width="90" MinWidth="65"  >
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextAlignment" Value="Center" />
+                                                <!-- <Setter Property="Padding" Value="0,0,8,0" />  -->
+                    
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
                                     <DataGridTemplateColumn Header="Deposit To" Width="120">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
@@ -1085,20 +1154,8 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <!-- <DataGridTemplateColumn Width="80"> -->
-                                    <!--     <DataGridTemplateColumn.CellTemplate> -->
-                                    <!--         <DataTemplate> -->
-                                    <!--             <Button Content="Remove" -->
-                                    <!--                     Background="Red" -->
-                                    <!--                     Foreground="White" -->
-                                    <!--                     Command="{Binding DataContext.DeletePaycheckCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                    <!--                     CommandParameter="{Binding}" /> -->
-                                    <!--         </DataTemplate> -->
-                                    <!--     </DataGridTemplateColumn.CellTemplate> -->
-                                    <!-- </DataGridTemplateColumn> -->
                                 </DataGrid.Columns>
                             </DataGrid>
-
                             <StackPanel Grid.Row="1" Margin="5"
                                         Visibility="{Binding IsEditingPaycheck, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="Paycheck Details" FontWeight="Bold" Margin="0,5" />
@@ -1177,16 +1234,6 @@
                                                 <DataTrigger Binding="{Binding IsEditingAccount}" Value="False">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                 </DataTrigger>
-                                                <!-- Use MultiDataTrigger for multiple conditions -->
-                                                <!-- <MultiDataTrigger> -->
-                                                <!--     ~1~ Condition 1: Checkbox1 is checked @1@ -->
-                                                <!--     <MultiDataTrigger.Conditions> -->
-                                                <!--         <Condition Binding="{Binding IsEditingTransaction}" Value="True" /> -->
-                                                <!--         <Condition Binding="{Binding EditingTransactionClone.Id, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible" /> -->
-                                                <!--     </MultiDataTrigger.Conditions> -->
-                                                <!--     ~1~ When both conditions are met, set Visibility to Visible @1@ -->
-                                                <!--     <Setter Property="Visibility" Value="Visible" /> -->
-                                                <!-- </MultiDataTrigger> -->
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
@@ -1252,17 +1299,10 @@
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" MinWidth="100" />
                                     <DataGridTextColumn Header="Balance" Binding="{Binding Balance, StringFormat=C}"
                                                         Width="100" MinWidth="100" />
-
                                     <DataGridTemplateColumn Width="110" MinWidth="110" Header="Actions">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <!-- <Button Content="Remove" -->
-                                                    <!--         Background="Red" -->
-                                                    <!--         Foreground="White" -->
-                                                    <!--         Command="{Binding DataContext.DeleteAccountCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                    <!--         CommandParameter="{Binding}" -->
-                                                    <!--         Visibility="{Binding DataContext.IsNotEditingAccount, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" /> -->
                                                     <Button Content="Loan Amortization"
                                                             Command="{Binding DataContext.ShowAmortizationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}"
@@ -1427,66 +1467,111 @@
                 ShowsPreview="True"/>
             <!-- Right Panel: Projections -->
             <DockPanel Grid.Column="2" Margin="10,0,0,0">
-
                 <Label DockPanel.Dock="Top" Content="Financial Projection (1 Year)" FontWeight="Bold" />
-
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="2*" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="1*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="2*" />
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
-                        <!-- <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
-                        <!--     <TextBlock x:Name="ToggleTextBlock" Text="Show reconciled transactions" -->
-                        <!--                HorizontalAlignment="Center" Margin="0,5,0,5" /> -->
-                        <!--     <ToggleButton Style="{StaticResource ToggleButtonStyle}" -->
-                        <!--                   Margin="0,0,0,0" -->
-                        <!--                   ToolTip="{Binding Path=ToggleReconciliationText}" -->
-                        <!--                   IsChecked="{Binding Path=ShowReconciled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" -->
-                        <!--                   Width="50" Height="15" /> -->
-                        <!-- </StackPanel> -->
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
-                                <Label Content="Start:" Margin="5,0,0,5" />
-                                <DatePicker SelectedDate="{Binding ProjectionStartDate, 
-                           Mode=TwoWay, 
-                           UpdateSourceTrigger=PropertyChanged, 
-                           TargetNullValue=''}"
-                                            Margin="5,0,0,5" />
-                                <Label Content="End:" Margin="5,0,0,5" />
-                                <DatePicker DisplayDateStart="{x:Static System:DateTime.Today}"
-                                            SelectedDate="{Binding ProjectionEndDate}"
-                                            Margin="5,0,0,5" />
-                            </StackPanel>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center"  VerticalAlignment="Center" Margin="5,0,0,5">
-                                <TextBlock Margin="5,0,0,5">
-                                    <Hyperlink Command="{Binding SetOneYearCommand}">
-                                        1 yr
-                                    </Hyperlink>
-                                </TextBlock>
-                                <TextBlock Margin="5,0,0,5">
-                                    <Hyperlink Command="{Binding SetFiveYearCommand}">
-                                        5 yr
-                                    </Hyperlink>
-                                </TextBlock>
+                    <!-- <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
+                    <!--     <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
+                    <!--         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
+                    <!--             <Label Content="Start:" Margin="5,0,0,5" /> -->
+                    <!--             <DatePicker SelectedDate="{Binding ProjectionStartDate,  -->
+                    <!--        Mode=TwoWay,  -->
+                    <!--        UpdateSourceTrigger=PropertyChanged,  -->
+                    <!--        TargetNullValue=''}" -->
+                    <!--                         Margin="5,0,0,5" /> -->
+                    <!--             <Label Content="End:" Margin="5,0,0,5" /> -->
+                    <!--             <DatePicker DisplayDateStart="{x:Static System:DateTime.Today}" -->
+                    <!--                         SelectedDate="{Binding ProjectionEndDate}" -->
+                    <!--                         Margin="5,0,0,5" /> -->
+                    <!--         </StackPanel> -->
+                    <!--         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center"  VerticalAlignment="Center" Margin="5,0,0,5"> -->
+                    <!--             <TextBlock Margin="5,0,0,5"> -->
+                    <!--                 <Hyperlink Command="{Binding SetOneYearCommand}"> -->
+                    <!--                     1 yr -->
+                    <!--                 </Hyperlink> -->
+                    <!--             </TextBlock> -->
+                    <!--             <TextBlock Margin="5,0,0,5"> -->
+                    <!--                 <Hyperlink Command="{Binding SetFiveYearCommand}"> -->
+                    <!--                     5 yr -->
+                    <!--                 </Hyperlink> -->
+                    <!--             </TextBlock> -->
+                    <!--             <TextBlock Margin="5,0,0,5"> -->
+                    <!--                 <Hyperlink Command="{Binding SetTenYearCommand}"> -->
+                    <!--                     10 yr -->
+                    <!--                 </Hyperlink> -->
+                    <!--             </TextBlock> -->
+                    <!--             <TextBlock Margin="5,0,0,5"> -->
+                    <!--                 <Hyperlink Command="{Binding SetThirtyYearCommand}"> -->
+                    <!--                     30 yr -->
+                    <!--                 </Hyperlink> -->
+                    <!--             </TextBlock> -->
+                    <!--         </StackPanel> -->
+                    <!--     </StackPanel> -->
+                    <!-- </StackPanel> -->
 
-                                <TextBlock Margin="5,0,0,5">
-                                    <Hyperlink Command="{Binding SetTenYearCommand}">
-                                        10 yr
-                                    </Hyperlink>
-                                </TextBlock>
-                                <TextBlock Margin="5,0,0,5">
-                                    <Hyperlink Command="{Binding SetThirtyYearCommand}">
-                                        30 yr
-                                    </Hyperlink>
-                                </TextBlock>
+<Border Background="#F8FAFC" 
+        BorderBrush="#CBD5E1" 
+        BorderThickness="1" 
+        CornerRadius="4" 
+        Padding="6,4" 
+        Margin="0,4,0,8"
+        Grid.Row="0">
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/> <ColumnDefinition Width="*"/>    <ColumnDefinition Width="Auto"/> </Grid.ColumnDefinitions>
 
-                            </StackPanel>
+        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+            <Label Content="Start:" VerticalAlignment="Center" Margin="5,0,0,0" />
+            <DatePicker SelectedDate="{Binding ProjectionStartDate, 
+                                               Mode=TwoWay, 
+                                               UpdateSourceTrigger=PropertyChanged, 
+                                               TargetNullValue=''}"
+                        VerticalAlignment="Center"
+                        Margin="5,0,0,0" />
+            
+            <Label Content="End:" VerticalAlignment="Center" Margin="12,0,0,0" />
+            <DatePicker DisplayDateStart="{x:Static System:DateTime.Today}"
+                        SelectedDate="{Binding ProjectionEndDate}"
+                        VerticalAlignment="Center"
+                        Margin="5,0,0,0" />
+        </StackPanel>
 
-                        </StackPanel>
-                    </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Command="{Binding SetOneYearCommand}" 
+                    Content="1 yr" 
+                    Padding="10,4" 
+                    Background="White" 
+                    BorderBrush="#CBD5E1"/>
+            
+            <Button Command="{Binding SetFiveYearCommand}" 
+                    Content="5 yr" 
+                    Padding="10,4" 
+                    Background="White" 
+                    BorderBrush="#CBD5E1" 
+                    Margin="-1,0,0,0"/>
+            
+            <Button Command="{Binding SetTenYearCommand}" 
+                    Content="10 yr" 
+                    Padding="10,4" 
+                    Background="White" 
+                    BorderBrush="#CBD5E1" 
+                    Margin="-1,0,0,0"/>
+            
+            <Button Command="{Binding SetThirtyYearCommand}" 
+                    Content="30 yr" 
+                    Padding="10,4" 
+                    Background="White" 
+                    BorderBrush="#CBD5E1" 
+                    Margin="-1,0,0,0"/>
+        </StackPanel>
+    </Grid>
+</Border>
                     <DataGrid x:Name="ProjectionGrid" Grid.Row="1" ItemsSource="{Binding Projections}"
                               AutoGenerateColumns="False" CanUserAddRows="False">
                         <DataGrid.RowStyle>
@@ -1505,34 +1590,54 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding TransactionDate, StringFormat=d}"
-                                                IsReadOnly="True" Width="80" />
-
-                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="True"
-                                                Width="150" />
-
-                            <DataGridTextColumn Header="Amount"
-                                                Binding="{Binding Amount, StringFormat=C, UpdateSourceTrigger=PropertyChanged}"
-                                                Width="90">
+                            <DataGridTextColumn Header="Posting Date" 
+                                                HeaderStyle="{StaticResource CenterAlignedHeaderStyle}"
+                                                Binding="{Binding TransactionDate, StringFormat='{}{0:MM/dd/yyyy}'}"
+                                                IsReadOnly="False" Width="90"  >
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="Black" />
-                                        <Style.Triggers>
-                                            <DataTrigger
-                                                Binding="{Binding Amount, Converter={StaticResource NegativeToRedConverter}}"
-                                                Value="True">
-                                                <Setter Property="Foreground" Value="Red" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
+                                        <Setter Property="TextAlignment" Value="Center" />
+                                        <!-- <Setter Property="Padding" Value="0,0,8,0" />  -->
+                    
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-
-                            <DataGridTextColumn Header="Total Balance" Binding="{Binding Balance, StringFormat=C}"
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" IsReadOnly="True"
+                                                Width="150" />
+                            <DataGridTextColumn Header="Amount"
+                                                HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                                Binding="{Binding Amount, StringFormat=C, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="90" MinWidth="80">
+                                <!-- <DataGridTextColumn.ElementStyle> -->
+                                <!--     <Style TargetType="TextBlock"> -->
+                                <!--         <Setter Property="Foreground" Value="Black" /> -->
+                                <!--         <Style.Triggers> -->
+                                <!--             <DataTrigger -->
+                                <!--                 Binding="{Binding Amount, Converter={StaticResource NegativeToRedConverter}}" -->
+                                <!--                 Value="True"> -->
+                                <!--                 <Setter Property="Foreground" Value="Red" /> -->
+                                <!--             </DataTrigger> -->
+                                <!--         </Style.Triggers> -->
+                                <!--     </Style> -->
+                                <!-- </DataGridTextColumn.ElementStyle> -->
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                        <Setter Property="Padding" Value="0,0,8,0" /> <Setter Property="Foreground" 
+                                            Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Total Balance" 
+                                                HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                                Binding="{Binding Balance, StringFormat=C}"
                                                 Width="90">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="Black" />
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                        <Setter Property="Padding" Value="0,0,8,0" /> 
+                                        <Setter Property="Foreground" 
+                                                Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsWarning}" Value="True">
                                                 <Setter Property="Foreground" Value="Red" />
@@ -1542,11 +1647,16 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-
-                            <DataGridTextColumn Header="Period Net" Binding="{Binding PeriodNet, StringFormat=C}"
+                            <DataGridTextColumn Header="Period Net" 
+                                                HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                                Binding="{Binding PeriodNet, StringFormat=C}"
                                                 Width="90">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                        <Setter Property="Padding" Value="0,0,8,0" /> 
+                                        <Setter Property="Foreground" 
+                                                Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" />
                                         <Setter Property="FontWeight" Value="Bold" />
                                         <Style.Triggers>
                                             <DataTrigger
@@ -1558,7 +1668,6 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-
                         </DataGrid.Columns>
                     </DataGrid>
                     <GridSplitter
@@ -1570,8 +1679,10 @@
                         VerticalAlignment="Stretch"
                         ResizeBehavior="PreviousAndNext"
                         ShowsPreview="True"/>
-                    <local:ProjectionLiveChartControl Grid.Row="3" Projections="{Binding Projections}"
-                                                      Accounts="{Binding Accounts}" Margin="0,5,0,0" />
+                    <local:ProjectionLiveChartControl Grid.Row="3" 
+                                                      Projections="{Binding Projections}"
+                                                      Accounts="{Binding Accounts}" 
+                                                      Margin="0,5,0,0" />
                 </Grid>
             </DockPanel>
         </Grid>

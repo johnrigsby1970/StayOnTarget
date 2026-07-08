@@ -9,11 +9,15 @@ public class ProjectionItem : ViewModelBase
     private bool _isWarning;
     private decimal? _periodNet;
     private int? _paycheckId;
+    private int? _toAccountId;
+    private int? _fromAccountId;
     private Dictionary<string, decimal> _accountBalances = new();
 
     public DateTime TransactionDate { get => _transactionDate; set => SetProperty(ref _transactionDate, value); }
     public string Description { get => _description; set => SetProperty(ref _description, value); }
     public int? PaycheckId { get => _paycheckId; set => SetProperty(ref _paycheckId, value); }
+    public int? ToAccountId { get => _toAccountId; set => SetProperty(ref _toAccountId, value); }
+    public int? FromAccountId { get => _fromAccountId; set => SetProperty(ref _fromAccountId, value); }
     public bool InOrOutOfMoneyAccount { get; set; }
     public bool NeedsAttention { get => _paycheckId.HasValue;  }
     public decimal Amount 

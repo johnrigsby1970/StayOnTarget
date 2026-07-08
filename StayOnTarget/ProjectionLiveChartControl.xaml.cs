@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
+using LiveChartsCore.Kernel.Sketches;
 using LiveChartsCore.Measure;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -65,7 +66,7 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
             Labeler = value => value.ToString("C")
         }
     };
-
+    
     private readonly CartesianChart _chart;
 
     public ProjectionLiveChartControl()
@@ -73,7 +74,7 @@ public partial class ProjectionLiveChartControl : UserControl, INotifyPropertyCh
         InitializeComponent();
         _chart = new CartesianChart
         {
-            LegendPosition = LiveChartsCore.Measure.LegendPosition.Right
+            LegendPosition = LiveChartsCore.Measure.LegendPosition.Bottom
         };
         MainGrid.Children.Add(_chart);
         _chart.SetBinding(CartesianChart.SeriesProperty, new System.Windows.Data.Binding("Series") { Source = this });

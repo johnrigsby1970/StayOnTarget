@@ -2,18 +2,127 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Amortization Schedule" Height="450" Width="600">
+    <Window.Resources>
+        <Style TargetType="{x:Type DataGrid}">
+            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0" />
+            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0" />
+        
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="1" />
+        
+            <Setter Property="AlternatingRowBackground" Value="#F8FAFC" />
+        
+            <Setter Property="RowBackground" Value="White" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="GridLinesVisibility" Value="All" />
+        </Style>
+        <Style TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="Background" Value="#E2E8F0" />
+
+            <Setter Property="Foreground" Value="#1E293B" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+
+            <Setter Property="Padding" Value="8,6,8,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+
+            <Setter Property="SeparatorBrush" Value="#CBD5E1" />
+        </Style>
+        <Style x:Key="RightAlignedHeaderStyle" 
+               TargetType="{x:Type DataGridColumnHeader}" 
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+    
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="CenterAlignedHeaderStyle" 
+               TargetType="{x:Type DataGridColumnHeader}" 
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+    
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
     <Grid Margin="10">
         <DockPanel>
             <TextBlock DockPanel.Dock="Top" x:Name="HeaderLabel" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" />
             <DataGrid x:Name="ScheduleGrid" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Month" Binding="{Binding Month}" Width="50" />
-                    <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="80" />
-                    <DataGridTextColumn Header="Payment" Binding="{Binding Payment, StringFormat=C}" Width="80" />
-                    <DataGridTextColumn Header="Principal" Binding="{Binding Principal, StringFormat=C}" Width="85" />
-                    <DataGridTextColumn Header="Interest" Binding="{Binding Interest, StringFormat=C}" Width="85" />
-                    <DataGridTextColumn Header="Escrow/Ins" Binding="{Binding EscrowInsurance, StringFormat=C}" Width="85" />
-                    <DataGridTextColumn Header="Balance" Binding="{Binding Balance, StringFormat=C}" Width="100" />
+                    <DataGridTextColumn Header="Month" Binding="{Binding Month}" Width="60" />
+                    <DataGridTextColumn Header="Date" 
+                                        HeaderStyle="{StaticResource CenterAlignedHeaderStyle}"
+                                        Binding="{Binding Date, StringFormat='{}{0:MM/dd/yyyy}'}"
+                                        IsReadOnly="False" Width="90"  >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Center" />
+                                <!-- <Setter Property="Padding" Value="0,0,8,0" />  -->
+                    
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Payment"
+                                        HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                        Binding="{Binding Payment, StringFormat=C}" Width="80" >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right" />
+                                <Setter Property="Padding" Value="0,0,8,0" /> 
+                                <!-- <Setter Property="Foreground"  -->
+                                <!--         Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Principal" 
+                                        HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                        Binding="{Binding Principal, StringFormat=C}" Width="85" >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right" />
+                                <Setter Property="Padding" Value="0,0,8,0" /> 
+                                <!-- <Setter Property="Foreground"  -->
+                                <!--         Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Interest"
+                                        HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                        Binding="{Binding Interest, StringFormat=C}" Width="85" >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right" />
+                                <Setter Property="Padding" Value="0,0,8,0" /> 
+                                <!-- <Setter Property="Foreground"  -->
+                                <!--         Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Escrow/Ins"
+                                        HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                        Binding="{Binding EscrowInsurance, StringFormat=C}"
+                                        Width="85" >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right" />
+                                <Setter Property="Padding" Value="0,0,8,0" /> 
+                                <!-- <Setter Property="Foreground"  -->
+                                <!--         Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Balance"
+                                        HeaderStyle="{StaticResource RightAlignedHeaderStyle}"
+                                        Binding="{Binding Balance, StringFormat=C}" Width="100" >
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right" />
+                                <Setter Property="Padding" Value="0,0,8,0" /> 
+                                <!-- <Setter Property="Foreground"  -->
+                                <!--         Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" /> -->
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </DockPanel>
