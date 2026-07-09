@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
+using System.Xml;
 using StayOnTarget.Models;
 using StayOnTarget.Services;
 using StayOnTarget.Services.Projections;
@@ -531,6 +532,8 @@ public class MainViewModel : ViewModelBase {
         new RelayCommand(a => ShowAmortization(a as Account ?? throw new InvalidOperationException()));
 
     public ICommand ShowAboutCommand => new RelayCommand(_ => ShowAbout());
+    public ICommand ExitCommand => new RelayCommand(_ => Exit());
+    public ICommand BackupCommand => new RelayCommand(_ => Backup());
     public ICommand SetOneYearCommand => new RelayCommand(_ => SetProjectionEndDate(1));
 
     public ICommand SetFiveYearCommand => new RelayCommand(_ => SetProjectionEndDate(5));
@@ -1849,6 +1852,20 @@ public class MainViewModel : ViewModelBase {
             Owner = Application.Current.MainWindow
         };
         about.ShowDialog();
+    }
+    
+    private void Exit() {
+        Application.Current.Shutdown();
+    }
+    
+    private void Backup() {
+        try {
+            var file = _budgetService.BackupDatabase();
+            MessageBox.Show($"Database backup saved successfully to {file}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex) {
+            MessageBox.Show(ex.Message, "Backup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void ShowAmortization(Account account) {

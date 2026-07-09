@@ -4,44 +4,35 @@ using System.IO;
 
 namespace StayOnTarget.Data;
 
-public class SqliteDecimalHandler : SqlMapper.TypeHandler<decimal>
-{
-    public override void SetValue(System.Data.IDbDataParameter parameter, decimal value)
-    {
+public class SqliteDecimalHandler : SqlMapper.TypeHandler<decimal> {
+    public override void SetValue(System.Data.IDbDataParameter parameter, decimal value) {
         parameter.Value = value;
     }
 
-    public override decimal Parse(object value)
-    {
+    public override decimal Parse(object value) {
         return Convert.ToDecimal(value);
     }
 }
 
-public class SqliteGuidHandler : SqlMapper.TypeHandler<Guid>
-{
-    public override void SetValue(System.Data.IDbDataParameter parameter, Guid value)
-    {
+public class SqliteGuidHandler : SqlMapper.TypeHandler<Guid> {
+    public override void SetValue(System.Data.IDbDataParameter parameter, Guid value) {
         // Store as TEXT in SQLite
         parameter.Value = value.ToString();
     }
 
-    public override Guid Parse(object value)
-    {
+    public override Guid Parse(object value) {
         if (value is Guid g) return g;
         if (value is byte[] bytes && bytes.Length == 16) return new Guid(bytes);
         return Guid.Parse(value?.ToString() ?? string.Empty);
     }
 }
 
-public class SqliteNullableGuidHandler : SqlMapper.TypeHandler<Guid?>
-{
-    public override void SetValue(System.Data.IDbDataParameter parameter, Guid? value)
-    {
+public class SqliteNullableGuidHandler : SqlMapper.TypeHandler<Guid?> {
+    public override void SetValue(System.Data.IDbDataParameter parameter, Guid? value) {
         parameter.Value = value?.ToString();
     }
 
-    public override Guid? Parse(object value)
-    {
+    public override Guid? Parse(object value) {
         if (value == null || value is DBNull) return null;
         if (value is Guid g) return g;
         if (value is byte[] bytes && bytes.Length == 16) return new Guid(bytes);
@@ -50,46 +41,65 @@ public class SqliteNullableGuidHandler : SqlMapper.TypeHandler<Guid?>
     }
 }
 
-public class DatabaseContext
-{
+public class DatabaseContext {
     private readonly string _connectionString;
-    
+
     private const string ProgramFolderName = "StayOnTarget";
     private const string DatabaseName = "budget.db";
-    
-    static DatabaseContext()
-    {
+
+    static DatabaseContext() {
         SqlMapper.AddTypeHandler(new SqliteDecimalHandler());
         SqlMapper.AddTypeHandler(new SqliteGuidHandler());
         SqlMapper.AddTypeHandler(new SqliteNullableGuidHandler());
     }
 
-    public DatabaseContext()
-    {
+    public DatabaseContext() {
         var userProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         //string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DatabaseName);
         var dbFolder = Path.Combine(userProfileFolder, ProgramFolderName);
         Directory.CreateDirectory(dbFolder);
-        
+
         var dbPath = Path.Combine(dbFolder, DatabaseName);
 
         _connectionString = $"Data Source={dbPath}";
         InitializeDatabase();
     }
 
-    public DatabaseContext(string dbPath)
-    {
+    public DatabaseContext(string dbPath) {
         _connectionString = $"Data Source={dbPath}";
         InitializeDatabase();
     }
 
+    public string BackupDatabase() {
+        var userProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var dbFolder = Path.Combine(userProfileFolder, ProgramFolderName);
+        var oldPath = Path.Combine(dbFolder, DatabaseName);
+        string directory = Path.GetDirectoryName(oldPath);
+        string filenameWithoutExt = Path.GetFileNameWithoutExtension(oldPath);
+        string extension = Path.GetExtension(oldPath);
+
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+        string newFilename = $"{filenameWithoutExt}_{timestamp}{extension}";
+        string newPath = Path.Combine(directory, newFilename);
+
+        using (var source = new SqliteConnection($"Data Source={oldPath}"))
+        using (var destination = new SqliteConnection($"Data Source={newPath}")) {
+            source.Open();
+            destination.Open();
+
+            // This performs a full, online backup safely
+            source.BackupDatabase(destination);
+            return newPath;
+        }
+    }
+
     public SqliteConnection GetConnection() => new SqliteConnection(_connectionString);
 
-    private void InitializeDatabase()
-    {
+    private void InitializeDatabase() {
         using var connection = GetConnection();
         connection.Open();
-        
+
         connection.Execute(@"
             CREATE TABLE IF NOT EXISTS Accounts (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -221,19 +231,17 @@ public class DatabaseContext
                 FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
             );
         ");
-  
+
         var columnExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='Memo'");
-        
-        if (columnExists == 0)
-        {
+
+        if (columnExists == 0) {
             // If the table exists but the column doesn't, add it. 
             // We check if table exists first.
             var tableExists = connection.ExecuteScalar<int>(@"
                 SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-            
-            if (tableExists > 0)
-            {
+
+            if (tableExists > 0) {
                 connection.Execute("ALTER TABLE Transactions ADD COLUMN Memo Text");
             }
         }
@@ -241,9 +249,8 @@ public class DatabaseContext
         // Check if CreditCardDetails table exists
         var ccDetailsTableExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM sqlite_master WHERE TYPE='table' AND name='CreditCardDetails'");
-        
-        if (ccDetailsTableExists == 0)
-        {
+
+        if (ccDetailsTableExists == 0) {
             connection.Execute(@"
                 CREATE TABLE CreditCardDetails (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -261,8 +268,7 @@ public class DatabaseContext
         var hexColorExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM pragma_table_info('Accounts') WHERE name='HexColor'");
 
-        if (hexColorExists == 0)
-        {
+        if (hexColorExists == 0) {
             connection.Execute("ALTER TABLE Accounts ADD COLUMN HexColor TEXT DEFAULT '#FF0000FF'");
         }
 
@@ -270,14 +276,13 @@ public class DatabaseContext
         var fromAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='FromAccountReconciledId'");
 
-        if (fromAccountReconciledIdExists == 0)
-        {
+        if (fromAccountReconciledIdExists == 0) {
             var tableExists = connection.ExecuteScalar<int>(@"
                 SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
 
-            if (tableExists > 0)
-            {
-                connection.Execute("ALTER TABLE Transactions ADD COLUMN FromAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
+            if (tableExists > 0) {
+                connection.Execute(
+                    "ALTER TABLE Transactions ADD COLUMN FromAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
             }
         }
 
@@ -285,14 +290,13 @@ public class DatabaseContext
         var toAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='ToAccountReconciledId'");
 
-        if (toAccountReconciledIdExists == 0)
-        {
+        if (toAccountReconciledIdExists == 0) {
             var tableExists = connection.ExecuteScalar<int>(@"
                 SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
 
-            if (tableExists > 0)
-            {
-                connection.Execute("ALTER TABLE Transactions ADD COLUMN ToAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
+            if (tableExists > 0) {
+                connection.Execute(
+                    "ALTER TABLE Transactions ADD COLUMN ToAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
             }
         }
     }

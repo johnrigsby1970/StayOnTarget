@@ -15,4 +15,9 @@ public partial class BudgetService
     {
         _db = new DatabaseContext(dbPath);
     }
+    
+    public string BackupDatabase()
+    {
+        return _db.BackupDatabase();
+    }
 }
