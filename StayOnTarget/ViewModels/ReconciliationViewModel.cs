@@ -45,6 +45,13 @@ public class ReconciliationViewModel : ViewModelBase {
         set => SetProperty(ref _endingBalance, value);
     }
 
+    private decimal _currentAssetValue;
+
+    public decimal CurrentAssetValue {
+        get => _currentAssetValue;
+        set => SetProperty(ref _currentAssetValue, value);
+    }
+
     private DateTime? _lastReconciledDate;
 
     public DateTime? LastReconciledDate {
@@ -73,8 +80,34 @@ public class ReconciliationViewModel : ViewModelBase {
         window.ShowDialog();
         LoadData();
     }
-    
+
+    private RelayCommand? _adjustBalanceCommand;
+    public RelayCommand AdjustBalanceCommand => _adjustBalanceCommand ??= new RelayCommand(_ => AdjustBalance());
+
+    private async void AdjustBalance() {
+        decimal currentRunningBalance = BeginningBalance + ReconciliationTransactions.Sum(t => t.Amount);
+        decimal delta = CurrentAssetValue - currentRunningBalance;
+
+        if (delta == 0) return;
+
+        var adjustmentTransaction = new Transaction {
+            AccountId = delta > 0 ? null : _account.Id,
+            ToAccountId = delta > 0 ? _account.Id : null,
+            TransactionDate = DateTime.Today,
+            Description = delta > 0 ? "Value Increase" : "Value Decrease",
+            Amount = Math.Abs(delta),
+            PeriodDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)
+        };
+
+        await _budgetService.UpsertTransactionAsync(adjustmentTransaction);
+        CurrentAssetValue = 0; // Reset so it gets recalculated in LoadData
+        LoadData();
+    }
+
     private void LoadData() {
+        //decimal currentRunningBalance = BeginningBalance + ReconciliationTransactions.Sum(t => t.Amount);
+        //if (CurrentAssetValue == 0) CurrentAssetValue = currentRunningBalance;
+
         decimal beginningBalance = _account.Balance;
         DateTime? lastReconciledDate = _account.BalanceAsOf;
         var accountReconciliation = _budgetService.GetLatestValidReconciliation(_account.Id);
@@ -92,6 +125,7 @@ public class ReconciliationViewModel : ViewModelBase {
             out lastReconciledDate, out beginningBalance);
         BeginningBalance = beginningBalance;
         LastReconciledDate = lastReconciledDate ?? DateTime.MinValue;
+        if (CurrentAssetValue == 0) CurrentAssetValue = EndingBalance;
 
         decimal? newReconciledBalance = null;
         DateTime? newReconciledDate = null;

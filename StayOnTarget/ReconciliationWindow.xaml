@@ -145,7 +145,17 @@
                     <Label
                         Content="{Binding EndingBalance, StringFormat=C}"
                         Width="Auto" Margin="0,0" />
-                                        
+                    
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding Account.Type, ConverterParameter='RealEstate|AppreciatingAsset|Investment|Brokerage|Retirement401k|CD', Converter={StaticResource AccountTypeToVisibilityConverter}}">
+                        <Label Content="Current Value:" Margin="20,0,0,0" />
+                        <TextBox
+                            Text="{Binding CurrentAssetValue, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                            Width="80" Margin="0,0" VerticalContentAlignment="Center" />
+                        <Button Content="Adjust Balance" 
+                                Command="{Binding AdjustBalanceCommand}"
+                                Margin="10,0,0,0" Padding="10,0" />
+                    </StackPanel>
                 </StackPanel>
                 <!-- <StackPanel Grid.Row="3" Margin="0,5" -->
                 <!--             Orientation="Horizontal"  -->
