@@ -17,9 +17,13 @@ public partial class MainWindow : Window {
 
     public MainWindow() {
         InitializeComponent();
-        _viewModel = new MainViewModel();
-        DataContext = _viewModel;
         Loaded += MainWindow_Loaded;
+    }
+
+    public MainWindow(MainViewModel viewModel) : this()
+    {
+        _viewModel = viewModel;
+        DataContext = _viewModel;
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e) {

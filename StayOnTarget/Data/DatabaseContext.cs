@@ -42,35 +42,55 @@ public class SqliteNullableGuidHandler : SqlMapper.TypeHandler<Guid?> {
 }
 
 public class DatabaseContext {
-    private readonly string _connectionString;
+    private string _connectionString;
 
     private const string ProgramFolderName = "StayOnTarget";
     private const string DatabaseName = "budget.db";
 
     static DatabaseContext() {
+        // // Call this once at application startup to register the encryption provider
+        // SQLitePCL.Batteries_V2.Init();
         SqlMapper.AddTypeHandler(new SqliteDecimalHandler());
         SqlMapper.AddTypeHandler(new SqliteGuidHandler());
         SqlMapper.AddTypeHandler(new SqliteNullableGuidHandler());
     }
 
-    public DatabaseContext() {
+    public DatabaseContext(string dbPath, string userPassword) 
+    {
+        // Ensure the directory exists for whatever path is passed in
+        var directory = Path.GetDirectoryName(dbPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+        
+        _connectionString = BuildConnectionString(dbPath, userPassword);
+
+        InitializeDatabase();
+    }
+    
+    // Public helper to compute the default user profile path safely
+    public static string GetDefaultDbPath()
+    {
         var userProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        //string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DatabaseName);
         var dbFolder = Path.Combine(userProfileFolder, ProgramFolderName);
-        Directory.CreateDirectory(dbFolder);
-
-        var dbPath = Path.Combine(dbFolder, DatabaseName);
-
-        _connectionString = $"Data Source={dbPath}";
-        InitializeDatabase();
+        return Path.Combine(dbFolder, DatabaseName);
     }
 
-    public DatabaseContext(string dbPath) {
-        _connectionString = $"Data Source={dbPath}";
-        InitializeDatabase();
+    private string BuildConnectionString(string dbPath, string? password) {
+        if (string.IsNullOrEmpty(password)) {
+            return $"Data Source={dbPath};";
+        }
+    
+        // Convert Windows backslashes to forward slashes so the SQLite URI parser reads it cleanly
+        var normalizedPath = dbPath.Replace('\\', '/');
+    
+        // Semicolons only separate built-in keywords (Data Source, Password, Pooling)
+        // The cipher settings live seamlessly inside the Data Source string itself!
+        return $"Data Source=file:{normalizedPath}?cipher=sqlcipher&legacy=4;Password={password};Pooling=False;";
     }
-
-    public string BackupDatabase() {
+    
+    public string BackupDatabase(string? password) {
         var userProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var dbFolder = Path.Combine(userProfileFolder, ProgramFolderName);
         var oldPath = Path.Combine(dbFolder, DatabaseName);
@@ -83,8 +103,13 @@ public class DatabaseContext {
         string newFilename = $"{filenameWithoutExt}_{timestamp}{extension}";
         string newPath = Path.Combine(directory, newFilename);
 
-        using (var source = new SqliteConnection($"Data Source={oldPath}"))
-        using (var destination = new SqliteConnection($"Data Source={newPath}")) {
+        // Force the encryption engine to use standard SQLCipher 4 formatting
+        // Note the "file:" prefix and the "?cipher=sqlcipher&legacy=4" parameters
+        var oldConnectionString =  BuildConnectionString(oldPath, password);
+        var newConnectionString = BuildConnectionString(newPath, password);
+        
+        using (var source = new SqliteConnection(oldConnectionString))
+        using (var destination = new SqliteConnection(newConnectionString)) {
             source.Open();
             destination.Open();
 
@@ -94,6 +119,25 @@ public class DatabaseContext {
         }
     }
 
+    public void ChangePassword(string dbPath, string oldPassword, string newPassword) {
+        string connectionString = BuildConnectionString(dbPath, oldPassword);
+        
+        using (var connection = new SqliteConnection(connectionString))
+        {
+            connection.Open();
+
+            using (var command = connection.CreateCommand())
+            {
+                // Correct SQLCipher/SQLite3MC syntax: PRAGMA rekey('password')
+                // Note: Single quotes wrap the password string inside the command
+                command.CommandText = $"PRAGMA rekey('{newPassword}');";
+                command.ExecuteNonQuery();
+            }
+        }
+        
+        _connectionString = BuildConnectionString(dbPath, newPassword);
+    }
+    
     public SqliteConnection GetConnection() => new SqliteConnection(_connectionString);
 
     private void InitializeDatabase() {

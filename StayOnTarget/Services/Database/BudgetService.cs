@@ -5,19 +5,20 @@ namespace StayOnTarget.Services;
 public partial class BudgetService
 {
     private readonly DatabaseContext _db;
+    private readonly string _password;
 
-    public BudgetService()
+    public BudgetService(string password) : this(DatabaseContext.GetDefaultDbPath(), password)
     {
-        _db = new DatabaseContext();
     }
 
-    public BudgetService(string dbPath)
+    public BudgetService(string dbPath, string password)
     {
-        _db = new DatabaseContext(dbPath);
+        _password = password;
+        _db = new DatabaseContext(dbPath, password);
     }
     
     public string BackupDatabase()
     {
-        return _db.BackupDatabase();
+        return _db.BackupDatabase(_password);
     }
 }

@@ -78,9 +78,9 @@ public class MainViewModel : ViewModelBase {
 
     public static MainViewModel? Instance { get; private set; }
 
-    public MainViewModel() {
+    public MainViewModel(BudgetService budgetService) {
         Instance = this;
-        _budgetService = new BudgetService();
+        _budgetService = budgetService;
         _projectionEngine = new ProjectionEngine();
         LoadData();
         InitializePeriod();
