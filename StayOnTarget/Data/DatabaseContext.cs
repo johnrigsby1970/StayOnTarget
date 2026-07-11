@@ -77,7 +77,7 @@ public class DatabaseContext {
         return Path.Combine(dbFolder, DatabaseName);
     }
 
-    private string BuildConnectionString(string dbPath, string? password) {
+    public string BuildConnectionString(string dbPath, string? password) {
         if (string.IsNullOrEmpty(password)) {
             return $"Data Source={dbPath};";
         }

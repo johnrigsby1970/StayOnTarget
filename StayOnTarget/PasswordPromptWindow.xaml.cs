@@ -1,5 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
+using Microsoft.Data.Sqlite;
+using StayOnTarget.Data;
 
 namespace StayOnTarget;
 
@@ -7,11 +9,14 @@ public partial class PasswordPromptWindow : Window
 {
     public string Password { get; private set; } = string.Empty;
     private readonly bool _isNewDatabase;
+    private readonly string _dbPath;
+    private int _failureCount = 0;
 
-    public PasswordPromptWindow(bool isNewDatabase)
+    public PasswordPromptWindow(bool isNewDatabase, string dbPath)
     {
         InitializeComponent();
         _isNewDatabase = isNewDatabase;
+        _dbPath = dbPath;
 
         if (_isNewDatabase)
         {
@@ -47,8 +52,11 @@ public partial class PasswordPromptWindow : Window
     private void ProcessInput()
     {
         ErrorMessage.Visibility = Visibility.Collapsed;
+        ErrorMessageBorder.Visibility = Visibility.Collapsed;
 
-        if (string.IsNullOrEmpty(PasswordInput.Password))
+        string inputPassword = PasswordInput.Password;
+
+        if (string.IsNullOrEmpty(inputPassword))
         {
             ShowError("Password cannot be empty.");
             return;
@@ -56,21 +64,56 @@ public partial class PasswordPromptWindow : Window
 
         if (_isNewDatabase)
         {
-            if (PasswordInput.Password != ConfirmPasswordInput.Password)
+            if (inputPassword != ConfirmPasswordInput.Password)
             {
                 ShowError("Passwords do not match.");
                 return;
             }
         }
 
-        Password = PasswordInput.Password;
-        DialogResult = true;
-        Close();
+        // Active validation
+        try
+        {
+            var dbContext = new DatabaseContext(_dbPath, inputPassword);
+            using (var connection = dbContext.GetConnection())
+            {
+                connection.Open();
+                // If it's a new database, DatabaseContext constructor already initialized it.
+                // If it's an existing one, Open() will throw if the password is wrong.
+            }
+
+            // Success!
+            Password = inputPassword;
+            Helpers.SaveDatabaseKeyToWindowsVault(Password);
+            DialogResult = true;
+            Close();
+        }
+        catch (SqliteException)
+        {
+            _failureCount++;
+            PasswordInput.Password = "";
+            ConfirmPasswordInput.Password = "";
+            PasswordInput.Focus();
+
+            if (_failureCount >= 3)
+            {
+                MessageBox.Show("Too many failed attempts. Shutting down.", "Security", MessageBoxButton.OK, MessageBoxImage.Stop);
+                Application.Current.Shutdown();
+                return;
+            }
+
+            ShowError($"Invalid password. (Attempt {_failureCount} of 3)");
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Validation error: {ex.Message}");
+        }
     }
 
     private void ShowError(string message)
     {
         ErrorMessage.Text = message;
         ErrorMessage.Visibility = Visibility.Visible;
+        ErrorMessageBorder.Visibility = Visibility.Visible;
     }
 }
