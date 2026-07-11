@@ -84,7 +84,20 @@ public partial class PasswordPromptWindow : Window
 
             // Success!
             Password = inputPassword;
-            Helpers.SaveDatabaseKeyToWindowsVault(Password);
+            if (UseWindowsHelloCheckBox.IsChecked == true)
+            {
+                try
+                {
+                    StayOnTarget.Properties.Settings.Default.UseWindowsHello = true;
+                    StayOnTarget.Properties.Settings.Default.Save();
+                    Helpers.SaveDatabaseKeyToWindowsVault(Password);
+                }
+                catch (Exception ex)
+                {
+                    // Gracefully log or handle vault storage issues without crashing the app setup
+                    MessageBox.Show($"Could not enable Windows Hello: {ex.Message}", "Security Notice", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
             DialogResult = true;
             Close();
         }

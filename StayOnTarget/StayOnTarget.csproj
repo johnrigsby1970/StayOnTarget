@@ -20,4 +20,9 @@
       <PackageReference Include="SQLite3MC.PCLRaw.bundle" Version="2.3.5" />
     </ItemGroup>
 
+    <ItemGroup>
+
+        <Compile Update="Properties\Settings.Designer.cs" AutoGen="True" DesignTimeSharedInput="True" DependentUpon="Settings.settings" />
+    </ItemGroup>
+
 </Project>

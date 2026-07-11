@@ -40,8 +40,11 @@ public partial class App : Application
             
             try
             {
-                // 2. Pass this active anchor to your helper method
-                password = await Helpers.TryUnlockWithWindowsHello();
+                bool userWantsHello = StayOnTarget.Properties.Settings.Default.UseWindowsHello;
+                if (userWantsHello) {
+                    // 2. Pass this active anchor to your helper method
+                    password = await Helpers.TryUnlockWithWindowsHello();
+                }
             }
             finally
             {
