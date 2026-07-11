@@ -23,6 +23,9 @@ public class MainViewModel : ViewModelBase {
     private ObservableCollection<BudgetBucket> _bucketsWithNone = new();
     private ObservableCollection<PeriodBucket> _currentPeriodBuckets = new();
     private ObservableCollection<Transaction> _currentPeriodTransactions = new();
+    private int _pastDueCount;
+    private int _upcomingCount;
+    private ObservableCollection<PeriodBill> _unpaidPastDueBills = new();
     private Bill? _selectedBill;
     private BudgetBucket? _selectedBucket;
     private PeriodBill? _selectedPeriodBill;
@@ -56,6 +59,8 @@ public class MainViewModel : ViewModelBase {
     private string _toggleReconciliationText = "Show Reconciled";
     private DateTime _projectionEndDate = DateTime.Today.AddYears(1);
     private DateTime? _projectionStartDate = null;
+    private int _selectedOuterTabIndex;
+    private int _selectedInnerTabIndex;
 
     #region Properties
 
@@ -127,8 +132,42 @@ public class MainViewModel : ViewModelBase {
 
     public ObservableCollection<PeriodBill> CurrentPeriodBills {
         get => _currentPeriodBills;
-        set => SetProperty(ref _currentPeriodBills, value);
+        set {
+            if (SetProperty(ref _currentPeriodBills, value)) {
+                UpdateWarningMetrics();
+            }
+        }
     }
+
+    public int PastDueCount {
+        get => _pastDueCount;
+        set => SetProperty(ref _pastDueCount, value);
+    }
+
+    public int UpcomingCount {
+        get => _upcomingCount;
+        set => SetProperty(ref _upcomingCount, value);
+    }
+
+    public ObservableCollection<PeriodBill> UnpaidPastDueBills {
+        get => _unpaidPastDueBills;
+        set => SetProperty(ref _unpaidPastDueBills, value);
+    }
+
+    private void UpdateWarningMetrics() {
+        var today = DateTime.Today;
+        var upcomingLimit = today.AddDays(2);
+
+        var pastDue = CurrentPeriodBills.Where(pb => !pb.HasActualAmount && pb.DueDate < today && pb.ActualAmount != 0).ToList();
+        var upcoming = CurrentPeriodBills.Where(pb => !pb.HasActualAmount && pb.DueDate >= today && pb.DueDate <= upcomingLimit && pb.ActualAmount != 0).ToList();
+
+        PastDueCount = pastDue.Count;
+        UpcomingCount = upcoming.Count;
+        UnpaidPastDueBills = new ObservableCollection<PeriodBill>(pastDue);
+        OnPropertyChanged(nameof(ShowWarningWidget));
+    }
+
+    public bool ShowWarningWidget => PastDueCount > 0 || UpcomingCount > 0;
 
     public ObservableCollection<BudgetBucket> Buckets {
         get => _buckets;
@@ -212,6 +251,16 @@ public class MainViewModel : ViewModelBase {
                 CalculateProjections();
             }
         }
+    }
+
+    public int SelectedOuterTabIndex {
+        get => _selectedOuterTabIndex;
+        set => SetProperty(ref _selectedOuterTabIndex, value);
+    }
+
+    public int SelectedInnerTabIndex {
+        get => _selectedInnerTabIndex;
+        set => SetProperty(ref _selectedInnerTabIndex, value);
     }
 
     public DateTime CurrentPeriodDate {
@@ -542,6 +591,14 @@ public class MainViewModel : ViewModelBase {
 
     public ICommand SetThirtyYearCommand => new RelayCommand(_ => SetProjectionEndDate(30));
 
+    public ICommand MapsToBillCommand => new RelayCommand(p => {
+        if (p is PeriodBill pb) {
+            SelectedPeriodBill = pb;
+            SelectedOuterTabIndex = 0;
+            SelectedInnerTabIndex = 1;
+        }
+    });
+
     public ICommand ToggleBucketDescriptionCommand =>
         new RelayCommand(_ => IsBucketDescriptionExpanded = !IsBucketDescriptionExpanded);
 
@@ -587,8 +644,16 @@ public class MainViewModel : ViewModelBase {
 
     private void PeriodBill_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBill pb) return;
-        if (e.PropertyName == nameof(PeriodBill.TransactionAmount)) return;
-        if (e.PropertyName == nameof(PeriodBill.HasActualAmount)) return;
+        if (e.PropertyName == nameof(PeriodBill.TransactionAmount)) {
+            UpdateWarningMetrics();
+            return;
+        }
+
+        if (e.PropertyName == nameof(PeriodBill.HasActualAmount)) {
+            UpdateWarningMetrics();
+            return;
+        }
+
         if (e.PropertyName == nameof(PeriodBill.BudgetExceeded)) return;
         _budgetService.UpsertPeriodBill(pb);
         LoadPeriodData();
@@ -1644,6 +1709,7 @@ public class MainViewModel : ViewModelBase {
         LoadPeriodBuckets();
         LoadPeriodTransactions();
         ApplyTransactionAmounts();
+        UpdateWarningMetrics();
     }
 
     private void ApplyTransactionAmounts() {
@@ -1681,6 +1747,7 @@ public class MainViewModel : ViewModelBase {
 
         CurrentPeriodBills = new ObservableCollection<PeriodBill>(projectedBillsForPeriod);
         foreach (var pb in CurrentPeriodBills) pb.PropertyChanged += PeriodBill_PropertyChanged;
+        UpdateWarningMetrics();
     }
 
     private void LoadPeriodBuckets() {
