@@ -10,7 +10,7 @@
         xmlns:models="clr-namespace:StayOnTarget.Models"
         xmlns:System="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
-        Title="Stay On Target" Height="600" Width="1000">
+        Title="Stay On Target" Height="600" Width="1000" MinWidth="1000">
     <Window.Resources>
         
         <Style TargetType="{x:Type DataGrid}">
@@ -220,7 +220,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" MinWidth="450" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="4*" />
+                <ColumnDefinition Width="4*"  MinWidth="550"  />
             </Grid.ColumnDefinitions>
 
             <!-- Left Panel: Bills and Paychecks -->
@@ -1613,45 +1613,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="2*" />
                     </Grid.RowDefinitions>
-                    <!-- <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
-                    <!--     <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
-                    <!--         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left"> -->
-                    <!--             <Label Content="Start:" Margin="5,0,0,5" /> -->
-                    <!--             <DatePicker SelectedDate="{Binding ProjectionStartDate,  -->
-                    <!--        Mode=TwoWay,  -->
-                    <!--        UpdateSourceTrigger=PropertyChanged,  -->
-                    <!--        TargetNullValue=''}" -->
-                    <!--                         Margin="5,0,0,5" /> -->
-                    <!--             <Label Content="End:" Margin="5,0,0,5" /> -->
-                    <!--             <DatePicker DisplayDateStart="{x:Static System:DateTime.Today}" -->
-                    <!--                         SelectedDate="{Binding ProjectionEndDate}" -->
-                    <!--                         Margin="5,0,0,5" /> -->
-                    <!--         </StackPanel> -->
-                    <!--         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center"  VerticalAlignment="Center" Margin="5,0,0,5"> -->
-                    <!--             <TextBlock Margin="5,0,0,5"> -->
-                    <!--                 <Hyperlink Command="{Binding SetOneYearCommand}"> -->
-                    <!--                     1 yr -->
-                    <!--                 </Hyperlink> -->
-                    <!--             </TextBlock> -->
-                    <!--             <TextBlock Margin="5,0,0,5"> -->
-                    <!--                 <Hyperlink Command="{Binding SetFiveYearCommand}"> -->
-                    <!--                     5 yr -->
-                    <!--                 </Hyperlink> -->
-                    <!--             </TextBlock> -->
-                    <!--             <TextBlock Margin="5,0,0,5"> -->
-                    <!--                 <Hyperlink Command="{Binding SetTenYearCommand}"> -->
-                    <!--                     10 yr -->
-                    <!--                 </Hyperlink> -->
-                    <!--             </TextBlock> -->
-                    <!--             <TextBlock Margin="5,0,0,5"> -->
-                    <!--                 <Hyperlink Command="{Binding SetThirtyYearCommand}"> -->
-                    <!--                     30 yr -->
-                    <!--                 </Hyperlink> -->
-                    <!--             </TextBlock> -->
-                    <!--         </StackPanel> -->
-                    <!--     </StackPanel> -->
-                    <!-- </StackPanel> -->
-
+                  
 <Border Background="#F8FAFC" 
         BorderBrush="#CBD5E1" 
         BorderThickness="1" 
