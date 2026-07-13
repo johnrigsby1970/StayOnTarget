@@ -398,13 +398,6 @@ public partial class BudgetService {
                 // Two matching transaction rows represent a paired ledger transfer event
                 var outboundSide = group.FirstOrDefault(r => (double)r.Amount < 0);
                 var inboundSide = group.FirstOrDefault(r => (double)r.Amount >= 0);
-                if (Math.Abs(outboundSide.Amount) == 126.75) {
-                    var s = "";
-                }
-
-                if (Math.Abs(inboundSide.Amount) == 126.75) {
-                    var s = "";
-                }
 
                 var primaryRow = outboundSide ?? inboundSide;
                 var uiTx = MapDynamicToTransaction(primaryRow, isTransferSide: true);
@@ -428,10 +421,7 @@ public partial class BudgetService {
             else {
                 // Single tracking record representing standard expense or deposit structures
                 var standaloneRow = group.First();
-                if (Math.Abs(standaloneRow.Amount) == 126.75) {
-                    var s = "";
-                }
-
+                
                 resultList.Add(MapDynamicToTransaction(standaloneRow, isTransferSide: false));
             }
         }
@@ -485,7 +475,9 @@ public partial class BudgetService {
             TransactionDate = DateTime.Parse(row.TransactionDate),
             TransactionId = Guid.Parse(row.TransactionId.ToString()),
             AccountId = uiAccountId,
+            AccountName= uiAccountId==null ? "" : row.AccountName,
             ToAccountId = uiToAccountId,
+            ToAccountName= uiToAccountId==null ? "" : string.IsNullOrEmpty(row.ToAccountName) ? row.AccountName : row.ToAccountName,
             BillId = row.BillId != null ? (int)row.BillId : null,
             BillName = row.BillName,
             BucketId = row.BucketId != null ? (int)row.BucketId : null,
