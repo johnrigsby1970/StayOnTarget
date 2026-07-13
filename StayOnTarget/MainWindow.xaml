@@ -91,6 +91,7 @@
         </Style>
         <local:AmountToBrushConverter x:Key="AmountToBrushConverter" />
         <local:AbsoluteValueConverter x:Key="AbsoluteValueConverter" />
+        <local:BooleanAndToVisibilityConverter x:Key="BooleanAndToVisibilityConverter" />
         <local:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
         <local:NegativeToRedConverter x:Key="NegativeToRedConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -217,7 +218,7 @@
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="2*" MinWidth="450" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="4*" />
             </Grid.ColumnDefinitions>
@@ -308,9 +309,15 @@
                                                     Width="80"
                                                     Margin="2" />
                                             <Button Content="Edit" Command="{Binding EditTransactionCommand}"
-                                                    Visibility="{Binding CanEditTransaction, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                     Width="80"
-                                                    Margin="2" />
+                                                    Margin="2" >
+                                                <Button.Visibility>
+                                                    <MultiBinding Converter="{StaticResource BooleanAndToVisibilityConverter}">
+                                                        <Binding Path="CanEditTransaction" />
+                                                        <Binding Path="IsNotEditingTransaction" />
+                                                    </MultiBinding>
+                                                </Button.Visibility>
+                                            </Button>
                                             <Button Content="Cancel"
                                                     Command="{Binding CancelTransactionCommand}"
                                                     Width="80"
@@ -560,9 +567,15 @@
                                         <StackPanel Grid.Column="2" Orientation="Horizontal"
                                                     HorizontalAlignment="Right" Margin="5">
                                             <Button Content="Edit" Command="{Binding EditPeriodBillCommand}"
-                                                    Visibility="{Binding CanEditPeriodBill, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                     Width="80"
-                                                    Margin="2" />
+                                                    Margin="2">
+                                                    <Button.Visibility>
+                                                        <MultiBinding Converter="{StaticResource BooleanAndToVisibilityConverter}">
+                                                            <Binding Path="CanEditPeriodBill" />
+                                                            <Binding Path="IsNotEditingPeriodBill" />
+                                                        </MultiBinding>
+                                                    </Button.Visibility>
+                                                </Button>
                                             <Button Content="Cancel"
                                                     Command="{Binding CancelPeriodBillCommand}"
                                                     Width="80"
@@ -712,9 +725,15 @@
                                         <StackPanel Grid.Column="2" Orientation="Horizontal"
                                                     HorizontalAlignment="Right" Margin="5">
                                             <Button Content="Edit" Command="{Binding EditPeriodBucketCommand}"
-                                                    Visibility="{Binding CanEditPeriodBucket, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                     Width="80"
-                                                    Margin="2" />
+                                                    Margin="2"  >
+                                                <Button.Visibility>
+                                                    <MultiBinding Converter="{StaticResource BooleanAndToVisibilityConverter}">
+                                                        <Binding Path="CanEditPeriodBucket" />
+                                                        <Binding Path="IsNotEditingPeriodBucket" />
+                                                    </MultiBinding>
+                                                </Button.Visibility>
+                                            </Button>
 
                                             <Button Content="Cancel"
                                                     Command="{Binding CancelPeriodBucketCommand}"
@@ -870,7 +889,14 @@
                                 <Button Content="Add" Command="{Binding AddBucketCommand}" Margin="5" Width="80"
                                         Visibility="{Binding IsNotEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 <Button Content="Edit" Command="{Binding EditBucketCommand}" Margin="5" Width="80"
-                                        Visibility="{Binding CanEditBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                         >
+                                    <Button.Visibility>
+                                        <MultiBinding Converter="{StaticResource BooleanAndToVisibilityConverter}">
+                                            <Binding Path="CanEditBucket" />
+                                            <Binding Path="IsNotEditingBucket" />
+                                        </MultiBinding>
+                                    </Button.Visibility>
+                                </Button>
                                 <Button Content="Save" Command="{Binding SaveBucketCommand}" Margin="5" Width="80"
                                         Background=" CornflowerBlue"
                                         Foreground="White"
@@ -981,7 +1007,14 @@
                                 <Button Content="Add" Command="{Binding AddBillCommand}" Margin="5" Width="80"
                                         Visibility="{Binding IsNotEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 <Button Content="Edit" Command="{Binding EditBillCommand}" Margin="5" Width="80"
-                                        Visibility="{Binding CanEditBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        >
+                                    <Button.Visibility>
+                                        <MultiBinding Converter="{StaticResource BooleanAndToVisibilityConverter}">
+                                            <Binding Path="CanEditBill" />
+                                            <Binding Path="IsNotEditingBill" />
+                                        </MultiBinding>
+                                    </Button.Visibility>
+                                </Button>
                                 <Button Content="Save" Command="{Binding SaveBillCommand}" Margin="5" Width="80"
                                         Background=" CornflowerBlue"
                                         Foreground="White"
@@ -1094,7 +1127,14 @@
                                 <Button Content="Edit" Command="{Binding EditPaycheckCommand}"
                                         Width="80"
                                         Margin="2"
-                                        Visibility="{Binding CanEditPaycheck, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        >
+                                <Button.Visibility>
+                                    <MultiBinding Converter="{StaticResource BooleanAndToVisibilityConverter}">
+                                        <Binding Path="CanEditPaycheck" />
+                                        <Binding Path="IsNotEditingPaycheck" />
+                                    </MultiBinding>
+                                </Button.Visibility>
+                                    </Button>
                                 <Button Content="Save" Command="{Binding SavePaycheckCommand}"
                                         Width="80"
                                         Margin="2"
@@ -1270,6 +1310,27 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
+                                <Button Content="Import" Command="{Binding ImportAccountCommand}"
+                                        Width="80"
+                                        Margin="2"
+                                        Background="YellowGreen"
+                                        Foreground="White">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding EditingAccountClone.Id, Converter={StaticResource IntToVisibilityConverter}}"
+                                                    Value="Collapsed">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsEditingAccount}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Add" Command="{Binding AddAccountCommand}"
@@ -1279,7 +1340,14 @@
                                 <Button Content="Edit" Command="{Binding EditAccountCommand}"
                                         Width="80"
                                         Margin="2"
-                                        Visibility="{Binding CanEditAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                >
+                                    <Button.Visibility>
+                                        <MultiBinding Converter="{StaticResource BooleanAndToVisibilityConverter}">
+                                            <Binding Path="CanEditAccount" />
+                                            <Binding Path="IsNotEditingAccount" />
+                                        </MultiBinding>
+                                    </Button.Visibility>
+                                </Button>
                                 <Button Content="Save" Command="{Binding SaveAccountCommand}"
                                         Background=" CornflowerBlue"
                                         Foreground="White"
@@ -1459,6 +1527,7 @@
                                             <Button Content="Manage Interest Rates"
                                                     Command="{Binding DataContext.SetAccountAprRatesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     Margin="0,0,0,0"
+                                                    Width="150"
                                                     CommandParameter="{Binding}" />
                                         </StackPanel>
                                     </StackPanel>
