@@ -5,7 +5,8 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using StayOnTarget.Models;
 using StayOnTarget.ViewModels;
-using System.Windows.Shapes; 
+using System.Windows.Shapes;
+using Serilog;
 
 namespace StayOnTarget;
 
@@ -27,15 +28,25 @@ public partial class MainWindow : Window {
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e) {
-        _viewModel.PropertyChanged += Vm_PropertyChanged;
-        if (_viewModel.Accounts != null)
-            UpdateProjectionColumns(_viewModel.Accounts);
+        try {
+            _viewModel.PropertyChanged += Vm_PropertyChanged;
+            if (_viewModel.Accounts != null)
+                UpdateProjectionColumns(_viewModel.Accounts);
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in MainWindow_Loaded.");
+        }
     }
 
     private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
-        if (e.PropertyName == nameof(MainViewModel.Accounts) && sender == DataContext) {
-            if (DataContext is MainViewModel vm && vm.Accounts != null)
-                UpdateProjectionColumns(vm.Accounts);
+        try {
+            if (e.PropertyName == nameof(MainViewModel.Accounts) && sender == DataContext) {
+                if (DataContext is MainViewModel vm && vm.Accounts != null)
+                    UpdateProjectionColumns(vm.Accounts);
+            }
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in Vm_PropertyChanged for {PropertyName}.", e.PropertyName);
         }
     }
 
@@ -345,25 +356,30 @@ public partial class MainWindow : Window {
 
 public class AccountBalanceConverter : IValueConverter {
     public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) {
-        if (value is ProjectionItem item && parameter is Tuple<string, int> accountParam) {
-            string accountName = accountParam.Item1;
-            int accountId = accountParam.Item2;
+        try {
+            if (value is ProjectionItem item && parameter is Tuple<string, int> accountParam) {
+                string accountName = accountParam.Item1;
+                int accountId = accountParam.Item2;
 
-            decimal balance = item.GetAccountBalance(accountName);
-            BalanceImpact impact = BalanceImpact.Muted;
+                decimal balance = item.GetAccountBalance(accountName);
+                BalanceImpact impact = BalanceImpact.Muted;
 
-            // Determine if this specific account was involved in the transaction
-            if (item.ToAccountId == accountId) {
-                impact = BalanceImpact.Increased;
+                // Determine if this specific account was involved in the transaction
+                if (item.ToAccountId == accountId) {
+                    impact = BalanceImpact.Increased;
+                }
+                else if (item.FromAccountId == accountId) {
+                    impact = BalanceImpact.Decreased;
+                }
+
+                return new AccountDisplayInfo {
+                    Balance = balance,
+                    Impact = impact
+                };
             }
-            else if (item.FromAccountId == accountId) {
-                impact = BalanceImpact.Decreased;
-            }
-
-            return new AccountDisplayInfo {
-                Balance = balance,
-                Impact = impact
-            };
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in AccountBalanceConverter.");
         }
 
         return new AccountDisplayInfo { Balance = 0m, Impact = BalanceImpact.Muted };
@@ -397,7 +413,12 @@ public class ExpressionConverter<TIn, TOut> : IValueConverter {
     public ExpressionConverter(Func<TIn, TOut> expression) => _expression = expression;
 
     public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) {
-        if (value is TIn typedValue) return _expression(typedValue);
+        try {
+            if (value is TIn typedValue) return _expression(typedValue);
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in ExpressionConverter for type {InType} to {OutType}.", typeof(TIn).Name, typeof(TOut).Name);
+        }
         return default(TOut);
     }
 

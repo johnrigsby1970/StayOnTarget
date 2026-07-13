@@ -1,10 +1,16 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
-using System.Windows.Input;
-using System.Xml;
+﻿using Serilog;
 using StayOnTarget.Models;
 using StayOnTarget.Services;
 using StayOnTarget.Services.Projections;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using System.Xml;
 
 namespace StayOnTarget.ViewModels;
 
@@ -617,64 +623,91 @@ public class MainViewModel : ViewModelBase {
 
     private void Item_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (_isLoadingData) return;
-        switch (sender) {
-            case Bill b:
-                _budgetService.UpsertBill(b);
-                break;
-            case Paycheck p: {
-                _budgetService.UpsertPaycheck(p);
-                RefreshPaychecks();
-                if (p.Id == _selectedPeriodPaycheckId) {
-                    OnPropertyChanged(nameof(SelectedPeriodPaycheckId));
-                    LoadPeriodData();
+        try {
+            switch (sender) {
+                case Bill b:
+                    _budgetService.UpsertBill(b);
+                    break;
+                case Paycheck p: {
+                    _budgetService.UpsertPaycheck(p);
+                    RefreshPaychecks();
+                    if (p.Id == _selectedPeriodPaycheckId) {
+                        OnPropertyChanged(nameof(SelectedPeriodPaycheckId));
+                        LoadPeriodData();
+                    }
+
+                    break;
                 }
-
-                break;
+                case Account a:
+                    _budgetService.UpsertAccount(a);
+                    break;
+                case BudgetBucket bb:
+                    _budgetService.UpsertBucket(bb);
+                    break;
             }
-            case Account a:
-                _budgetService.UpsertAccount(a);
-                break;
-            case BudgetBucket bb:
-                _budgetService.UpsertBucket(bb);
-                break;
-        }
 
-        CalculateProjections();
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in Item_PropertyChanged for {SenderType}.", sender?.GetType().Name);
+        }
     }
 
     private void PeriodBill_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBill pb) return;
-        if (e.PropertyName == nameof(PeriodBill.TransactionAmount)) {
-            UpdateWarningMetrics();
-            return;
-        }
+        try {
+            if (e.PropertyName == nameof(PeriodBill.TransactionAmount)) {
+                UpdateWarningMetrics();
+                return;
+            }
 
-        if (e.PropertyName == nameof(PeriodBill.HasActualAmount)) {
-            UpdateWarningMetrics();
-            return;
-        }
+            if (e.PropertyName == nameof(PeriodBill.HasActualAmount)) {
+                UpdateWarningMetrics();
+                return;
+            }
 
-        if (e.PropertyName == nameof(PeriodBill.BudgetExceeded)) return;
-        _budgetService.UpsertPeriodBill(pb);
-        LoadPeriodData();
-        CalculateProjections();
+            if (e.PropertyName == nameof(PeriodBill.BudgetExceeded)) return;
+            _budgetService.UpsertPeriodBill(pb);
+            LoadPeriodData();
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in PeriodBill_PropertyChanged.");
+        }
     }
 
     private void PeriodBucket_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBucket pb) return;
-        if (e.PropertyName == nameof(PeriodBucket.TransactionAmount)) return;
-        if (e.PropertyName == nameof(PeriodBucket.HasActualAmount)) return;
-        if (e.PropertyName == nameof(PeriodBucket.BudgetExceeded)) return;
-        _budgetService.UpsertPeriodBucket(pb);
-        LoadPeriodData();
-        CalculateProjections();
+        try {
+            if (e.PropertyName == nameof(PeriodBucket.TransactionAmount)) return;
+            if (e.PropertyName == nameof(PeriodBucket.HasActualAmount)) return;
+            if (e.PropertyName == nameof(PeriodBucket.BudgetExceeded)) return;
+            _budgetService.UpsertPeriodBucket(pb);
+            LoadPeriodData();
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in PeriodBucket_PropertyChanged.");
+        }
     }
 
     private void Transaction_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not Transaction t) return;
-        Task.Run(async () => await _budgetService.UpsertTransactionAsync(t)); // Run async work
-        LoadPeriodData();
-        CalculateProjections();
+        try {
+            Task.Run(async () => {
+                try {
+                    await _budgetService.UpsertTransactionAsync(t);
+                }
+                catch (Exception ex) {
+                    Log.Error(ex, "Error upserting transaction in PropertyChanged.");
+                }
+            }); // Run async work
+            LoadPeriodData();
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in Transaction_PropertyChanged.");
+        }
     }
 
     #endregion
@@ -682,41 +715,57 @@ public class MainViewModel : ViewModelBase {
     #region Bill CRUD
 
     private void AddBill() {
-        EditingBillClone = new Bill { Name = "New Bill", ExpectedAmount = 0, DueDay = 1, IsActive = true };
-        SelectedBill = null;
-        IsEditingBill = true;
+        try {
+            EditingBillClone = new Bill { Name = "New Bill", ExpectedAmount = 0, DueDay = 1, IsActive = true };
+            SelectedBill = null;
+            IsEditingBill = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error initializing new bill.");
+        }
     }
 
     private void EditBill() {
-        CancelBill();
-        if (SelectedBill == null) return;
-        EditingBillClone = new Bill {
-            Id = SelectedBill.Id, Name = SelectedBill.Name, ExpectedAmount = SelectedBill.ExpectedAmount,
-            Frequency = SelectedBill.Frequency, DueDay = SelectedBill.DueDay, AccountId = SelectedBill.AccountId,
-            ToAccountId = SelectedBill.ToAccountId, NextDueDate = SelectedBill.NextDueDate,
-            Category = SelectedBill.Category, IsActive = SelectedBill.IsActive
-        };
-        IsEditingBill = true;
+        try {
+            CancelBill();
+            if (SelectedBill == null) return;
+            EditingBillClone = new Bill {
+                Id = SelectedBill.Id, Name = SelectedBill.Name, ExpectedAmount = SelectedBill.ExpectedAmount,
+                Frequency = SelectedBill.Frequency, DueDay = SelectedBill.DueDay, AccountId = SelectedBill.AccountId,
+                ToAccountId = SelectedBill.ToAccountId, NextDueDate = SelectedBill.NextDueDate,
+                Category = SelectedBill.Category, IsActive = SelectedBill.IsActive
+            };
+            IsEditingBill = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error entering edit mode for bill.");
+        }
     }
 
     private void SaveBill() {
         if (EditingBillClone == null) return;
 
-        if (EditingBillClone.AccountId == 0) EditingBillClone.AccountId = null;
-        if (EditingBillClone.ToAccountId == 0) EditingBillClone.ToAccountId = null;
+        try {
+            if (EditingBillClone.AccountId == 0) EditingBillClone.AccountId = null;
+            if (EditingBillClone.ToAccountId == 0) EditingBillClone.ToAccountId = null;
 
-        if (SelectedBill != null) {
-            UpdateBillFromClone(SelectedBill, EditingBillClone);
-            _budgetService.UpsertBill(SelectedBill);
-        }
-        else {
-            _budgetService.UpsertBill(EditingBillClone);
-            LoadData();
-        }
+            if (SelectedBill != null) {
+                UpdateBillFromClone(SelectedBill, EditingBillClone);
+                _budgetService.UpsertBill(SelectedBill);
+            }
+            else {
+                _budgetService.UpsertBill(EditingBillClone);
+                LoadData();
+            }
 
-        IsEditingBill = false;
-        EditingBillClone = null;
-        CalculateProjections();
+            IsEditingBill = false;
+            EditingBillClone = null;
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error saving bill.");
+            MessageBox.Show("Failed to save bill. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void UpdateBillFromClone(Bill target, Bill clone) {
@@ -732,8 +781,13 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void CancelBill() {
-        IsEditingBill = false;
-        EditingBillClone = null;
+        try {
+            IsEditingBill = false;
+            EditingBillClone = null;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error cancelling bill edit.");
+        }
     }
 
     // private void DeletePeriodBill(PeriodBill? pb) {
@@ -768,54 +822,76 @@ public class MainViewModel : ViewModelBase {
 
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
-            // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeletePeriodBill(EditingPeriodBillClone.Id);
-            IsEditingPeriodBill = false;
-            EditingPeriodBillClone = null;
-            LoadPeriodData();
-            CalculateProjections();
+            try {
+                // User confirmed deletion, proceed with your delete logic here
+                _budgetService.DeletePeriodBill(EditingPeriodBillClone.Id);
+                IsEditingPeriodBill = false;
+                EditingPeriodBillClone = null;
+                LoadPeriodData();
+                CalculateProjections();
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error deleting period bill.");
+                MessageBox.Show("Failed to delete period bill. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
 
     private void EditPeriodBill() {
-        CancelPeriodBill();
-        //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
-        if (SelectedPeriodBill == null) return;
-        EditingPeriodBillClone = new PeriodBill {
-            Id = SelectedPeriodBill.Id,
-            BillName = SelectedPeriodBill.BillName,
-            ActualAmount = SelectedPeriodBill.ActualAmount,
-            BillId = SelectedPeriodBill.BillId,
-            FitId = SelectedPeriodBill.FitId,
-            DueDate = SelectedPeriodBill.DueDate,
-            PeriodDate = SelectedPeriodBill.PeriodDate,
-            IsPaid = SelectedPeriodBill.IsPaid
-        };
+        try {
+            CancelPeriodBill();
+            //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
+            if (SelectedPeriodBill == null) return;
+            EditingPeriodBillClone = new PeriodBill {
+                Id = SelectedPeriodBill.Id,
+                BillName = SelectedPeriodBill.BillName,
+                ActualAmount = SelectedPeriodBill.ActualAmount,
+                BillId = SelectedPeriodBill.BillId,
+                FitId = SelectedPeriodBill.FitId,
+                DueDate = SelectedPeriodBill.DueDate,
+                PeriodDate = SelectedPeriodBill.PeriodDate,
+                IsPaid = SelectedPeriodBill.IsPaid
+            };
 
-        IsEditingPeriodBill = true;
+            IsEditingPeriodBill = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error entering edit mode for period bill.");
+        }
     }
 
     private void SavePeriodBill() {
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (EditingPeriodBillClone == null) return;
-        if (SelectedPeriodBill != null) {
-            UpdatePeriodBillFromClone(SelectedPeriodBill, EditingPeriodBillClone);
-        }
-        else {
-            _budgetService.UpsertPeriodBill(EditingPeriodBillClone);
-        }
+        try {
+            if (SelectedPeriodBill != null) {
+                UpdatePeriodBillFromClone(SelectedPeriodBill, EditingPeriodBillClone);
+            }
+            else {
+                _budgetService.UpsertPeriodBill(EditingPeriodBillClone);
+            }
 
-        LoadPeriodData();
-        IsEditingPeriodBill = false;
-        EditingPeriodBillClone = null;
-        CalculateProjections();
+            LoadPeriodData();
+            IsEditingPeriodBill = false;
+            EditingPeriodBillClone = null;
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error saving period bill.");
+            MessageBox.Show("Failed to save period bill. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
 
     private void CancelPeriodBill() {
-        IsEditingPeriodBill = false;
-        EditingPeriodBillClone = null;
+        try {
+            IsEditingPeriodBill = false;
+            EditingPeriodBillClone = null;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error cancelling period bill edit.");
+        }
     }
 
 
@@ -858,12 +934,18 @@ public class MainViewModel : ViewModelBase {
 
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
-            // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeleteBill(EditingBillClone.Id);
-            IsEditingBill = false;
-            EditingBillClone = null;
-            LoadData();
-            CalculateProjections();
+            try {
+                // User confirmed deletion, proceed with your delete logic here
+                _budgetService.DeleteBill(EditingBillClone.Id);
+                IsEditingBill = false;
+                EditingBillClone = null;
+                LoadData();
+                CalculateProjections();
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error deleting bill.");
+                MessageBox.Show("Failed to delete bill. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
@@ -872,42 +954,58 @@ public class MainViewModel : ViewModelBase {
     #region Bucket CRUD
 
     private void AddBucket() {
-        EditingBucketClone = new BudgetBucket { Name = "New Bucket", ExpectedAmount = 0 };
-        SelectedBucket = null;
-        IsEditingBucket = true;
+        try {
+            EditingBucketClone = new BudgetBucket { Name = "New Bucket", ExpectedAmount = 0 };
+            SelectedBucket = null;
+            IsEditingBucket = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error initializing new bucket.");
+        }
     }
 
     private void EditBucket() {
-        CancelBucket();
-        if (SelectedBucket == null) return;
-        EditingBucketClone = new BudgetBucket {
-            Id = SelectedBucket.Id,
-            Name = SelectedBucket.Name,
-            ExpectedAmount = SelectedBucket.ExpectedAmount,
-            AccountId = SelectedBucket.AccountId,
-            PaycheckId = SelectedBucket.PaycheckId
-        };
-        IsEditingBucket = true;
+        try {
+            CancelBucket();
+            if (SelectedBucket == null) return;
+            EditingBucketClone = new BudgetBucket {
+                Id = SelectedBucket.Id,
+                Name = SelectedBucket.Name,
+                ExpectedAmount = SelectedBucket.ExpectedAmount,
+                AccountId = SelectedBucket.AccountId,
+                PaycheckId = SelectedBucket.PaycheckId
+            };
+            IsEditingBucket = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error entering edit mode for bucket.");
+        }
     }
 
     private void SaveBucket() {
         if (EditingBucketClone == null) return;
 
-        if (EditingBucketClone.AccountId == 0) EditingBucketClone.AccountId = null;
-        if (EditingBucketClone.PaycheckId == 0) EditingBucketClone.PaycheckId = null;
+        try {
+            if (EditingBucketClone.AccountId == 0) EditingBucketClone.AccountId = null;
+            if (EditingBucketClone.PaycheckId == 0) EditingBucketClone.PaycheckId = null;
 
-        if (SelectedBucket != null) {
-            UpdateBucketFromClone(SelectedBucket, EditingBucketClone);
-            _budgetService.UpsertBucket(SelectedBucket);
-        }
-        else {
-            _budgetService.UpsertBucket(EditingBucketClone);
-            LoadData();
-        }
+            if (SelectedBucket != null) {
+                UpdateBucketFromClone(SelectedBucket, EditingBucketClone);
+                _budgetService.UpsertBucket(SelectedBucket);
+            }
+            else {
+                _budgetService.UpsertBucket(EditingBucketClone);
+                LoadData();
+            }
 
-        IsEditingBucket = false;
-        EditingBucketClone = null;
-        CalculateProjections();
+            IsEditingBucket = false;
+            EditingBucketClone = null;
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error saving bucket.");
+            MessageBox.Show("Failed to save bucket. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void UpdateBucketFromClone(BudgetBucket target, BudgetBucket clone) {
@@ -918,8 +1016,13 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void CancelBucket() {
-        IsEditingBucket = false;
-        EditingBucketClone = null;
+        try {
+            IsEditingBucket = false;
+            EditingBucketClone = null;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error cancelling bucket edit.");
+        }
     }
 
     // private void DeleteBucket(BudgetBucket? b) {
@@ -954,45 +1057,62 @@ public class MainViewModel : ViewModelBase {
 
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
-            // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeleteBucket(EditingBucketClone.Id);
-            IsEditingBucket = false;
-            EditingBucketClone = null;
-            LoadData();
-            CalculateProjections();
+            try {
+                // User confirmed deletion, proceed with your delete logic here
+                _budgetService.DeleteBucket(EditingBucketClone.Id);
+                IsEditingBucket = false;
+                EditingBucketClone = null;
+                LoadData();
+                CalculateProjections();
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error deleting bucket.");
+                MessageBox.Show("Failed to delete bucket. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
     private void EditPeriodBucket() {
-        CancelPeriodBucket();
-        //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
-        if (SelectedPeriodBucket == null) return;
-        EditingPeriodBucketClone = new PeriodBucket {
-            Id = SelectedPeriodBucket.Id,
-            BucketName = SelectedPeriodBucket.BucketName,
-            ActualAmount = SelectedPeriodBucket.ActualAmount,
-            BucketId = SelectedPeriodBucket.BucketId,
-            FitId = SelectedPeriodBucket.FitId,
-            PeriodDate = SelectedPeriodBucket.PeriodDate,
-            IsPaid = SelectedPeriodBucket.IsPaid
-        };
-        IsEditingPeriodBucket = true;
+        try {
+            CancelPeriodBucket();
+            //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
+            if (SelectedPeriodBucket == null) return;
+            EditingPeriodBucketClone = new PeriodBucket {
+                Id = SelectedPeriodBucket.Id,
+                BucketName = SelectedPeriodBucket.BucketName,
+                ActualAmount = SelectedPeriodBucket.ActualAmount,
+                BucketId = SelectedPeriodBucket.BucketId,
+                FitId = SelectedPeriodBucket.FitId,
+                PeriodDate = SelectedPeriodBucket.PeriodDate,
+                IsPaid = SelectedPeriodBucket.IsPaid
+            };
+            IsEditingPeriodBucket = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error entering edit mode for period bucket.");
+        }
     }
 
     private void SavePeriodBucket() {
         //until a user customizes a bucket, it uses the budgeted bucket and the period bucket is a copy of that.
         if (EditingPeriodBucketClone == null) return;
-        if (SelectedPeriodBucket != null) {
-            UpdatePeriodBucketFromClone(SelectedPeriodBucket, EditingPeriodBucketClone);
-        }
-        else {
-            _budgetService.UpsertPeriodBucket(EditingPeriodBucketClone);
-        }
+        try {
+            if (SelectedPeriodBucket != null) {
+                UpdatePeriodBucketFromClone(SelectedPeriodBucket, EditingPeriodBucketClone);
+            }
+            else {
+                _budgetService.UpsertPeriodBucket(EditingPeriodBucketClone);
+            }
 
-        LoadPeriodData();
-        IsEditingPeriodBucket = false;
-        EditingPeriodBucketClone = null;
-        CalculateProjections();
+            LoadPeriodData();
+            IsEditingPeriodBucket = false;
+            EditingPeriodBucketClone = null;
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error saving period bucket.");
+            MessageBox.Show("Failed to save period bucket. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void UpdatePeriodBucketFromClone(PeriodBucket target, PeriodBucket clone) {
@@ -1006,8 +1126,13 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void CancelPeriodBucket() {
-        IsEditingPeriodBucket = false;
-        EditingPeriodBucketClone = null;
+        try {
+            IsEditingPeriodBucket = false;
+            EditingPeriodBucketClone = null;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error cancelling period bucket edit.");
+        }
     }
 
     // private void DeletePeriodBucket(PeriodBucket? pb) {
@@ -1042,12 +1167,18 @@ public class MainViewModel : ViewModelBase {
 
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
-            // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeletePeriodBucket(EditingPeriodBucketClone.Id);
-            IsEditingPeriodBucket = false;
-            EditingPeriodBucketClone = null;
-            LoadPeriodData();
-            CalculateProjections();
+            try {
+                // User confirmed deletion, proceed with your delete logic here
+                _budgetService.DeletePeriodBucket(EditingPeriodBucketClone.Id);
+                IsEditingPeriodBucket = false;
+                EditingPeriodBucketClone = null;
+                LoadPeriodData();
+                CalculateProjections();
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error deleting period bucket.");
+                MessageBox.Show("Failed to delete period bucket. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
@@ -1056,63 +1187,79 @@ public class MainViewModel : ViewModelBase {
     #region Transaction CRUD
 
     private void AddTransaction() {
-        var guid = Guid.NewGuid().ToString();
-        EditingTransactionClone = new Transaction {
-            Description = "", Memo = "", Amount = 0, TransactionDate = DateTime.Today, PeriodDate = CurrentPeriodDate,
-            FitId = guid
-        };
-        SelectedTransaction = null;
-        IsEditingTransaction = true;
+        try {
+            var guid = Guid.NewGuid().ToString();
+            EditingTransactionClone = new Transaction {
+                Description = "", Memo = "", Amount = 0, TransactionDate = DateTime.Today, PeriodDate = CurrentPeriodDate,
+                FitId = guid
+            };
+            SelectedTransaction = null;
+            IsEditingTransaction = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error initializing new transaction.");
+        }
     }
 
     private void EditTransaction() {
-        CancelTransaction();
-        if (SelectedTransaction == null) return;
-        EditingTransactionClone = new Transaction {
-            Id = SelectedTransaction.Id,
-            Description = SelectedTransaction.Description,
-            Memo = SelectedTransaction.Memo,
-            Amount = SelectedTransaction.Amount,
-            TransactionDate = SelectedTransaction.TransactionDate,
-            AccountId = SelectedTransaction.AccountId,
-            ToAccountId = SelectedTransaction.ToAccountId,
-            BucketId = SelectedTransaction.BucketId,
-            PeriodDate = SelectedTransaction.PeriodDate,
-            IsPrincipalOnly = SelectedTransaction.IsPrincipalOnly,
-            IsRebalance = SelectedTransaction.IsRebalance,
-            PaycheckId = SelectedTransaction.PaycheckId,
-            BillId = SelectedTransaction.BillId,
-            BillName = SelectedTransaction.BillName,
-            PaycheckOccurrenceDate = SelectedTransaction.PaycheckOccurrenceDate,
-            FitId = SelectedTransaction.FitId,
-            TransactionId = SelectedTransaction.TransactionId,
-            FromAccountReconciledId = SelectedTransaction.FromAccountReconciledId,
-            ToAccountReconciledId = SelectedTransaction.ToAccountReconciledId
-        };
-        IsEditingTransaction = true;
+        try {
+            CancelTransaction();
+            if (SelectedTransaction == null) return;
+            EditingTransactionClone = new Transaction {
+                Id = SelectedTransaction.Id,
+                Description = SelectedTransaction.Description,
+                Memo = SelectedTransaction.Memo,
+                Amount = SelectedTransaction.Amount,
+                TransactionDate = SelectedTransaction.TransactionDate,
+                AccountId = SelectedTransaction.AccountId,
+                ToAccountId = SelectedTransaction.ToAccountId,
+                BucketId = SelectedTransaction.BucketId,
+                PeriodDate = SelectedTransaction.PeriodDate,
+                IsPrincipalOnly = SelectedTransaction.IsPrincipalOnly,
+                IsRebalance = SelectedTransaction.IsRebalance,
+                PaycheckId = SelectedTransaction.PaycheckId,
+                BillId = SelectedTransaction.BillId,
+                BillName = SelectedTransaction.BillName,
+                PaycheckOccurrenceDate = SelectedTransaction.PaycheckOccurrenceDate,
+                FitId = SelectedTransaction.FitId,
+                TransactionId = SelectedTransaction.TransactionId,
+                FromAccountReconciledId = SelectedTransaction.FromAccountReconciledId,
+                ToAccountReconciledId = SelectedTransaction.ToAccountReconciledId
+            };
+            IsEditingTransaction = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error entering edit mode for transaction.");
+        }
     }
 
     private async Task SaveTransaction() {
         if (EditingTransactionClone == null) return;
 
-        if (EditingTransactionClone.AccountId == 0) EditingTransactionClone.AccountId = null;
-        if (EditingTransactionClone.ToAccountId == 0) EditingTransactionClone.ToAccountId = null;
-        if (EditingTransactionClone.BillId == 0) EditingTransactionClone.BillId = null;
-        if (EditingTransactionClone.BucketId == 0) EditingTransactionClone.BucketId = null;
+        try {
+            if (EditingTransactionClone.AccountId == 0) EditingTransactionClone.AccountId = null;
+            if (EditingTransactionClone.ToAccountId == 0) EditingTransactionClone.ToAccountId = null;
+            if (EditingTransactionClone.BillId == 0) EditingTransactionClone.BillId = null;
+            if (EditingTransactionClone.BucketId == 0) EditingTransactionClone.BucketId = null;
 
-        if (SelectedTransaction != null) {
-            UpdateTransactionFromClone(SelectedTransaction, EditingTransactionClone);
-            await _budgetService.UpsertTransactionAsync(SelectedTransaction);
+            if (SelectedTransaction != null) {
+                UpdateTransactionFromClone(SelectedTransaction, EditingTransactionClone);
+                await _budgetService.UpsertTransactionAsync(SelectedTransaction);
+            }
+            else {
+                await _budgetService.UpsertTransactionAsync(EditingTransactionClone);
+            }
+
+            IsEditingTransaction = false;
+            EditingTransactionClone = null;
+
+            LoadPeriodData();
+            CalculateProjections();
         }
-        else {
-            await _budgetService.UpsertTransactionAsync(EditingTransactionClone);
+        catch (Exception ex) {
+            Log.Error(ex, "Error saving transaction.");
+            MessageBox.Show("Failed to save transaction. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-
-        IsEditingTransaction = false;
-        EditingTransactionClone = null;
-
-        LoadPeriodData();
-        CalculateProjections();
     }
 
     private void UpdateTransactionFromClone(Transaction target, Transaction clone) {
@@ -1136,12 +1283,17 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void CancelTransaction() {
-        if (SelectedTransaction != null && SelectedTransaction.TransactionId == Guid.Empty) {
-            CurrentPeriodTransactions.Remove(SelectedTransaction);
-        }
+        try {
+            if (SelectedTransaction != null && SelectedTransaction.TransactionId == Guid.Empty) {
+                CurrentPeriodTransactions.Remove(SelectedTransaction);
+            }
 
-        IsEditingTransaction = false;
-        EditingTransactionClone = null;
+            IsEditingTransaction = false;
+            EditingTransactionClone = null;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error cancelling transaction edit.");
+        }
     }
 
     // private void DeleteTransaction(Transaction? t) {
@@ -1175,12 +1327,18 @@ public class MainViewModel : ViewModelBase {
 
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
-            // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeleteTransaction(EditingTransactionClone.TransactionId);
-            IsEditingTransaction = false;
-            EditingTransactionClone = null;
-            LoadPeriodData();
-            CalculateProjections();
+            try {
+                // User confirmed deletion, proceed with your delete logic here
+                _budgetService.DeleteTransaction(EditingTransactionClone.TransactionId);
+                IsEditingTransaction = false;
+                EditingTransactionClone = null;
+                LoadPeriodData();
+                CalculateProjections();
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error deleting transaction.");
+                MessageBox.Show("Failed to delete transaction. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
@@ -1189,53 +1347,61 @@ public class MainViewModel : ViewModelBase {
     #region Paycheck CRUD
 
     private void AddPaycheck() {
-        EditingPaycheckClone = new Paycheck
-            { Name = "New Paycheck", ExpectedAmount = 0, StartDate = DateTime.Today, Frequency = Frequency.BiWeekly };
-        SelectedPaycheck = null;
-        IsEditingPaycheck = true;
-
-        // var p = new Paycheck
-        //     { Name = "New Paycheck", ExpectedAmount = 0, StartDate = DateTime.Today, Frequency = Frequency.BiWeekly };
-        // _budgetService.UpsertPaycheck(p);
-        // LoadData();
-        // RefreshPaychecks();
-        // LoadPaychecks();
-        // CalculateProjections();
+        try {
+            EditingPaycheckClone = new Paycheck
+                { Name = "New Paycheck", ExpectedAmount = 0, StartDate = DateTime.Today, Frequency = Frequency.BiWeekly };
+            SelectedPaycheck = null;
+            IsEditingPaycheck = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error initializing new paycheck.");
+        }
     }
 
     private void EditPaycheck() {
-        CancelPaycheck();
-        if (SelectedPaycheck == null) return;
-        EditingPaycheckClone = new Paycheck {
-            Id = SelectedPaycheck.Id,
-            Name = SelectedPaycheck.Name,
-            ExpectedAmount = SelectedPaycheck.ExpectedAmount,
-            Frequency = SelectedPaycheck.Frequency,
-            StartDate = SelectedPaycheck.StartDate,
-            EndDate = SelectedPaycheck.EndDate,
-            AccountId = SelectedPaycheck.AccountId,
-            IsBalanced = SelectedPaycheck.IsBalanced
-        };
-        IsEditingPaycheck = true;
+        try {
+            CancelPaycheck();
+            if (SelectedPaycheck == null) return;
+            EditingPaycheckClone = new Paycheck {
+                Id = SelectedPaycheck.Id,
+                Name = SelectedPaycheck.Name,
+                ExpectedAmount = SelectedPaycheck.ExpectedAmount,
+                Frequency = SelectedPaycheck.Frequency,
+                StartDate = SelectedPaycheck.StartDate,
+                EndDate = SelectedPaycheck.EndDate,
+                AccountId = SelectedPaycheck.AccountId,
+                IsBalanced = SelectedPaycheck.IsBalanced
+            };
+            IsEditingPaycheck = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error entering edit mode for paycheck.");
+        }
     }
 
     private void SavePaycheck() {
         if (EditingPaycheckClone == null) return;
-        if (SelectedPaycheck != null) {
-            UpdatePaycheckFromClone(SelectedPaycheck, EditingPaycheckClone);
-            _budgetService.UpsertPaycheck(SelectedPaycheck);
-        }
-        else {
-            _budgetService.UpsertPaycheck(EditingPaycheckClone);
-        }
+        try {
+            if (SelectedPaycheck != null) {
+                UpdatePaycheckFromClone(SelectedPaycheck, EditingPaycheckClone);
+                _budgetService.UpsertPaycheck(SelectedPaycheck);
+            }
+            else {
+                _budgetService.UpsertPaycheck(EditingPaycheckClone);
+            }
 
-        IsEditingPaycheck = false;
-        EditingPaycheckClone = null;
+            IsEditingPaycheck = false;
+            EditingPaycheckClone = null;
 
-        LoadData();
-        RefreshPaychecks();
-        LoadPaychecks();
-        CalculateProjections();
+            LoadData();
+            RefreshPaychecks();
+            LoadPaychecks();
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error saving paycheck.");
+            MessageBox.Show("Failed to save paycheck. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void UpdatePaycheckFromClone(Paycheck target, Paycheck clone) {
@@ -1249,8 +1415,13 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void CancelPaycheck() {
-        IsEditingPaycheck = false;
-        EditingPaycheckClone = null;
+        try {
+            IsEditingPaycheck = false;
+            EditingPaycheckClone = null;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error cancelling paycheck edit.");
+        }
     }
 
     // private void DeletePaycheck(Paycheck? p) {
@@ -1286,13 +1457,19 @@ public class MainViewModel : ViewModelBase {
 
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
-            // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeletePaycheck(EditingPaycheckClone.Id);
-            IsEditingPaycheck = false;
-            EditingPaycheckClone = null;
-            LoadData();
-            RefreshPaychecks();
-            CalculateProjections();
+            try {
+                // User confirmed deletion, proceed with your delete logic here
+                _budgetService.DeletePaycheck(EditingPaycheckClone.Id);
+                IsEditingPaycheck = false;
+                EditingPaycheckClone = null;
+                LoadData();
+                RefreshPaychecks();
+                CalculateProjections();
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error deleting paycheck.");
+                MessageBox.Show("Failed to delete paycheck. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
@@ -1301,97 +1478,113 @@ public class MainViewModel : ViewModelBase {
     #region Account CRUD
 
     private void AddAccount() {
-        EditingAccountClone = new Account {
-            Name = "New Account",
-            Type = AccountType.Checking,
-            Balance = 0,
-            BalanceAsOf = DateTime.Today,
-            IncludeInTotal = true,
-            MortgageDetails = new MortgageDetails(),
-            CreditCardDetails = new CreditCardDetails(),
-            HexColor = "#FF808080"
-        };
-        SelectedAccount = null;
-        IsEditingAccount = true;
+        try {
+            EditingAccountClone = new Account {
+                Name = "New Account",
+                Type = AccountType.Checking,
+                Balance = 0,
+                BalanceAsOf = DateTime.Today,
+                IncludeInTotal = true,
+                MortgageDetails = new MortgageDetails(),
+                CreditCardDetails = new CreditCardDetails(),
+                HexColor = "#FF808080"
+            };
+            SelectedAccount = null;
+            IsEditingAccount = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error initializing new account.");
+        }
     }
 
     private void EditAccount() {
-        CancelAccount();
-        if (SelectedAccount == null) return;
-        EditingAccountClone = new Account {
-            Id = SelectedAccount.Id,
-            Name = SelectedAccount.Name,
-            BankName = SelectedAccount.BankName,
-            Balance = SelectedAccount.Balance,
-            BalanceAsOf = SelectedAccount.BalanceAsOf,
-            AnnualGrowthRate = SelectedAccount.AnnualGrowthRate,
-            IncludeInTotal = SelectedAccount.IncludeInTotal,
-            Type = SelectedAccount.Type,
-            HexColor = SelectedAccount.HexColor
-        };
-        if (SelectedAccount.MortgageDetails != null) {
-            EditingAccountClone.MortgageDetails = new MortgageDetails {
-                Id = SelectedAccount.MortgageDetails.Id,
-                AccountId = SelectedAccount.MortgageDetails.AccountId,
-                InterestRate = SelectedAccount.MortgageDetails.InterestRate,
-                Escrow = SelectedAccount.MortgageDetails.Escrow,
-                MortgageInsurance = SelectedAccount.MortgageDetails.MortgageInsurance,
-                LoanPayment = SelectedAccount.MortgageDetails.LoanPayment,
-                PaymentDate = SelectedAccount.MortgageDetails.PaymentDate
+        try {
+            CancelAccount();
+            if (SelectedAccount == null) return;
+            EditingAccountClone = new Account {
+                Id = SelectedAccount.Id,
+                Name = SelectedAccount.Name,
+                BankName = SelectedAccount.BankName,
+                Balance = SelectedAccount.Balance,
+                BalanceAsOf = SelectedAccount.BalanceAsOf,
+                AnnualGrowthRate = SelectedAccount.AnnualGrowthRate,
+                IncludeInTotal = SelectedAccount.IncludeInTotal,
+                Type = SelectedAccount.Type,
+                HexColor = SelectedAccount.HexColor
             };
-        }
-        else {
-            EditingAccountClone.MortgageDetails = new MortgageDetails();
-        }
+            if (SelectedAccount.MortgageDetails != null) {
+                EditingAccountClone.MortgageDetails = new MortgageDetails {
+                    Id = SelectedAccount.MortgageDetails.Id,
+                    AccountId = SelectedAccount.MortgageDetails.AccountId,
+                    InterestRate = SelectedAccount.MortgageDetails.InterestRate,
+                    Escrow = SelectedAccount.MortgageDetails.Escrow,
+                    MortgageInsurance = SelectedAccount.MortgageDetails.MortgageInsurance,
+                    LoanPayment = SelectedAccount.MortgageDetails.LoanPayment,
+                    PaymentDate = SelectedAccount.MortgageDetails.PaymentDate
+                };
+            }
+            else {
+                EditingAccountClone.MortgageDetails = new MortgageDetails();
+            }
 
-        if (SelectedAccount.CreditCardDetails != null) {
-            EditingAccountClone.CreditCardDetails = new CreditCardDetails {
-                Id = SelectedAccount.CreditCardDetails.Id,
-                AccountId = SelectedAccount.CreditCardDetails.AccountId,
-                StatementDay = SelectedAccount.CreditCardDetails.StatementDay,
-                DueDateOffset = SelectedAccount.CreditCardDetails.DueDateOffset,
-                GraceActive = SelectedAccount.CreditCardDetails.GraceActive,
-                MinPayFloor = SelectedAccount.CreditCardDetails.MinPayFloor,
-                PayPreviousMonthBalanceInFull = SelectedAccount.CreditCardDetails.PayPreviousMonthBalanceInFull
-            };
-        }
-        else {
-            EditingAccountClone.CreditCardDetails = new CreditCardDetails();
-        }
+            if (SelectedAccount.CreditCardDetails != null) {
+                EditingAccountClone.CreditCardDetails = new CreditCardDetails {
+                    Id = SelectedAccount.CreditCardDetails.Id,
+                    AccountId = SelectedAccount.CreditCardDetails.AccountId,
+                    StatementDay = SelectedAccount.CreditCardDetails.StatementDay,
+                    DueDateOffset = SelectedAccount.CreditCardDetails.DueDateOffset,
+                    GraceActive = SelectedAccount.CreditCardDetails.GraceActive,
+                    MinPayFloor = SelectedAccount.CreditCardDetails.MinPayFloor,
+                    PayPreviousMonthBalanceInFull = SelectedAccount.CreditCardDetails.PayPreviousMonthBalanceInFull
+                };
+            }
+            else {
+                EditingAccountClone.CreditCardDetails = new CreditCardDetails();
+            }
 
-        IsEditingAccount = true;
+            IsEditingAccount = true;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error entering edit mode for account.");
+        }
     }
 
     private void SaveAccount() {
         if (EditingAccountClone != null) {
-            if (EditingAccountClone.Type == AccountType.Checking && (EditingAccountClone.AccountAprHistory == null ||
-                                                                     EditingAccountClone.AccountAprHistory.Count ==
-                                                                     0)) {
-                MessageBox.Show(
-                    "Before you can save this credit card, you need to set up your interest rates.", // Message
-                    "Incomplete Setup", // Title
-                    MessageBoxButton.OK, // Buttons
-                    MessageBoxImage.Warning // Icon
-                );
-                SetAccountAprRatesCommand.Execute(EditingAccountClone);
-                return;
-            }
+            try {
+                if (EditingAccountClone.Type == AccountType.Checking && (EditingAccountClone.AccountAprHistory == null ||
+                                                                         EditingAccountClone.AccountAprHistory.Count ==
+                                                                         0)) {
+                    MessageBox.Show(
+                        "Before you can save this credit card, you need to set up your interest rates.", // Message
+                        "Incomplete Setup", // Title
+                        MessageBoxButton.OK, // Buttons
+                        MessageBoxImage.Warning // Icon
+                    );
+                    SetAccountAprRatesCommand.Execute(EditingAccountClone);
+                    return;
+                }
 
-            if (SelectedAccount != null) {
-                UpdateAccountFromClone(SelectedAccount, EditingAccountClone);
-                _budgetService.UpsertAccount(SelectedAccount);
-            }
-            else {
-                _budgetService.UpsertAccount(EditingAccountClone);
-                LoadData();
-            }
+                if (SelectedAccount != null) {
+                    UpdateAccountFromClone(SelectedAccount, EditingAccountClone);
+                    _budgetService.UpsertAccount(SelectedAccount);
+                }
+                else {
+                    _budgetService.UpsertAccount(EditingAccountClone);
+                    LoadData();
+                }
 
-            IsEditingAccount = false;
-            EditingAccountClone = null;
-            CalculateProjections();
+                IsEditingAccount = false;
+                EditingAccountClone = null;
+                CalculateProjections();
 
-            // Re-trigger Accounts collection change to update chart
-            OnPropertyChanged(nameof(Accounts));
+                // Re-trigger Accounts collection change to update chart
+                OnPropertyChanged(nameof(Accounts));
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error saving account.");
+                MessageBox.Show("Failed to save account. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
@@ -1426,8 +1619,13 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void CancelAccount() {
-        IsEditingAccount = false;
-        EditingAccountClone = null;
+        try {
+            IsEditingAccount = false;
+            EditingAccountClone = null;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error cancelling account edit.");
+        }
     }
 
     // private void DeleteAccount(Account? a) {
@@ -1462,12 +1660,18 @@ public class MainViewModel : ViewModelBase {
 
         // Check the user's response
         if (messageBoxResult == MessageBoxResult.Yes) {
-            // User confirmed deletion, proceed with your delete logic here
-            _budgetService.DeleteAccount(EditingAccountClone.Id);
-            IsEditingAccount = false;
-            EditingAccountClone = null;
-            LoadData();
-            CalculateProjections();
+            try {
+                // User confirmed deletion, proceed with your delete logic here
+                _budgetService.DeleteAccount(EditingAccountClone.Id);
+                IsEditingAccount = false;
+                EditingAccountClone = null;
+                LoadData();
+                CalculateProjections();
+            }
+            catch (Exception ex) {
+                Log.Error(ex, "Error deleting account.");
+                MessageBox.Show("Failed to delete account. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
@@ -1548,6 +1752,10 @@ public class MainViewModel : ViewModelBase {
                 ShowToast(message);
             }
         }
+        catch (Exception ex) {
+            Log.Error(ex, "Error calculating projections.");
+            ShowToast("Failed to calculate projections. Check logs.");
+        }
         finally {
             _isCalculatingProjections = false;
         }
@@ -1565,38 +1773,66 @@ public class MainViewModel : ViewModelBase {
     }
     
     public List<PeriodBill> GetProjectedBillsForPeriod(DateTime periodStart) {
-        var periodEnd = periodStart.AddDays(14); // Default
-        if (ShowByMonth) {
-            periodEnd = periodStart.AddMonths(1);
-        }
-        else {
-            var allPaycheckDates = new List<DateTime>();
-            foreach (var pay in Paychecks) {
-                var nextPay = pay.StartDate;
-                while (nextPay < periodStart.AddYears(1)) {
-                    if (nextPay > periodStart) {
-                        allPaycheckDates.Add(nextPay);
-                        break;
-                    }
+        try {
+            var periodEnd = periodStart.AddDays(14); // Default
+            if (ShowByMonth) {
+                periodEnd = periodStart.AddMonths(1);
+            }
+            else {
+                var allPaycheckDates = new List<DateTime>();
+                foreach (var pay in Paychecks) {
+                    var nextPay = pay.StartDate;
+                    while (nextPay < periodStart.AddYears(1)) {
+                        if (nextPay > periodStart) {
+                            allPaycheckDates.Add(nextPay);
+                            break;
+                        }
 
-                    nextPay = pay.Frequency switch {
-                        Frequency.Weekly => nextPay.AddDays(7),
-                        Frequency.BiWeekly => nextPay.AddDays(14),
-                        Frequency.Monthly => nextPay.AddMonths(1),
-                        _ => nextPay.AddYears(100)
-                    };
+                        nextPay = pay.Frequency switch {
+                            Frequency.Weekly => nextPay.AddDays(7),
+                            Frequency.BiWeekly => nextPay.AddDays(14),
+                            Frequency.Monthly => nextPay.AddMonths(1),
+                            _ => nextPay.AddYears(100)
+                        };
+                    }
                 }
+
+                if (allPaycheckDates.Any()) periodEnd = allPaycheckDates.Min();
             }
 
-            if (allPaycheckDates.Any()) periodEnd = allPaycheckDates.Min();
-        }
+            var result = new List<PeriodBill>();
+            foreach (var bill in Bills) {
+                DateTime nextDue;
+                if (bill.NextDueDate.HasValue) {
+                    nextDue = bill.NextDueDate.Value;
+                    while (nextDue < periodStart) {
+                        nextDue = bill.Frequency switch {
+                            Frequency.Monthly => nextDue.AddMonths(1),
+                            Frequency.Yearly => nextDue.AddYears(1),
+                            Frequency.Weekly => nextDue.AddDays(7),
+                            Frequency.BiWeekly => nextDue.AddDays(14),
+                            _ => nextDue.AddYears(100)
+                        };
+                    }
+                }
+                else {
+                    nextDue = new DateTime(periodStart.Year, periodStart.Month,
+                        Math.Min(bill.DueDay, DateTime.DaysInMonth(periodStart.Year, periodStart.Month)));
+                    if (nextDue < periodStart) nextDue = nextDue.AddMonths(1);
+                }
 
-        var result = new List<PeriodBill>();
-        foreach (var bill in Bills) {
-            DateTime nextDue;
-            if (bill.NextDueDate.HasValue) {
-                nextDue = bill.NextDueDate.Value;
-                while (nextDue < periodStart) {
+                while (nextDue < periodEnd) {
+                    if (nextDue >= periodStart) {
+                        result.Add(new PeriodBill {
+                            BillId = bill.Id,
+                            BillName = bill.Name,
+                            PeriodDate = periodStart,
+                            DueDate = nextDue,
+                            ActualAmount = bill.ExpectedAmount,
+                            IsPaid = false
+                        });
+                    }
+
                     nextDue = bill.Frequency switch {
                         Frequency.Monthly => nextDue.AddMonths(1),
                         Frequency.Yearly => nextDue.AddYears(1),
@@ -1606,42 +1842,22 @@ public class MainViewModel : ViewModelBase {
                     };
                 }
             }
-            else {
-                nextDue = new DateTime(periodStart.Year, periodStart.Month,
-                    Math.Min(bill.DueDay, DateTime.DaysInMonth(periodStart.Year, periodStart.Month)));
-                if (nextDue < periodStart) nextDue = nextDue.AddMonths(1);
-            }
 
-            while (nextDue < periodEnd) {
-                if (nextDue >= periodStart) {
-                    result.Add(new PeriodBill {
-                        BillId = bill.Id,
-                        BillName = bill.Name,
-                        PeriodDate = periodStart,
-                        DueDate = nextDue,
-                        ActualAmount = bill.ExpectedAmount,
-                        IsPaid = false
-                    });
-                }
-
-                nextDue = bill.Frequency switch {
-                    Frequency.Monthly => nextDue.AddMonths(1),
-                    Frequency.Yearly => nextDue.AddYears(1),
-                    Frequency.Weekly => nextDue.AddDays(7),
-                    Frequency.BiWeekly => nextDue.AddDays(14),
-                    _ => nextDue.AddYears(100)
-                };
-            }
+            return result;
         }
-
-        return result;
+        catch (Exception ex) {
+            Log.Error(ex, "Error getting projected bills for period starting {PeriodStart}.", periodStart);
+            return new List<PeriodBill>();
+        }
     }
 
     private void LoadData() {
+        Log.Information("Loading all budget data.");
         _isLoadingData = true;
         try {
             var accounts = _budgetService.GetAllAccounts().ToList();
             if (accounts.All(a => a.Name != "Household Cash")) {
+                Log.Information("Household Cash account not found. Creating default.");
                 var cashAccount = new Account {
                     Name = "Household Cash",
                     Type = AccountType.Savings,
@@ -1686,6 +1902,13 @@ public class MainViewModel : ViewModelBase {
             var bucketsWithNone = new List<BudgetBucket> { new BudgetBucket { Id = 0, Name = "(None)" } };
             bucketsWithNone.AddRange(buckets);
             BucketsWithNone = new ObservableCollection<BudgetBucket>(bucketsWithNone);
+            
+            Log.Information("Budget data loaded successfully. Accounts: {AccountCount}, Bills: {BillCount}", Accounts.Count, Bills.Count);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to load budget data.");
+            MessageBox.Show("Failed to load budget data. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally {
             _isLoadingData = false;
@@ -1693,236 +1916,307 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void LoadPaychecks() {
-        var allPaychecks = Paychecks.ToList();
-        if (allPaychecks.Count == 0) {
-            CurrentPeriodDate = DateTime.Today;
-            return;
+        try {
+            var allPaychecks = Paychecks.ToList();
+            if (allPaychecks.Count == 0) {
+                CurrentPeriodDate = DateTime.Today;
+                return;
+            }
+
+            PeriodPaychecks = new ObservableCollection<Paycheck>(allPaychecks);
+
+            SetCurrentPeriodDate();
         }
-
-        PeriodPaychecks = new ObservableCollection<Paycheck>(allPaychecks);
-
-        SetCurrentPeriodDate();
+        catch (Exception ex) {
+            Log.Error(ex, "Error loading paychecks into period view.");
+        }
     }
 
     private void LoadPeriodData() {
-        LoadPeriodBills();
-        LoadPeriodBuckets();
-        LoadPeriodTransactions();
-        ApplyTransactionAmounts();
-        UpdateWarningMetrics();
+        try {
+            LoadPeriodBills();
+            LoadPeriodBuckets();
+            LoadPeriodTransactions();
+            ApplyTransactionAmounts();
+            UpdateWarningMetrics();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error loading period data.");
+        }
     }
 
     private void ApplyTransactionAmounts() {
-        foreach (var pb in CurrentPeriodBills) {
-            pb.TransactionAmount = CurrentPeriodTransactions
-                .Where(t => t.BillId == pb.BillId)
-                .Sum(t => t.Amount);
+        try {
+            foreach (var pb in CurrentPeriodBills) {
+                pb.TransactionAmount = CurrentPeriodTransactions
+                    .Where(t => t.BillId == pb.BillId)
+                    .Sum(t => t.Amount);
+            }
+
+            foreach (var pb in CurrentPeriodBuckets) {
+                pb.TransactionAmount = CurrentPeriodTransactions
+                    .Where(t => t.BucketId == pb.BucketId)
+                    .Sum(t => t.Amount);
+            }
         }
-
-
-        foreach (var pb in CurrentPeriodBuckets) {
-            pb.TransactionAmount = CurrentPeriodTransactions
-                .Where(t => t.BucketId == pb.BucketId)
-                .Sum(t => t.Amount);
+        catch (Exception ex) {
+            Log.Error(ex, "Error applying transaction amounts to period items.");
         }
     }
 
     private void LoadPeriodBills() {
-        var pBills = _budgetService.GetPeriodBills(CurrentPeriodDate).ToList();
-        pBills = pBills.OrderBy(pb => pb.DueDate).ToList();
-        // Always ensure projected bills for this period are in the database and collection
-        var projectedBillsForPeriod = GetProjectedBillsForPeriod(CurrentPeriodDate);
+        try {
+            var pBills = _budgetService.GetPeriodBills(CurrentPeriodDate).ToList();
+            pBills = pBills.OrderBy(pb => pb.DueDate).ToList();
+            // Always ensure projected bills for this period are in the database and collection
+            var projectedBillsForPeriod = GetProjectedBillsForPeriod(CurrentPeriodDate);
 
-        foreach (var pb in projectedBillsForPeriod) {
-            if (!pBills.Any(existing =>
-                    existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date)) { }
-            else {
-                var periodBill = pBills.SingleOrDefault(existing =>
-                    existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date);
-                UpdatePeriodBillFromClone(pb, periodBill!);
+            foreach (var pb in projectedBillsForPeriod) {
+                if (!pBills.Any(existing =>
+                        existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date)) { }
+                else {
+                    var periodBill = pBills.SingleOrDefault(existing =>
+                        existing.BillId == pb.BillId && existing.PeriodDate.Date == pb.PeriodDate.Date);
+                    UpdatePeriodBillFromClone(pb, periodBill!);
+                }
             }
+
+            projectedBillsForPeriod = projectedBillsForPeriod.OrderBy(pb => pb.DueDate).ToList();
+
+            CurrentPeriodBills = new ObservableCollection<PeriodBill>(projectedBillsForPeriod);
+            foreach (var pb in CurrentPeriodBills) pb.PropertyChanged += PeriodBill_PropertyChanged;
+            UpdateWarningMetrics();
         }
-
-        projectedBillsForPeriod = projectedBillsForPeriod.OrderBy(pb => pb.DueDate).ToList();
-
-        CurrentPeriodBills = new ObservableCollection<PeriodBill>(projectedBillsForPeriod);
-        foreach (var pb in CurrentPeriodBills) pb.PropertyChanged += PeriodBill_PropertyChanged;
-        UpdateWarningMetrics();
+        catch (Exception ex) {
+            Log.Error(ex, "Error loading period bills.");
+        }
     }
 
     private void LoadPeriodBuckets() {
-        var pBuckets = _budgetService.GetPeriodBucketsIncludingMonthly(CurrentPeriodDate).ToList();
+        try {
+            var pBuckets = _budgetService.GetPeriodBucketsIncludingMonthly(CurrentPeriodDate).ToList();
 
-        foreach (var bucket in Buckets.Where(b =>
-                     b.PaycheckId == null || (b.PaycheckId == SelectedPeriodPaycheckId && !ShowByMonth))) {
-            if (pBuckets.All(existing => existing.BucketId != bucket.Id)) {
-                var pb = new PeriodBucket {
-                    BucketId = bucket.Id,
-                    BucketName = bucket.Name,
-                    PeriodDate = bucket.PaycheckId == null
-                        ? new DateTime(CurrentPeriodDate.Year, CurrentPeriodDate.Month, 1)
-                        : CurrentPeriodDate,
-                    ActualAmount = bucket.ExpectedAmount,
-                    IsPaid = false,
-                    FitId = Guid.NewGuid()
-                };
-                pBuckets.Add(pb);
+            foreach (var bucket in Buckets.Where(b =>
+                         b.PaycheckId == null || (b.PaycheckId == SelectedPeriodPaycheckId && !ShowByMonth))) {
+                if (pBuckets.All(existing => existing.BucketId != bucket.Id)) {
+                    var pb = new PeriodBucket {
+                        BucketId = bucket.Id,
+                        BucketName = bucket.Name,
+                        PeriodDate = bucket.PaycheckId == null
+                            ? new DateTime(CurrentPeriodDate.Year, CurrentPeriodDate.Month, 1)
+                            : CurrentPeriodDate,
+                        ActualAmount = bucket.ExpectedAmount,
+                        IsPaid = false,
+                        FitId = Guid.NewGuid()
+                    };
+                    pBuckets.Add(pb);
+                }
             }
-        }
 
-        CurrentPeriodBuckets = new ObservableCollection<PeriodBucket>(pBuckets);
-        foreach (var pb in CurrentPeriodBuckets) pb.PropertyChanged += PeriodBucket_PropertyChanged;
+            CurrentPeriodBuckets = new ObservableCollection<PeriodBucket>(pBuckets);
+            foreach (var pb in CurrentPeriodBuckets) pb.PropertyChanged += PeriodBucket_PropertyChanged;
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error loading period buckets.");
+        }
     }
 
     private void LoadPeriodTransactions() {
-        var transactions = _budgetService.GetTransactions(CurrentPeriodDate).ToList();
-        transactions = transactions.OrderBy(pb => pb.TransactionDate).ToList();
-        CurrentPeriodTransactions = new ObservableCollection<Transaction>(transactions);
+        try {
+            var transactions = _budgetService.GetTransactions(CurrentPeriodDate).ToList();
+            transactions = transactions.OrderBy(pb => pb.TransactionDate).ToList();
+            CurrentPeriodTransactions = new ObservableCollection<Transaction>(transactions);
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error loading period transactions.");
+        }
     }
 
     private void InitializePeriod() {
-        if (ShowByMonth) {
-            CurrentPeriodDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-            return;
-        }
+        try {
+            if (ShowByMonth) {
+                CurrentPeriodDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                return;
+            }
 
-        LoadPaychecks();
+            LoadPaychecks();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error initializing period.");
+        }
     }
 
     private void NavigatePeriod(int direction) {
-        if (ShowByMonth) {
-            CurrentPeriodDate = CurrentPeriodDate.AddMonths(direction);
-            LoadPeriodData();
-            return;
-        }
-
-        var allPaycheckDates = new List<DateTime>();
-        var end = DateTime.Today.AddYears(1);
-        foreach (var pay in Paychecks.Where(p => p.Id == SelectedPeriodPaycheckId)) {
-            var nextPay = pay.StartDate;
-            while (nextPay < end) {
-                allPaycheckDates.Add(nextPay);
-                nextPay = pay.Frequency switch {
-                    Frequency.Weekly => nextPay.AddDays(7),
-                    Frequency.BiWeekly => nextPay.AddDays(14),
-                    Frequency.Monthly => nextPay.AddMonths(1),
-                    _ => nextPay.AddYears(100)
-                };
+        try {
+            if (ShowByMonth) {
+                CurrentPeriodDate = CurrentPeriodDate.AddMonths(direction);
+                LoadPeriodData();
+                return;
             }
-        }
 
-        var sortedDates = allPaycheckDates.Distinct().OrderBy(d => d).ToList();
-        var currentIndex = sortedDates.FindIndex(d => d.Date == CurrentPeriodDate.Date);
+            var allPaycheckDates = new List<DateTime>();
+            var end = DateTime.Today.AddYears(1);
+            foreach (var pay in Paychecks.Where(p => p.Id == SelectedPeriodPaycheckId)) {
+                var nextPay = pay.StartDate;
+                while (nextPay < end) {
+                    allPaycheckDates.Add(nextPay);
+                    nextPay = pay.Frequency switch {
+                        Frequency.Weekly => nextPay.AddDays(7),
+                        Frequency.BiWeekly => nextPay.AddDays(14),
+                        Frequency.Monthly => nextPay.AddMonths(1),
+                        _ => nextPay.AddYears(100)
+                    };
+                }
+            }
 
-        if (currentIndex == -1) {
-            if (direction > 0)
-                CurrentPeriodDate = sortedDates.FirstOrDefault(d => d > CurrentPeriodDate);
-            else
-                CurrentPeriodDate = sortedDates.LastOrDefault(d => d < CurrentPeriodDate);
-        }
-        else {
-            int nextIndex = currentIndex + direction;
-            if (nextIndex >= 0 && nextIndex < sortedDates.Count)
-                CurrentPeriodDate = sortedDates[nextIndex];
-        }
+            var sortedDates = allPaycheckDates.Distinct().OrderBy(d => d).ToList();
+            var currentIndex = sortedDates.FindIndex(d => d.Date == CurrentPeriodDate.Date);
 
-        LoadPeriodData();
+            if (currentIndex == -1) {
+                if (direction > 0)
+                    CurrentPeriodDate = sortedDates.FirstOrDefault(d => d > CurrentPeriodDate);
+                else
+                    CurrentPeriodDate = sortedDates.LastOrDefault(d => d < CurrentPeriodDate);
+            }
+            else {
+                int nextIndex = currentIndex + direction;
+                if (nextIndex >= 0 && nextIndex < sortedDates.Count)
+                    CurrentPeriodDate = sortedDates[nextIndex];
+            }
+
+            LoadPeriodData();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error navigating period.");
+        }
     }
 
     private void ReconcileAccount() {
         if (EditingAccountClone == null) return;
-        var window = new ReconciliationWindow(EditingAccountClone, _budgetService) {
-            Owner = Application.Current.MainWindow
-        };
-        window.ShowDialog();
-        CalculateProjections();
+        try {
+            var window = new ReconciliationWindow(EditingAccountClone, _budgetService) {
+                Owner = Application.Current.MainWindow
+            };
+            window.ShowDialog();
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error showing reconciliation window.");
+            MessageBox.Show("Failed to open reconciliation window. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void SetAccountAprRates() {
         if (EditingAccountClone is not { Type: AccountType.CreditCard }) return;
-        EditingAccountClone.AccountAprHistory ??= [];
-        var window = new AccountAprHistoryWindow(EditingAccountClone, _budgetService) {
-            Owner = Application.Current.MainWindow
-        };
-        window.ShowDialog();
-        CalculateProjections();
+        try {
+            EditingAccountClone.AccountAprHistory ??= [];
+            var window = new AccountAprHistoryWindow(EditingAccountClone, _budgetService) {
+                Owner = Application.Current.MainWindow
+            };
+            window.ShowDialog();
+            CalculateProjections();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error showing APR history window.");
+            MessageBox.Show("Failed to open interest rate window. See log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
 
     private void RefreshPaychecks() {
-        var allPaychecks = Paychecks.ToList();
-        if (allPaychecks.Count == 0) {
-            CurrentPeriodDate = DateTime.Today;
-            return;
-        }
+        try {
+            var allPaychecks = Paychecks.ToList();
+            if (allPaychecks.Count == 0) {
+                CurrentPeriodDate = DateTime.Today;
+                return;
+            }
 
-        PeriodPaychecks = new ObservableCollection<Paycheck>(allPaychecks);
+            PeriodPaychecks = new ObservableCollection<Paycheck>(allPaychecks);
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error refreshing paychecks list.");
+        }
     }
 
     private void SetCurrentPeriodDate(int? id = null) {
-        var allPaychecks = Paychecks.ToList();
-        if (allPaychecks.Count == 0) {
-            CurrentPeriodDate = DateTime.Today;
-            return;
-        }
-
-        DateTime latestPayBeforeToday = DateTime.MinValue;
-        foreach (var pay in allPaychecks.Where(p => id == null || p.Id == id)) {
-            var nextPay = pay.StartDate;
-            while (nextPay <= DateTime.Today.AddDays(1)) {
-                if (nextPay <= DateTime.Today && nextPay > latestPayBeforeToday)
-                    latestPayBeforeToday = nextPay;
-
-                nextPay = pay.Frequency switch {
-                    Frequency.Weekly => nextPay.AddDays(7),
-                    Frequency.BiWeekly => nextPay.AddDays(14),
-                    Frequency.Monthly => nextPay.AddMonths(1),
-                    _ => nextPay.AddYears(100)
-                };
+        try {
+            var allPaychecks = Paychecks.ToList();
+            if (allPaychecks.Count == 0) {
+                CurrentPeriodDate = DateTime.Today;
+                return;
             }
-        }
 
-        if (latestPayBeforeToday != DateTime.MinValue)
-            CurrentPeriodDate = latestPayBeforeToday;
-        else if (allPaychecks.Any())
-            CurrentPeriodDate = allPaychecks.Min(p => p.StartDate);
+            DateTime latestPayBeforeToday = DateTime.MinValue;
+            foreach (var pay in allPaychecks.Where(p => id == null || p.Id == id)) {
+                var nextPay = pay.StartDate;
+                while (nextPay <= DateTime.Today.AddDays(1)) {
+                    if (nextPay <= DateTime.Today && nextPay > latestPayBeforeToday)
+                        latestPayBeforeToday = nextPay;
 
-        var currentPeriodPaychecks = new List<Paycheck>();
-        foreach (var pay in allPaychecks.Where(p => id == null || p.Id == id)) {
-            var nextPay = pay.StartDate;
-            var found = false;
-            while (nextPay <= CurrentPeriodDate) {
-                if (nextPay.Date == CurrentPeriodDate.Date) {
-                    found = true;
-                    break;
+                    nextPay = pay.Frequency switch {
+                        Frequency.Weekly => nextPay.AddDays(7),
+                        Frequency.BiWeekly => nextPay.AddDays(14),
+                        Frequency.Monthly => nextPay.AddMonths(1),
+                        _ => nextPay.AddYears(100)
+                    };
+                }
+            }
+
+            if (latestPayBeforeToday != DateTime.MinValue)
+                CurrentPeriodDate = latestPayBeforeToday;
+            else if (allPaychecks.Any())
+                CurrentPeriodDate = allPaychecks.Min(p => p.StartDate);
+
+            var currentPeriodPaychecks = new List<Paycheck>();
+            foreach (var pay in allPaychecks.Where(p => id == null || p.Id == id)) {
+                var nextPay = pay.StartDate;
+                var found = false;
+                while (nextPay <= CurrentPeriodDate) {
+                    if (nextPay.Date == CurrentPeriodDate.Date) {
+                        found = true;
+                        break;
+                    }
+
+                    nextPay = pay.Frequency switch {
+                        Frequency.Weekly => nextPay.AddDays(7),
+                        Frequency.BiWeekly => nextPay.AddDays(14),
+                        Frequency.Monthly => nextPay.AddMonths(1),
+                        _ => nextPay.AddYears(100)
+                    };
                 }
 
-                nextPay = pay.Frequency switch {
-                    Frequency.Weekly => nextPay.AddDays(7),
-                    Frequency.BiWeekly => nextPay.AddDays(14),
-                    Frequency.Monthly => nextPay.AddMonths(1),
-                    _ => nextPay.AddYears(100)
-                };
+                if (found) currentPeriodPaychecks.Add(pay);
             }
 
-            if (found) currentPeriodPaychecks.Add(pay);
+            if (id == null && currentPeriodPaychecks.Any()) {
+                _selectedPeriodPaycheckId = currentPeriodPaychecks.First().Id;
+                OnPropertyChanged(nameof(SelectedPeriodPaycheckId));
+            }
         }
-
-        if (id == null && currentPeriodPaychecks.Any()) {
-            _selectedPeriodPaycheckId = currentPeriodPaychecks.First().Id;
-            OnPropertyChanged(nameof(SelectedPeriodPaycheckId));
+        catch (Exception ex) {
+            Log.Error(ex, "Error setting current period date.");
         }
     }
 
     private void ShowAbout() {
-        var about = new AboutWindow {
-            Owner = Application.Current.MainWindow
-        };
-        about.ShowDialog();
+        try {
+            var about = new AboutWindow {
+                Owner = Application.Current.MainWindow
+            };
+            about.ShowDialog();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error showing about window.");
+        }
     }
-    
+
     private void Exit() {
-        Application.Current.Shutdown();
+        try {
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error during exit.");
+        }
     }
     
     private void Backup() {
@@ -1936,10 +2230,15 @@ public class MainViewModel : ViewModelBase {
     }
 
     private void ShowAmortization(Account account) {
-        var amortization = new AmortizationWindow(account) {
-            Owner = Application.Current.MainWindow
-        };
-        amortization.ShowDialog();
+        try {
+            var amortization = new AmortizationWindow(account) {
+                Owner = Application.Current.MainWindow
+            };
+            amortization.ShowDialog();
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error showing amortization window.");
+        }
     }
 
     #endregion

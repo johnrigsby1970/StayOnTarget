@@ -1,5 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.Sqlite;
+using Serilog;
+using System;
 using System.IO;
 
 namespace StayOnTarget.Data;
@@ -138,13 +140,28 @@ public class DatabaseContext {
         _connectionString = BuildConnectionString(dbPath, newPassword);
     }
     
-    public SqliteConnection GetConnection() => new SqliteConnection(_connectionString);
+    public SqliteConnection GetConnection()
+    {
+        try
+        {
+            return new SqliteConnection(_connectionString);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to create SqliteConnection.");
+            throw;
+        }
+    }
 
     private void InitializeDatabase() {
-        using var connection = GetConnection();
-        connection.Open();
+        Log.Information("Initializing database.");
+        try
+        {
+            using var connection = GetConnection();
+            connection.Open();
+            Log.Debug("Database connection opened for initialization.");
 
-        connection.Execute(@"
+            connection.Execute(@"
             CREATE TABLE IF NOT EXISTS Accounts (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Name TEXT NOT NULL,
@@ -343,5 +360,13 @@ public class DatabaseContext {
                     "ALTER TABLE Transactions ADD COLUMN ToAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
             }
         }
+        
+        Log.Information("Database initialization and schema updates completed successfully.");
     }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "Database initialization failed.");
+        throw;
+    }
+}
 }
