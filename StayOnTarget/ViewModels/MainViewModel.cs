@@ -32,7 +32,10 @@ public class MainViewModel : ViewModelBase {
     private ObservableCollection<Transaction> _currentPeriodTransactions = new();
     private int _pastDueCount;
     private int _upcomingCount;
+    private int _budgetExceededCount;
+    private int _envelopeNearingFullCount;
     private ObservableCollection<PeriodBill> _unpaidPastDueBills = new();
+    private ObservableCollection<PeriodBucket> _budgetBustedBuckets = new();
     private Bill? _selectedBill;
     private BudgetBucket? _selectedBucket;
     private PeriodBill? _selectedPeriodBill;
@@ -175,6 +178,45 @@ public class MainViewModel : ViewModelBase {
     }
 
     public bool ShowWarningWidget => PastDueCount > 0 || UpcomingCount > 0;
+    
+    #region Warning Envelope
+    
+    public int BudgetExceededCount {
+        get => _budgetExceededCount;
+        set => SetProperty(ref _budgetExceededCount, value);
+    }
+
+    public int EnvelopeNearingFullCount {
+        get => _envelopeNearingFullCount;
+        set => SetProperty(ref _envelopeNearingFullCount, value);
+    }
+
+    public ObservableCollection<PeriodBucket> BudgetBustedBuckets {
+        get => _budgetBustedBuckets;
+        set => SetProperty(ref _budgetBustedBuckets, value);
+    }
+
+    private void UpdateBucketWarningMetrics() {
+        var exceeded = CurrentPeriodBuckets.Where(pb => pb.HasActualAmount  && pb.ActualAmount != 0 && pb.BudgetExceeded && pb.TransactionAmount != 0).ToList();// && Math.Abs((double)pb.TransactionAmount / (double)pb.ActualAmount) > 1.10).ToList();
+        var nearingfull = CurrentPeriodBuckets.Where(pb => pb.HasActualAmount && pb.ActualAmount != 0 && !pb.BudgetExceeded && pb.TransactionAmount != 0 && Math.Abs((double)pb.TransactionAmount / (double)pb.ActualAmount) > .80 ).ToList();
+
+        BudgetExceededCount = exceeded.Count;
+        EnvelopeNearingFullCount = nearingfull.Count;
+        if (nearingfull.Count > 0) {
+            var myList = exceeded;
+            myList.AddRange(nearingfull);
+            BudgetBustedBuckets = new ObservableCollection<PeriodBucket>(myList);
+        }
+        else {
+            BudgetBustedBuckets = new ObservableCollection<PeriodBucket>(exceeded);
+        }
+        
+        OnPropertyChanged(nameof(ShowEnvelopeWarningWidget));
+    }
+
+    public bool ShowEnvelopeWarningWidget => BudgetExceededCount > 0 || EnvelopeNearingFullCount > 0;
+    
+    #endregion
 
     public ObservableCollection<BudgetBucket> Buckets {
         get => _buckets;
@@ -183,7 +225,11 @@ public class MainViewModel : ViewModelBase {
 
     public ObservableCollection<PeriodBucket> CurrentPeriodBuckets {
         get => _currentPeriodBuckets;
-        set => SetProperty(ref _currentPeriodBuckets, value);
+        set {
+            if (SetProperty(ref _currentPeriodBuckets, value)) {
+                UpdateBucketWarningMetrics();
+            }
+        }
     }
 
     public ObservableCollection<Transaction> CurrentPeriodTransactions {
@@ -607,6 +653,16 @@ public class MainViewModel : ViewModelBase {
         }
     });
 
+    public ICommand MapsToBucketCommand => new RelayCommand(p => {
+        if (p is PeriodBucket pb) {
+            SelectedPeriodBucket = pb;
+            SelectedOuterTabIndex = 0;
+            SelectedInnerTabIndex = 2;
+        }
+    });
+    
+    
+        
     public ICommand ToggleBucketDescriptionCommand =>
         new RelayCommand(_ => IsBucketDescriptionExpanded = !IsBucketDescriptionExpanded);
 
@@ -672,6 +728,10 @@ public class MainViewModel : ViewModelBase {
             _budgetService.UpsertPeriodBill(pb);
             LoadPeriodData();
             CalculateProjections();
+            
+            if (e.PropertyName == nameof(PeriodBill.ActualAmount)) return; {
+                UpdateWarningMetrics();
+            }
         }
         catch (Exception ex) {
             Log.Error(ex, "Error in PeriodBill_PropertyChanged.");
@@ -681,12 +741,25 @@ public class MainViewModel : ViewModelBase {
     private void PeriodBucket_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
         if (sender is not PeriodBucket pb) return;
         try {
-            if (e.PropertyName == nameof(PeriodBucket.TransactionAmount)) return;
-            if (e.PropertyName == nameof(PeriodBucket.HasActualAmount)) return;
+            if (e.PropertyName == nameof(PeriodBill.TransactionAmount)) {
+                UpdateBucketWarningMetrics();
+                return;
+            }
+
+            if (e.PropertyName == nameof(PeriodBill.HasActualAmount)) {
+                UpdateBucketWarningMetrics();
+                return;
+            }
+            
+
             if (e.PropertyName == nameof(PeriodBucket.BudgetExceeded)) return;
             _budgetService.UpsertPeriodBucket(pb);
             LoadPeriodData();
             CalculateProjections();
+            
+            if (e.PropertyName == nameof(PeriodBill.ActualAmount)) return; {
+                UpdateBucketWarningMetrics();
+            }
         }
         catch (Exception ex) {
             Log.Error(ex, "Error in PeriodBucket_PropertyChanged.");
@@ -1941,6 +2014,7 @@ public class MainViewModel : ViewModelBase {
             LoadPeriodTransactions();
             ApplyTransactionAmounts();
             UpdateWarningMetrics();
+            UpdateBucketWarningMetrics();
         }
         catch (Exception ex) {
             Log.Error(ex, "Error loading period data.");

@@ -228,6 +228,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TabControl Grid.Row="0" SelectedIndex="{Binding SelectedOuterTabIndex}">
@@ -1586,6 +1587,76 @@
                                             <DockPanel>
                                                 <TextBlock Text="{Binding DueDate, StringFormat=MMM dd}" DockPanel.Dock="Right" Foreground="#EF4444" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
                                                 <TextBlock Text="{Binding BillName}" Foreground="#1E293B" FontWeight="Medium" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Envelope Warning Widget -->
+                <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="8" Margin="0,10,0,0" Padding="12"
+                        Visibility="{Binding ShowEnvelopeWarningWidget, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="Envelope Alerts" FontWeight="SemiBold" FontSize="14" Foreground="#0F172A" Margin="0,0,0,10"/>
+                        
+                        <UniformGrid Columns="2" Margin="0,0,0,12">
+                            <!-- Past Due -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
+                                <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                                    <Path Data="M3 2v18h2V12h11l1-2-1-2H5V2H3zm4 4h7.5l.5 1-.5 1H7V6z" Fill="#EF4444" />
+                                </Viewbox>
+                                <StackPanel>
+                                    <TextBlock Text="Over Budget" FontSize="11" Foreground="#64748B" FontWeight="Medium"/>
+                                    <TextBlock Text="{Binding BudgetExceededCount}" FontSize="18" FontWeight="Bold" Foreground="#0F172A"/>
+                                </StackPanel>
+                            </StackPanel>
+                            
+                            <!-- Envelope Budget Filling Up -->
+                            <StackPanel Orientation="Horizontal">
+                                <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                                    <Path Data="M3 2v18h2V12h11l1-2-1-2H5V2H3zm4 4h7.5l.5 1-.5 1H7V6z" Fill="#22C55E" />
+                                </Viewbox>
+                                <StackPanel>
+                                    <TextBlock Text="80% Full" FontSize="11" Foreground="#64748B" FontWeight="Medium"/>
+                                    <TextBlock Text="{Binding EnvelopeNearingFullCount}" FontSize="18" FontWeight="Bold" Foreground="#0F172A"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <Separator Background="#CBD5E1" Margin="0,0,0,10" Opacity="0.5"/>
+
+                        <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding BudgetBustedBuckets}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Margin="0,0,0,6" Padding="8,6">
+                                            <Border.InputBindings>
+                                                <MouseBinding MouseAction="LeftDoubleClick" 
+                                                              Command="{Binding DataContext.MapsToBucketCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              CommandParameter="{Binding}"/>
+                                            </Border.InputBindings>
+                                            <DockPanel>
+                                                <TextBlock Text="{Binding TransactionAmount, Converter={StaticResource AbsoluteValueConverter}, StringFormat=C}" DockPanel.Dock="Right" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center">
+                                                
+                                                 <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#22C55E" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger
+                                                                Binding="{Binding BudgetExceeded}"
+                                                                Value="true">
+                                                                <Setter Property="Foreground" Value="#EF4444" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+
+                                                </TextBlock>
+                                                
+                                                <TextBlock Text="{Binding BucketName}" Foreground="#1E293B" FontWeight="Medium" FontSize="12" TextTrimming="CharacterEllipsis"/>
                                             </DockPanel>
                                         </Border>
                                     </DataTemplate>
