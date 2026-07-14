@@ -89,9 +89,11 @@
     
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
+        
         <local:AmountToBrushConverter x:Key="AmountToBrushConverter" />
         <local:AbsoluteValueConverter x:Key="AbsoluteValueConverter" />
         <local:BooleanAndToVisibilityConverter x:Key="BooleanAndToVisibilityConverter" />
+        <local:CategoryNameConverter x:Key="CategoryNameConverter" />
         <local:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
         <local:NegativeToRedConverter x:Key="NegativeToRedConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -393,6 +395,10 @@
                                                                     Width="Auto" MinWidth="100" />
                                                 <DataGridTextColumn Header="To" Binding="{Binding ToAccountName}"
                                                                     Width="Auto" MinWidth="100" />
+                                                <DataGridTextColumn Header="Category"
+                                                                    Binding="{Binding Converter={StaticResource CategoryNameConverter}}" 
+                                                                    Width="Auto" 
+                                                                    MinWidth="100" />
                                                 <DataGridTextColumn Header="Memo"
                                                                     Binding="{Binding Memo}" Width="Auto" MinWidth="100" />
 

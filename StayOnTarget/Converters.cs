@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using StayOnTarget.Models;
 
 namespace StayOnTarget;
 
@@ -45,6 +46,30 @@ public class AmountToBrushConverter : IValueConverter
             return amount < 0 ? ModernRed : StandardDark;
         }
         return StandardDark;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class CategoryNameConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        // 'value' will be the entire row data object (your ViewModel or Model)
+        if (value is null) return string.Empty;
+
+        // Replace 'YourRowDataType' with the actual class name of your items
+        var rowData = (Transaction)value; 
+
+        if (rowData.BillId != null)
+        {
+            return $"Bill: {rowData.BillName}" ;
+        }
+        
+        return rowData.BucketName;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
