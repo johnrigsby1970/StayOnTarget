@@ -92,7 +92,7 @@ public partial class BudgetService
         return accounts;
     }
 
-    public void UpsertAccount(Account account)
+    public int UpsertAccount(Account account)
     {
         using var conn = _db.GetConnection();
         var accountParam = new
@@ -110,13 +110,14 @@ public partial class BudgetService
 
         if (account.Id == 0)
         {
-            account.Id = conn.ExecuteScalar<int>(@"INSERT INTO Accounts (Name, BankName, Balance, BalanceAsOf, AnnualGrowthRate, IncludeInTotal, Type, HexColor) 
-                           VALUES (@Name, @BankName, @Balance, @BalanceAsOf, @AnnualGrowthRate, @IncludeInTotal, @Type, @HexColor);
+            account.Id = conn.ExecuteScalar<int>(@"INSERT INTO Accounts (Name, BankName,  BalanceAsOf, AnnualGrowthRate, IncludeInTotal, Type, HexColor) 
+                           VALUES (@Name, @BankName, @BalanceAsOf, @AnnualGrowthRate, @IncludeInTotal, @Type, @HexColor);
                            SELECT last_insert_rowid();", accountParam);
+            
         }
         else
         {
-            conn.Execute(@"UPDATE Accounts SET Name=@Name, BankName=@BankName, Balance=@Balance, BalanceAsOf=@BalanceAsOf,
+            conn.Execute(@"UPDATE Accounts SET Name=@Name, BankName=@BankName, BalanceAsOf=@BalanceAsOf,
                            AnnualGrowthRate=@AnnualGrowthRate, IncludeInTotal=@IncludeInTotal, Type=@Type, HexColor=@HexColor WHERE Id=@Id", accountParam);
         }
 
@@ -176,6 +177,8 @@ public partial class BudgetService
             }
 
         }
+
+        return account.Id;
     }
     
     public void DeleteAccount(int id)

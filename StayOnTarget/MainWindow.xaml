@@ -9,6 +9,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:models="clr-namespace:StayOnTarget.Models"
         xmlns:System="clr-namespace:System;assembly=System.Runtime"
+        xmlns:helpers="clr-namespace:StayOnTarget" 
         mc:Ignorable="d"
         Title="Stay On Target" Height="600" Width="1000" MinWidth="1000">
     <Window.Resources>
@@ -435,6 +436,7 @@
 
                                                     <Label Grid.Column="0" Grid.Row="2" Content="Amount:" />
                                                     <TextBox Grid.Column="1" Grid.Row="2"
+                                                             helpers:TextBoxBehavior.IsNumericOnly="True"
                                                              Text="{Binding EditingTransactionClone.Amount, Converter={StaticResource AbsoluteValueConverter}, StringFormat={}{0:0.00;-0.00;''}}"
                                                              Margin="5" />
 
@@ -689,6 +691,7 @@
 
                                                     <Label Grid.Column="2" Content="Budgeted:" />
                                                     <TextBox Grid.Column="3"
+                                                             helpers:TextBoxBehavior.IsNumericOnly="True"
                                                              Text="{Binding EditingPeriodBillClone.ActualAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                                                              Margin="5" />
                                                 </Grid>
@@ -760,7 +763,7 @@
                                                 </TextBlock>
                                                 <TextBlock Margin="5" TextWrapping="Wrap"
                                                            Visibility="{Binding IsBucketDescriptionExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    Amounts set here apply only for this period. The available projected amount will adjust as transactions are entered that apply to this bucket. Once enough transactions are marked with this bucket are subtracted from the total available for the period, the projection for the remainder of the period will be zero. You can add to the envelope total for the period to give more room in this envelope. To set the projection for all future periods, set it in the Buckets tab.
+                                                    Amounts set here apply only for this period. The available projected amount will adjust as transactions are entered that apply to this envelope. Once enough transactions are marked with this envelope are subtracted from the total available for the period, the projection for the remainder of the period will be zero. You can add to the envelope total for the period to give more room in this envelope. To set the projection for all future periods, set it in the Envelopes tab.
                                                     <Hyperlink Command="{Binding ToggleBucketDescriptionCommand}">Read less</Hyperlink>
                                                 </TextBlock>
                                             </StackPanel>
@@ -842,6 +845,7 @@
 
                                                     <Label Grid.Column="2" Content="Budgeted:" />
                                                     <TextBox Grid.Column="3"
+                                                             helpers:TextBoxBehavior.IsNumericOnly="True"
                                                              Text="{Binding EditingPeriodBucketClone.ActualAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                                                              Margin="5" />
                                                 </Grid>
@@ -946,6 +950,7 @@
 
                                         <Label Grid.Column="2" Content="Budgeted:" />
                                         <TextBox Grid.Column="3"
+                                                 helpers:TextBoxBehavior.IsNumericOnly="True"
                                                  Text="{Binding EditingBucketClone.ExpectedAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                                                  Margin="5" />
                                     </Grid>
@@ -1070,6 +1075,7 @@
 
                                         <Label Grid.Column="2" Grid.Row="0" Content="Budgeted:" />
                                         <TextBox Grid.Column="3" Grid.Row="0"
+                                                 helpers:TextBoxBehavior.IsNumericOnly="True"
                                                  Text="{Binding EditingBillClone.ExpectedAmount, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.00;-0.00;''}}"
                                                  Margin="5" />
 
@@ -1238,6 +1244,7 @@
 
                                         <Label Grid.Column="2" Grid.Row="0" Content="Amount:" />
                                         <TextBox Grid.Column="3" Grid.Row="0"
+                                                 helpers:TextBoxBehavior.IsNumericOnly="True"
                                                  Text="{Binding EditingPaycheckClone.Amount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
                                                  Margin="5" />
 

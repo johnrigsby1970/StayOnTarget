@@ -2,21 +2,17 @@
 using StayOnTarget.Models;
 using StayOnTarget.Services;
 using StayOnTarget.Services.Projections;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Xml;
+using Newtonsoft.Json;
 using StayOnTarget.Views;
 
 namespace StayOnTarget.ViewModels;
 
 public class MainViewModel : ViewModelBase {
     private readonly BudgetService _budgetService;
+    private readonly ReconciliationService _reconciliationService;
     private readonly IProjectionEngine _projectionEngine;
     private ObservableCollection<Account> _accounts = new();
     private ObservableCollection<Account> _accountsWithNone = new();
@@ -68,7 +64,7 @@ public class MainViewModel : ViewModelBase {
     private bool _showReconciled = true;
     private string _toggleReconciliationText = "Show Reconciled";
     private DateTime _projectionEndDate = DateTime.Today.AddYears(1);
-    private DateTime? _projectionStartDate = null;
+    private DateTime? _projectionStartDate;
     private int _selectedOuterTabIndex;
     private int _selectedInnerTabIndex;
 
@@ -88,9 +84,13 @@ public class MainViewModel : ViewModelBase {
 
     public static MainViewModel? Instance { get; private set; }
 
-    public MainViewModel(BudgetService budgetService) {
+    public MainViewModel(
+        BudgetService budgetService, 
+        ReconciliationService reconciliationService) {
+        
         Instance = this;
         _budgetService = budgetService;
+        _reconciliationService = reconciliationService;
         _projectionEngine = new ProjectionEngine();
         LoadData();
         InitializePeriod();
@@ -1645,7 +1645,42 @@ public class MainViewModel : ViewModelBase {
                     _budgetService.UpsertAccount(SelectedAccount);
                 }
                 else {
-                    _budgetService.UpsertAccount(EditingAccountClone);
+                    EditingAccountClone.Id = _budgetService.UpsertAccount(EditingAccountClone);
+                    var openingBalance = new Transaction() {
+                        AccountId = EditingAccountClone.Id, 
+                        Amount = EditingAccountClone.Balance, 
+                        TransactionDate = EditingAccountClone.BalanceAsOf , 
+                        TransactionId = Guid.NewGuid(),
+                        FitId = Guid.NewGuid().ToString(),
+                        Description = "Opening Balance", 
+                        Memo = "Opening Balance", 
+                        PeriodDate = EditingAccountClone.BalanceAsOf
+                    };
+
+                    if (openingBalance.Amount != 0) {
+                        Task.Run(async () => {
+                            try {
+                                await _budgetService.UpsertTransactionAsync(openingBalance);
+                            }
+                            catch (Exception ex) {
+                                Log.Error(ex, "Error upserting transaction in PropertyChanged.");
+                            }
+                        }); // Run async work
+
+                        var transactions = _budgetService.GetAccountTransactions(openingBalance.AccountId.Value);
+
+                        string json = JsonConvert.SerializeObject(transactions.ToList());
+                        var reconciliationTransactions =
+                            JsonConvert.DeserializeObject<List<ReconciliationTransaction>>(json);
+                        if (reconciliationTransactions != null) {
+                            _reconciliationService.ReconcileAccount(
+                                openingBalance.AccountId.Value,
+                                reconciliationTransactions,
+                                openingBalance.Amount,
+                                openingBalance.TransactionDate);
+                        }
+                    }
+
                     LoadData();
                 }
 

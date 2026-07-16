@@ -4,6 +4,7 @@ using Windows.Security.Credentials.UI;
 namespace StayOnTarget;
 
 public static class Helpers {
+    
     public static void SaveDatabaseKeyToWindowsVault(string password) {
         var vault = new PasswordVault();
 

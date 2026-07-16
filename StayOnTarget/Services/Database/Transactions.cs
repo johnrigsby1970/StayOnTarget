@@ -26,6 +26,12 @@ public partial class BudgetService {
         var dbRows = conn.Query<dynamic>("SELECT *, TransactionDate as TransactionDate FROM Transactions").ToList();
         return MergeDbRowsToUiTransactions(dbRows);
     }
+    
+    public IEnumerable<Transaction> GetAccountTransactions(int accountId) {
+        using var conn = _db.GetConnection();
+        var dbRows = conn.Query<dynamic>("SELECT *, TransactionDate as TransactionDate FROM Transactions WHERE AccountId=@accountId", new { accountId }).ToList();
+        return MergeDbRowsToUiTransactions(dbRows);
+    }
 
     public IEnumerable<Transaction> GetAllPaycheckTransactions() {
         using var conn = _db.GetConnection();

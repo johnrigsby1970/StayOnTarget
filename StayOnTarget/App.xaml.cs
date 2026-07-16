@@ -147,7 +147,8 @@ public partial class App : Application
         {
             Log.Information("Initializing BudgetService and MainWindow.");
             var budgetService = new BudgetService(dbPath, password);
-            var viewModel = new MainViewModel(budgetService);
+            var reconciliationService = new ReconciliationService(budgetService);
+            var viewModel = new MainViewModel(budgetService, reconciliationService);
             var mainWindow = new MainWindow(viewModel);
             
             // STEP 2: Make this the official main window

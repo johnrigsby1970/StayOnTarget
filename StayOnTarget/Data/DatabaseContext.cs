@@ -57,23 +57,20 @@ public class DatabaseContext {
         SqlMapper.AddTypeHandler(new SqliteNullableGuidHandler());
     }
 
-    public DatabaseContext(string dbPath, string userPassword) 
-    {
+    public DatabaseContext(string dbPath, string userPassword) {
         // Ensure the directory exists for whatever path is passed in
         var directory = Path.GetDirectoryName(dbPath);
-        if (!string.IsNullOrEmpty(directory))
-        {
+        if (!string.IsNullOrEmpty(directory)) {
             Directory.CreateDirectory(directory);
         }
-        
+
         _connectionString = BuildConnectionString(dbPath, userPassword);
 
         InitializeDatabase();
     }
-    
+
     // Public helper to compute the default user profile path safely
-    public static string GetDefaultDbPath()
-    {
+    public static string GetDefaultDbPath() {
         var userProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var dbFolder = Path.Combine(userProfileFolder, ProgramFolderName);
         return Path.Combine(dbFolder, DatabaseName);
@@ -83,15 +80,15 @@ public class DatabaseContext {
         if (string.IsNullOrEmpty(password)) {
             return $"Data Source={dbPath};";
         }
-    
+
         // Convert Windows backslashes to forward slashes so the SQLite URI parser reads it cleanly
         var normalizedPath = dbPath.Replace('\\', '/');
-    
+
         // Semicolons only separate built-in keywords (Data Source, Password, Pooling)
         // The cipher settings live seamlessly inside the Data Source string itself!
         return $"Data Source=file:{normalizedPath}?cipher=sqlcipher&legacy=4;Password={password};Pooling=False;";
     }
-    
+
     public string BackupDatabase(string? password) {
         var userProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var dbFolder = Path.Combine(userProfileFolder, ProgramFolderName);
@@ -107,9 +104,9 @@ public class DatabaseContext {
 
         // Force the encryption engine to use standard SQLCipher 4 formatting
         // Note the "file:" prefix and the "?cipher=sqlcipher&legacy=4" parameters
-        var oldConnectionString =  BuildConnectionString(oldPath, password);
+        var oldConnectionString = BuildConnectionString(oldPath, password);
         var newConnectionString = BuildConnectionString(newPath, password);
-        
+
         using (var source = new SqliteConnection(oldConnectionString))
         using (var destination = new SqliteConnection(newConnectionString)) {
             source.Open();
@@ -123,31 +120,26 @@ public class DatabaseContext {
 
     public void ChangePassword(string dbPath, string oldPassword, string newPassword) {
         string connectionString = BuildConnectionString(dbPath, oldPassword);
-        
-        using (var connection = new SqliteConnection(connectionString))
-        {
+
+        using (var connection = new SqliteConnection(connectionString)) {
             connection.Open();
 
-            using (var command = connection.CreateCommand())
-            {
+            using (var command = connection.CreateCommand()) {
                 // Correct SQLCipher/SQLite3MC syntax: PRAGMA rekey('password')
                 // Note: Single quotes wrap the password string inside the command
                 command.CommandText = $"PRAGMA rekey('{newPassword}');";
                 command.ExecuteNonQuery();
             }
         }
-        
+
         _connectionString = BuildConnectionString(dbPath, newPassword);
     }
-    
-    public SqliteConnection GetConnection()
-    {
-        try
-        {
+
+    public SqliteConnection GetConnection() {
+        try {
             return new SqliteConnection(_connectionString);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             Log.Error(ex, "Failed to create SqliteConnection.");
             throw;
         }
@@ -155,8 +147,7 @@ public class DatabaseContext {
 
     private void InitializeDatabase() {
         Log.Information("Initializing database.");
-        try
-        {
+        try {
             using var connection = GetConnection();
             connection.Open();
             Log.Debug("Database connection opened for initialization.");
@@ -293,26 +284,26 @@ public class DatabaseContext {
             );
         ");
 
-        var columnExists = connection.ExecuteScalar<int>(@"
+            var columnExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='Memo'");
 
-        if (columnExists == 0) {
-            // If the table exists but the column doesn't, add it. 
-            // We check if table exists first.
-            var tableExists = connection.ExecuteScalar<int>(@"
+            if (columnExists == 0) {
+                // If the table exists but the column doesn't, add it. 
+                // We check if table exists first.
+                var tableExists = connection.ExecuteScalar<int>(@"
                 SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
 
-            if (tableExists > 0) {
-                connection.Execute("ALTER TABLE Transactions ADD COLUMN Memo Text");
+                if (tableExists > 0) {
+                    connection.Execute("ALTER TABLE Transactions ADD COLUMN Memo Text");
+                }
             }
-        }
 
-        // Check if CreditCardDetails table exists
-        var ccDetailsTableExists = connection.ExecuteScalar<int>(@"
+            // Check if CreditCardDetails table exists
+            var ccDetailsTableExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM sqlite_master WHERE TYPE='table' AND name='CreditCardDetails'");
 
-        if (ccDetailsTableExists == 0) {
-            connection.Execute(@"
+            if (ccDetailsTableExists == 0) {
+                connection.Execute(@"
                 CREATE TABLE CreditCardDetails (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     AccountId INTEGER NOT NULL,
@@ -323,50 +314,49 @@ public class DatabaseContext {
                     GraceActive INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
                 )");
-        }
+            }
 
-        // Check if HexColor exists in Accounts table
-        var hexColorExists = connection.ExecuteScalar<int>(@"
+            // Check if HexColor exists in Accounts table
+            var hexColorExists = connection.ExecuteScalar<int>(@"
             SELECT COUNT(*) FROM pragma_table_info('Accounts') WHERE name='HexColor'");
 
-        if (hexColorExists == 0) {
-            connection.Execute("ALTER TABLE Accounts ADD COLUMN HexColor TEXT DEFAULT '#FF0000FF'");
-        }
-
-        // Check if FromAccountReconciledId exists in Transactions table
-        var fromAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
-            SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='FromAccountReconciledId'");
-
-        if (fromAccountReconciledIdExists == 0) {
-            var tableExists = connection.ExecuteScalar<int>(@"
-                SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-
-            if (tableExists > 0) {
-                connection.Execute(
-                    "ALTER TABLE Transactions ADD COLUMN FromAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
+            if (hexColorExists == 0) {
+                connection.Execute("ALTER TABLE Accounts ADD COLUMN HexColor TEXT DEFAULT '#FF0000FF'");
             }
+
+            // // Check if FromAccountReconciledId exists in Transactions table
+            // var fromAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
+            //     SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='FromAccountReconciledId'");
+            //
+            // if (fromAccountReconciledIdExists == 0) {
+            //     var tableExists = connection.ExecuteScalar<int>(@"
+            //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
+            //
+            //     if (tableExists > 0) {
+            //         connection.Execute(
+            //             "ALTER TABLE Transactions ADD COLUMN FromAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
+            //     }
+            // }
+            //
+            // // Check if ToAccountReconciledId exists in Transactions table
+            // var toAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
+            //     SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='ToAccountReconciledId'");
+            //
+            // if (toAccountReconciledIdExists == 0) {
+            //     var tableExists = connection.ExecuteScalar<int>(@"
+            //         SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
+            //
+            //     if (tableExists > 0) {
+            //         connection.Execute(
+            //             "ALTER TABLE Transactions ADD COLUMN ToAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
+            //     }
+            // }
+
+            Log.Information("Database initialization and schema updates completed successfully.");
         }
-
-        // Check if ToAccountReconciledId exists in Transactions table
-        var toAccountReconciledIdExists = connection.ExecuteScalar<int>(@"
-            SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='ToAccountReconciledId'");
-
-        if (toAccountReconciledIdExists == 0) {
-            var tableExists = connection.ExecuteScalar<int>(@"
-                SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
-
-            if (tableExists > 0) {
-                connection.Execute(
-                    "ALTER TABLE Transactions ADD COLUMN ToAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
-            }
+        catch (Exception ex) {
+            Log.Fatal(ex, "Database initialization failed.");
+            throw;
         }
-        
-        Log.Information("Database initialization and schema updates completed successfully.");
     }
-    catch (Exception ex)
-    {
-        Log.Fatal(ex, "Database initialization failed.");
-        throw;
-    }
-}
 }

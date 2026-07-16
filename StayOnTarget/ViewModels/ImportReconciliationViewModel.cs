@@ -328,19 +328,75 @@ public class ImportReconciliationViewModel : ViewModelBase {
     }
 
     private void AutoMatchTransactions() {
+        //In different levels of accuracy, try to find a transaction that is already in the system that matches. The more accurate match wins
         foreach (var imported in ImportedTransactions.Where(x => x.Date != null)) {
             if (imported.Date == null || imported.Date == DateTime.MinValue) {
                 //it is a pending transaction at the bank (BoA as an example)
                 continue;
             }
 
+            //same amount, same date, very close name
+            var exactMatch = UnreconciledManualTransactions.FirstOrDefault(m =>
+                Math.Abs(m.Amount) == Math.Abs(imported.Amount) &&
+                Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) == 0 && TransactionMatcher.IsMatch(imported.Payee, m.Description));
+            if (exactMatch != null) {
+                imported.IsReconciled = true;
+                imported.Status = $"Auto-Matched ({exactMatch.Description})";
+                imported.MatchedManualFitId = exactMatch.FitId;
+                imported.MatchedManualTransactionDate = exactMatch.TransactionDate;
+                imported.MatchedManualTransactionId = exactMatch.TransactionId;
+
+                exactMatch.IsMatched = true;
+                // Set selection defaults to help the user review
+                SelectedImported = imported;
+                SelectedManual = exactMatch;
+                continue;
+            }
+            
+            //same amount, close date, very close name
+            var closerMatch = UnreconciledManualTransactions.FirstOrDefault(m =>
+                Math.Abs(m.Amount) == Math.Abs(imported.Amount) &&
+                Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) <= 4 && TransactionMatcher.IsMatch(imported.Payee, m.Description));
+            if (closerMatch != null) {
+                imported.IsReconciled = true;
+                imported.Status = $"Auto-Matched ({closerMatch.Description})";
+                imported.MatchedManualFitId = closerMatch.FitId;
+                imported.MatchedManualTransactionDate = closerMatch.TransactionDate;
+                imported.MatchedManualTransactionId = closerMatch.TransactionId;
+
+                closerMatch.IsMatched = true;
+                // Set selection defaults to help the user review
+                SelectedImported = imported;
+                SelectedManual = closerMatch;
+                continue;
+            }
+            
+            //same amount, same date, name can be different
+            var closeMatch = UnreconciledManualTransactions.FirstOrDefault(m =>
+                Math.Abs(m.Amount) == Math.Abs(imported.Amount) &&
+                                               Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) == 0);
+            if (closeMatch != null) {
+                imported.IsReconciled = true;
+                imported.Status = $"Auto-Matched ({closeMatch.Description})";
+                imported.MatchedManualFitId = closeMatch.FitId;
+                imported.MatchedManualTransactionDate = closeMatch.TransactionDate;
+                imported.MatchedManualTransactionId = closeMatch.TransactionId;
+
+                closeMatch.IsMatched = true;
+                // Set selection defaults to help the user review
+                SelectedImported = imported;
+                SelectedManual = closeMatch;
+                continue;
+            }
+            
             // Look for a manual entry with the exact amount and a date within a 4-day window
             if (UnreconciledManualTransactions.Count(m =>
-                    m.Amount == imported.Amount &&
-                    Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) <= 4) > 1) {
+                    Math.Abs(m.Amount) ==  Math.Abs(imported.Amount) &&
+                                                    Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) <= 4) > 1) {
                 continue;
             }
 
+            //same amount, close date, name can be different
             var match = UnreconciledManualTransactions.FirstOrDefault(m =>
                 m.Amount == imported.Amount &&
                 Math.Abs((m.TransactionDate - imported.Date.Value).TotalDays) <= 4);
