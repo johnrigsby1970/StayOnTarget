@@ -95,8 +95,7 @@ public class ReconciliationViewModel : ViewModelBase {
             ToAccountId = delta > 0 ? _account.Id : null,
             TransactionDate = DateTime.Today,
             Description = delta > 0 ? "Value Increase" : "Value Decrease",
-            Amount = Math.Abs(delta),
-            PeriodDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)
+            Amount = Math.Abs(delta)
         };
 
         await _budgetService.UpsertTransactionAsync(adjustmentTransaction);

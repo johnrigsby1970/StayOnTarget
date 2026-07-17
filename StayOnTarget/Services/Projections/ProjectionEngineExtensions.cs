@@ -311,7 +311,7 @@ public static class ProjectionEngineExtensions {
                 var interest = Math.Round(accountBalances[acc.Id] * monthlyRate, 2);
                 accountBalances[acc.Id] += interest;
                 if (includedTotalAccounts.Contains(acc.Id)) {
-                    runningBalance -= interest;
+                    runningBalance += interest;
                 }
 
                 var item = new ProjectionItem {
@@ -369,10 +369,10 @@ public static class ProjectionEngineExtensions {
 
                 totalInterest = Math.Round(totalInterest, 2);
 
-                if (totalInterest >= 0) {
+                if (totalInterest <= 0) {
                     accountBalances[acc.Id] += totalInterest;
                     if (includedTotalAccounts.Contains(acc.Id)) {
-                        runningBalance -= totalInterest;
+                        runningBalance += totalInterest;
                     }
                 }
 
@@ -653,10 +653,6 @@ public static class ProjectionEngineExtensions {
         //bills are just like envelopes, except there is only one. We don't want to account for bills from
         //the past in a project, or bills that have been paid.
         foreach (var bill in bills) {
-            if (bill.ExpectedAmount == 500) {
-                var x = "";
-            }
-
             var nextDue = bill.NextDueDate ?? current;
             if (bill.NextDueDate == null) {
                 nextDue = new DateTime(current.Year, current.Month,
@@ -685,10 +681,6 @@ public static class ProjectionEngineExtensions {
                     var dueDate = (pb != null) ? pb.DueDate : nextDue;
                     if (dueDate >= DateTime.Today) {
                         var paidSuffix = (pb != null && pb.IsPaid) ? " (PAID)" : "";
-                        if (bill.ExpectedAmount == 500) {
-                            var x = "";
-                        }
-
                         var fromAccId = bill.AccountId ?? primaryChecking;
                         if (amountToUse != 0) {
                             if (bill.ToAccountId.HasValue) {

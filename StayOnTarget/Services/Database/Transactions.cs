@@ -6,7 +6,7 @@ using StayOnTarget.Models;
 namespace StayOnTarget.Services;
 
 public partial class BudgetService {
-    public IEnumerable<Transaction> GetTransactions(DateTime periodDate) {
+    public IEnumerable<Transaction> GetTransactions(DateTime periodStart, DateTime periodEnd) {
         using var conn = _db.GetConnection();
 
         var dbRows = conn.Query<dynamic>(@"
@@ -16,7 +16,11 @@ public partial class BudgetService {
             LEFT JOIN Accounts a1 ON t.AccountId = a1.Id
             LEFT JOIN Bills ON t.BillId = Bills.Id
             LEFT JOIN Buckets ON t.BucketId = Buckets.Id
-            WHERE t.PeriodDate = @periodDate", new { periodDate = periodDate.ToString("yyyy-MM-dd") }).ToList();
+            WHERE t.TransactionDate >= @periodStart AND t.TransactionDate < @periodEnd", 
+            new { 
+                periodStart = periodStart.ToString("yyyy-MM-dd"),
+                periodEnd = periodEnd.ToString("yyyy-MM-dd")
+            }).ToList();
 
         return MergeDbRowsToUiTransactions(dbRows);
     }
@@ -488,7 +492,6 @@ public partial class BudgetService {
             BillName = row.BillName,
             BucketId = row.BucketId != null ? (int)row.BucketId : null,
             BucketName = row.BucketName,
-            PeriodDate = DateTime.Parse(row.PeriodDate),
             IsPrincipalOnly = row.IsPrincipalOnly == 1,
             FitId = row.FitId?.ToString(),
             PaycheckId = row.PaycheckId != null ? (int)row.PaycheckId : null,
@@ -517,7 +520,7 @@ public partial class BudgetService {
         p.Add("AccountId", targetAccountId);
         p.Add("BillId", t.BillId);
         p.Add("BucketId", t.BucketId);
-        p.Add("PeriodDate", t.PeriodDate.ToString("yyyy-MM-dd"));
+        p.Add("PeriodDate", "1900-01-01");
         p.Add("IsPrincipalOnly", t.IsPrincipalOnly ? 1 : 0);
         p.Add("FitId", t.FitId.ToString());
         p.Add("PaycheckId", t.PaycheckId);

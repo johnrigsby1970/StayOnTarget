@@ -1100,27 +1100,6 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
-    // private void DeleteBucket(BudgetBucket? b) {
-    //     if (b != null) {
-    //         MessageBoxResult messageBoxResult = MessageBox.Show(
-    //             "Are you sure you want to delete this bucket?", // Message
-    //             "Delete Confirmation", // Title
-    //             MessageBoxButton.YesNo, // Buttons
-    //             MessageBoxImage.Warning // Icon
-    //         );
-    //
-    //         // Check the user's response
-    //         if (messageBoxResult == MessageBoxResult.Yes) {
-    //             // User confirmed deletion, proceed with your delete logic here
-    //             _budgetService.DeleteBucket(b.Id);
-    //             IsEditingBucket = false;
-    //             EditingBucketClone = null;
-    //             LoadData();
-    //             CalculateProjections();
-    //         }
-    //     }
-    // }
-
     private void DeleteBucket() {
         if (EditingBucketClone == null) return;
         var messageBoxResult = MessageBox.Show(
@@ -1210,27 +1189,6 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
-    // private void DeletePeriodBucket(PeriodBucket? pb) {
-    //     if (pb != null) {
-    //         MessageBoxResult messageBoxResult = MessageBox.Show(
-    //             "Are you sure you want to delete this period's bucket?\r\n\r\nIt will use the budgetted amount for the bucket instead. Save a $0 amount if you do not want to budget for this bucket for this period.", // Message
-    //             "Delete Confirmation", // Title
-    //             MessageBoxButton.YesNo, // Buttons
-    //             MessageBoxImage.Warning // Icon
-    //         );
-    //
-    //         // Check the user's response
-    //         if (messageBoxResult == MessageBoxResult.Yes) {
-    //             // User confirmed deletion, proceed with your delete logic here
-    //             _budgetService.DeletePeriodBucket(pb.Id);
-    //             IsEditingPeriodBucket = false;
-    //             EditingPeriodBucketClone = null;
-    //             LoadPeriodData();
-    //             CalculateProjections();
-    //         }
-    //     }
-    // }
-
     private void DeletePeriodBucket() {
         if (EditingPeriodBucketClone == null) return;
         var messageBoxResult = MessageBox.Show(
@@ -1265,7 +1223,7 @@ public class MainViewModel : ViewModelBase {
         try {
             var guid = Guid.NewGuid().ToString();
             EditingTransactionClone = new Transaction {
-                Description = "", Memo = "", Amount = 0, TransactionDate = DateTime.Today, PeriodDate = CurrentPeriodDate,
+                Description = "", Memo = "", Amount = 0, TransactionDate = DateTime.Today,
                 FitId = guid
             };
             SelectedTransaction = null;
@@ -1289,7 +1247,6 @@ public class MainViewModel : ViewModelBase {
                 AccountId = SelectedTransaction.AccountId,
                 ToAccountId = SelectedTransaction.ToAccountId,
                 BucketId = SelectedTransaction.BucketId,
-                PeriodDate = SelectedTransaction.PeriodDate,
                 IsPrincipalOnly = SelectedTransaction.IsPrincipalOnly,
                 IsRebalance = SelectedTransaction.IsRebalance,
                 PaycheckId = SelectedTransaction.PaycheckId,
@@ -1348,7 +1305,6 @@ public class MainViewModel : ViewModelBase {
         target.ToAccountId = clone.ToAccountId == 0 ? null : clone.ToAccountId;
         target.BucketId = clone.BucketId == 0 ? null : clone.BucketId;
         target.BillId = clone.BillId == 0 ? null : clone.BillId;
-        target.PeriodDate = clone.PeriodDate;
         target.IsPrincipalOnly = clone.IsPrincipalOnly;
         target.IsRebalance = clone.IsRebalance;
         target.PaycheckId = clone.PaycheckId;
@@ -1370,27 +1326,7 @@ public class MainViewModel : ViewModelBase {
             Log.Error(ex, "Error cancelling transaction edit.");
         }
     }
-
-    // private void DeleteTransaction(Transaction? t) {
-    //     if (t != null) {
-    //         MessageBoxResult messageBoxResult = MessageBox.Show(
-    //             "Are you sure you want to delete this transaction?", // Message
-    //             "Delete Confirmation", // Title
-    //             MessageBoxButton.YesNo, // Buttons
-    //             MessageBoxImage.Warning // Icon
-    //         );
-    //
-    //         // Check the user's response
-    //         if (messageBoxResult == MessageBoxResult.Yes) {
-    //             // User confirmed deletion, proceed with your delete logic here
-    //             _budgetService.DeleteTransaction(t.Id);
-    //             IsEditingTransaction = false;
-    //             EditingTransactionClone = null;
-    //             LoadPeriodData();
-    //             CalculateProjections();
-    //         }
-    //     }
-    // }
+    
     private void DeleteTransaction() {
         if (EditingTransactionClone == null) return;
         var messageBoxResult = MessageBox.Show(
@@ -1498,29 +1434,7 @@ public class MainViewModel : ViewModelBase {
             Log.Error(ex, "Error cancelling paycheck edit.");
         }
     }
-
-    // private void DeletePaycheck(Paycheck? p) {
-    //     if (p != null) {
-    //         MessageBoxResult messageBoxResult = MessageBox.Show(
-    //             "Are you sure you want to delete this paycheck?", // Message
-    //             "Delete Confirmation", // Title
-    //             MessageBoxButton.YesNo, // Buttons
-    //             MessageBoxImage.Warning // Icon
-    //         );
-    //
-    //         // Check the user's response
-    //         if (messageBoxResult == MessageBoxResult.Yes) {
-    //             // User confirmed deletion, proceed with your delete logic here
-    //             _budgetService.DeletePaycheck(p.Id);
-    //             IsEditingPaycheck = false;
-    //             EditingPaycheckClone = null;
-    //             LoadData();
-    //             RefreshPaychecks();
-    //             CalculateProjections();
-    //         }
-    //     }
-    // }
-
+    
     private void DeletePaycheck() {
         if (EditingPaycheckClone == null) return;
         var messageBoxResult = MessageBox.Show(
@@ -1653,8 +1567,7 @@ public class MainViewModel : ViewModelBase {
                         TransactionId = Guid.NewGuid(),
                         FitId = Guid.NewGuid().ToString(),
                         Description = "Opening Balance", 
-                        Memo = "Opening Balance", 
-                        PeriodDate = EditingAccountClone.BalanceAsOf
+                        Memo = "Opening Balance"
                     };
 
                     if (openingBalance.Amount != 0) {
@@ -1737,27 +1650,6 @@ public class MainViewModel : ViewModelBase {
             Log.Error(ex, "Error cancelling account edit.");
         }
     }
-
-    // private void DeleteAccount(Account? a) {
-    //     if (a != null) {
-    //         MessageBoxResult messageBoxResult = MessageBox.Show(
-    //             "Are you sure you want to delete this account?", // Message
-    //             "Delete Confirmation", // Title
-    //             MessageBoxButton.YesNo, // Buttons
-    //             MessageBoxImage.Warning // Icon
-    //         );
-    //
-    //         // Check the user's response
-    //         if (messageBoxResult == MessageBoxResult.Yes) {
-    //             // User confirmed deletion, proceed with your delete logic here
-    //             _budgetService.DeleteAccount(a.Id);
-    //             IsEditingAccount = false;
-    //             EditingAccountClone = null;
-    //             LoadData();
-    //             CalculateProjections();
-    //         }
-    //     }
-    // }
 
     private void DeleteAccount() {
         if (EditingAccountClone == null) return;
@@ -1977,8 +1869,11 @@ public class MainViewModel : ViewModelBase {
                 _budgetService.UpsertAccount(cashAccount);
                 accounts = _budgetService.GetAllAccounts().ToList();
             }
-
+            var accountBalances = _budgetService.GetAllAccountsAsOf(DateTime.Now).ToList();
             accounts = accounts.OrderBy(b => b.Name).ToList();
+            foreach (var a in accounts) {
+                a.Balance = accountBalances.SingleOrDefault(b => b.Id == a.Id)?.Balance??0;
+            }
             foreach (var a in accounts) a.PropertyChanged += Item_PropertyChanged;
             Accounts = new ObservableCollection<Account>(accounts);
 
@@ -2132,9 +2027,36 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
+    private DateTime GetNextPeriodDate(DateTime currentPeriodStart) {
+        if (ShowByMonth) {
+            return currentPeriodStart.AddMonths(1);
+        }
+
+        var allPaycheckDates = new List<DateTime>();
+        var end = currentPeriodStart.AddYears(1);
+        foreach (var pay in Paychecks.Where(p => p.Id == SelectedPeriodPaycheckId)) {
+            var nextPay = pay.StartDate;
+            while (nextPay < end) {
+                allPaycheckDates.Add(nextPay);
+                nextPay = pay.Frequency switch {
+                    Frequency.Weekly => nextPay.AddDays(7),
+                    Frequency.BiWeekly => nextPay.AddDays(14),
+                    Frequency.Monthly => nextPay.AddMonths(1),
+                    _ => nextPay.AddYears(100)
+                };
+            }
+        }
+
+        var sortedDates = allPaycheckDates.Distinct().OrderBy(d => d).ToList();
+        var nextDate = sortedDates.FirstOrDefault(d => d > currentPeriodStart);
+        
+        return nextDate == DateTime.MinValue ? currentPeriodStart.AddDays(14) : nextDate;
+    }
+
     private void LoadPeriodTransactions() {
         try {
-            var transactions = _budgetService.GetTransactions(CurrentPeriodDate).ToList();
+            var nextPeriodDate = GetNextPeriodDate(CurrentPeriodDate);
+            var transactions = _budgetService.GetTransactions(CurrentPeriodDate, nextPeriodDate).ToList();
             transactions = transactions.OrderBy(pb => pb.TransactionDate).ToList();
             CurrentPeriodTransactions = new ObservableCollection<Transaction>(transactions);
         }

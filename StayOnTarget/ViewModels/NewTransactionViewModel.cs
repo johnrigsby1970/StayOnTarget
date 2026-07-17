@@ -42,8 +42,6 @@ public class NewTransactionViewModel : ViewModelBase {
 
         LoadPaychecks();
 
-        EditingTransactionClone.PeriodDate = CurrentPeriodDate;
-
         Loaded = true;
     }
 
@@ -200,8 +198,31 @@ public class NewTransactionViewModel : ViewModelBase {
         OnPropertyChanged(nameof(CurrentPeriodBuckets));
     }
 
+    private DateTime GetNextPeriodDate(DateTime currentPeriodStart) {
+        var allPaycheckDates = new List<DateTime>();
+        var end = currentPeriodStart.AddYears(1);
+        foreach (var pay in Paychecks.Where(p => p.Id != 0)) {
+            var nextPay = pay.StartDate;
+            while (nextPay < end) {
+                allPaycheckDates.Add(nextPay);
+                nextPay = pay.Frequency switch {
+                    Frequency.Weekly => nextPay.AddDays(7),
+                    Frequency.BiWeekly => nextPay.AddDays(14),
+                    Frequency.Monthly => nextPay.AddMonths(1),
+                    _ => nextPay.AddYears(100)
+                };
+            }
+        }
+
+        var sortedDates = allPaycheckDates.Distinct().OrderBy(d => d).ToList();
+        var nextDate = sortedDates.FirstOrDefault(d => d > currentPeriodStart);
+
+        return nextDate == DateTime.MinValue ? currentPeriodStart.AddDays(14) : nextDate;
+    }
+
     private void LoadPeriodTransactions() {
-        var transactions = _budgetService.GetTransactions(CurrentPeriodDate).ToList();
+        var nextPeriodDate = GetNextPeriodDate(CurrentPeriodDate);
+        var transactions = _budgetService.GetTransactions(CurrentPeriodDate, nextPeriodDate).ToList();
         transactions = transactions.OrderBy(pb => pb.TransactionDate).ToList();
         CurrentPeriodTransactions = new ObservableCollection<Transaction>(transactions);
         OnPropertyChanged(nameof(CurrentPeriodTransactions));
