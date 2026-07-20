@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
+        <ApplicationIcon>Use AI Image Jul 18, 2026, 11_27_35.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
