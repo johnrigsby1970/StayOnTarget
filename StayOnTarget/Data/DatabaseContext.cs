@@ -173,6 +173,7 @@ public class DatabaseContext {
                 MortgageInsurance DECIMAL NOT NULL,
                 LoanPayment DECIMAL NOT NULL,
                 PaymentDate TEXT,
+                StatementDay INTEGER NOT NULL DEFAULT 1,
                 FOREIGN KEY(AccountId) REFERENCES Accounts(Id)
             );
 
@@ -234,6 +235,7 @@ public class DatabaseContext {
                 BucketId INTEGER REFERENCES Buckets(Id),
                 PeriodDate TEXT NOT NULL,
                 IsPrincipalOnly INTEGER DEFAULT 0,
+                IsInterestOnly INTEGER DEFAULT 0,
                 TransactionId TEXT NOT NULL,
                 FitId TEXT NOT NULL,
                 PaycheckId INTEGER REFERENCES Paychecks(Id),
@@ -285,7 +287,7 @@ public class DatabaseContext {
         ");
 
             var columnExists = connection.ExecuteScalar<int>(@"
-            SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='Memo'");
+            SELECT COUNT(*) FROM pragma_table_info('Transactions') WHERE name='IsInterestOnly'");
 
             if (columnExists == 0) {
                 // If the table exists but the column doesn't, add it. 
@@ -294,7 +296,7 @@ public class DatabaseContext {
                 SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Transactions'");
 
                 if (tableExists > 0) {
-                    connection.Execute("ALTER TABLE Transactions ADD COLUMN Memo Text");
+                    connection.Execute("ALTER TABLE Transactions ADD COLUMN IsInterestOnly INTEGER DEFAULT 0");
                 }
             }
 
@@ -351,6 +353,10 @@ public class DatabaseContext {
             //             "ALTER TABLE Transactions ADD COLUMN ToAccountReconciledId INTEGER REFERENCES AccountReconciliations(Id)");
             //     }
             // }
+
+            if (!connection.Query<dynamic>("PRAGMA table_info(MortgageDetails)").Any(x => x.name == "StatementDay")) {
+                connection.Execute("ALTER TABLE MortgageDetails ADD COLUMN StatementDay INTEGER NOT NULL DEFAULT 1;");
+            }
 
             Log.Information("Database initialization and schema updates completed successfully.");
         }

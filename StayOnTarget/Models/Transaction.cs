@@ -20,7 +20,7 @@ public class Transaction : ViewModelBase
     private bool _isReconciled;
     private bool _isCashAdvance;
     private bool _isBalanceTransfer;
-    private bool _isInterestAdjustment;
+    private bool _isInterestOnly;
     private int? _fromAccountReconciledId;
     private int? _toAccountReconciledId;
 
@@ -118,10 +118,10 @@ public class Transaction : ViewModelBase
         set => SetProperty(ref _isBalanceTransfer, value);
     }
 
-    public bool IsInterestAdjustment
+    public bool IsInterestOnly
     {
-        get => _isInterestAdjustment;
-        set => SetProperty(ref _isInterestAdjustment, value);
+        get => _isInterestOnly;
+        set => SetProperty(ref _isInterestOnly, value);
     }
 
     public int? FromAccountReconciledId

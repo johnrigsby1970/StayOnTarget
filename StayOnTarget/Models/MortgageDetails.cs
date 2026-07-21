@@ -9,9 +9,16 @@ public class MortgageDetails : ViewModelBase
     private decimal _mortgageInsurance;
     private decimal _loanPayment;
     private DateTime _paymentDate = DateTime.Today;
+    private int _statementDay;
 
     public int Id { get; set; }
     public int AccountId { get; set; }
+
+    public int StatementDay
+    {
+        get => _statementDay;
+        set => SetProperty(ref _statementDay, value);
+    }
 
     public decimal InterestRate
     {

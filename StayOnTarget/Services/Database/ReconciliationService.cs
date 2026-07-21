@@ -150,10 +150,10 @@ public class ReconciliationService {
             if (transaction.ToAccountId == accountId) {
                 bool isPrincipalOnly = transaction.IsPrincipalOnly;
                 bool isRebalance = transaction.IsRebalance;
-                bool isInterestAdjustment = transaction.IsInterestAdjustment;
+                bool isInterestOnly = transaction.IsInterestOnly;
 
                 if (account.Type == AccountType.Mortgage) {
-                    if (isRebalance || isInterestAdjustment)
+                    if (isRebalance || isInterestOnly)
                         balance += amount;
                     else {
                         decimal principal = amount;
@@ -167,7 +167,7 @@ public class ReconciliationService {
                     }
                 }
                 else if (account.Type == AccountType.CreditCard) {
-                    if (isRebalance || isInterestAdjustment)
+                    if (isRebalance || isInterestOnly)
                         balance += amount;
                     else
                         balance -= amount; // Payment reduces credit card balance

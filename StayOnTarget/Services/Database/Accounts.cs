@@ -132,17 +132,18 @@ public partial class BudgetService
                 account.MortgageDetails.Escrow,
                 account.MortgageDetails.MortgageInsurance,
                 account.MortgageDetails.LoanPayment,
-                PaymentDate = account.MortgageDetails.PaymentDate.ToString("yyyy-MM-dd")
+                PaymentDate = account.MortgageDetails.PaymentDate.ToString("yyyy-MM-dd"),
+                account.MortgageDetails.StatementDay
             };
             if (account.MortgageDetails.Id == 0)
             {
-                conn.Execute(@"INSERT INTO MortgageDetails (AccountId, InterestRate, Escrow, MortgageInsurance, LoanPayment, PaymentDate) 
-                               VALUES (@AccountId, @InterestRate, @Escrow, @MortgageInsurance, @LoanPayment, @PaymentDate)", mdParam);
+                conn.Execute(@"INSERT INTO MortgageDetails (AccountId, InterestRate, Escrow, MortgageInsurance, LoanPayment, PaymentDate, StatementDay) 
+                           VALUES (@AccountId, @InterestRate, @Escrow, @MortgageInsurance, @LoanPayment, @PaymentDate, @StatementDay)", mdParam);
             }
             else
             {
-                conn.Execute(@"UPDATE MortgageDetails SET InterestRate=@InterestRate, Escrow=@Escrow, 
-                               MortgageInsurance=@MortgageInsurance, LoanPayment=@LoanPayment, PaymentDate=@PaymentDate WHERE Id=@Id", mdParam);
+                conn.Execute(@"UPDATE MortgageDetails SET InterestRate=@InterestRate, Escrow=@Escrow,
+                           MortgageInsurance=@MortgageInsurance, LoanPayment=@LoanPayment, PaymentDate=@PaymentDate, StatementDay=@StatementDay WHERE Id=@Id", mdParam);
             }
         }
 

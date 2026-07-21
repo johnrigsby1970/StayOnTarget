@@ -1285,6 +1285,7 @@ public class MainViewModel : ViewModelBase {
         target.BucketId = clone.BucketId == 0 ? null : clone.BucketId;
         target.BillId = clone.BillId == 0 ? null : clone.BillId;
         target.IsPrincipalOnly = clone.IsPrincipalOnly;
+        target.IsInterestOnly = clone.IsInterestOnly;
         target.IsRebalance = clone.IsRebalance;
         target.PaycheckId = clone.PaycheckId;
         target.PaycheckOccurrenceDate = clone.PaycheckOccurrenceDate;
@@ -2109,6 +2110,7 @@ public class MainViewModel : ViewModelBase {
                 Owner = Application.Current.MainWindow
             };
             window.ShowDialog();
+            LoadData();
             CalculateProjections();
         }
         catch (Exception ex) {
@@ -2123,6 +2125,7 @@ public class MainViewModel : ViewModelBase {
                 Owner = Application.Current.MainWindow
             };
             window.ShowDialog();
+            LoadData();
             CalculateProjections();
         }
         catch (Exception ex) {

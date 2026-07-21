@@ -378,7 +378,8 @@ public static class ProjectionEngineExtensions {
 
                 // Reset Grace Period check
                 if (acc.CreditCardDetails.PayPreviousMonthBalanceInFull) {
-                    ccGraceActive[acc.Id] = (ccPaidThisCycle[acc.Id] >= ccUnpaidStatementBalance[acc.Id] - 0.01m);
+                    //Did they pay their balance this period? If so, they keep their grade period.
+                    ccGraceActive[acc.Id] = (ccPaidThisCycle[acc.Id] >= Math.Abs(ccUnpaidStatementBalance[acc.Id]) );
                 }
                 else {
                     ccGraceActive[acc.Id] = false;
@@ -440,7 +441,7 @@ public static class ProjectionEngineExtensions {
                     var hasInterestTransaction = transactions.Any(t =>
                         (t.AccountId == acc.Id || t.ToAccountId == acc.Id) &&
                         t.TransactionDate > periodStart && t.TransactionDate <= nextInterest &&
-                        (t.IsInterestAdjustment ||
+                        (t.IsInterestOnly ||
                          t.Description.Contains("Interest", StringComparison.OrdinalIgnoreCase)));
 
                     if (!hasInterestTransaction) {
@@ -470,7 +471,7 @@ public static class ProjectionEngineExtensions {
                     var hasInterestAdjustment = transactions.Any(t =>
                         (t.AccountId == acc.Id) &&
                         t.TransactionDate > periodStart && t.TransactionDate <= nextStatement &&
-                        (t.IsInterestAdjustment ||
+                        (t.IsInterestOnly ||
                          t.Description.Contains("Interest", StringComparison.OrdinalIgnoreCase)));
 
                     if (!hasInterestAdjustment) {
@@ -534,7 +535,7 @@ public static class ProjectionEngineExtensions {
                     transaction.PaycheckId, transaction.PaycheckOccurrenceDate,
                     ProjectionEngine.ProjectionEventType.Transaction,
                     transaction.IsPrincipalOnly,
-                    transaction.IsRebalance, transaction.IsInterestAdjustment, false, transaction.Id));
+                    transaction.IsRebalance, transaction.IsInterestOnly, false, transaction.Id));
             }
         }
     }

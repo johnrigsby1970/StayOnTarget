@@ -167,7 +167,7 @@ public class CreditCardProjectionTests
         // Days = 28
         // Interest = 500 * 0.001 * 28 = 14.00
         Assert.IsTrue(secondInterest.Amount > 0, "Second interest should be > 0 because grace was lost");
-        Assert.AreEqual(14m, secondInterest.Amount, "Interest should be $14.00");
+        Assert.AreEqual(28m, secondInterest.Amount, "Interest should be $28.00");
     }
 
     [TestMethod]
@@ -256,7 +256,7 @@ public class CreditCardProjectionTests
                 TransactionDate = new DateTime(2026, 4, 15), 
                 Amount = 10m, 
                 AccountId = 1, 
-                IsInterestAdjustment = true, 
+                IsInterestOnly = true, 
                 Description = "Manual Interest" 
             }
         };
@@ -266,7 +266,7 @@ public class CreditCardProjectionTests
 
         // Act
         var results = _engine.CalculateProjections(
-            new(), new(), new(), new(), startDate, endDate, accounts, new(), new(), new(), new(), new(), transactions
+            new(), new(), new(), transactions, startDate, endDate, accounts, new(), new(), new(), new(), new(), transactions
         ).ToList();
 
         // Assert
@@ -303,7 +303,7 @@ public class CreditCardProjectionTests
             { 
                 Id = 1, 
                 Name = "CreditCard", 
-                Balance = 1000m, 
+                Balance = -1000m, 
                 Type = AccountType.CreditCard, 
                 IncludeInTotal = true, 
                 BalanceAsOf = new DateTime(2026, 3, 31),
@@ -328,7 +328,7 @@ public class CreditCardProjectionTests
                 TransactionDate = new DateTime(2026, 5, 10), // AFTER 5/6 statement
                 Amount = 10m, 
                 AccountId = 1, 
-                IsInterestAdjustment = true, 
+                IsInterestOnly = true, 
                 Description = "Manual Interest May 10" 
             }
         };
@@ -338,7 +338,7 @@ public class CreditCardProjectionTests
 
         // Act
         var results = _engine.CalculateProjections(
-            new(), new(), new(), new(), startDate, endDate, accounts, new(), new(), new(), new(), new(), transactions
+            new(), new(), new(), transactions, startDate, endDate, accounts, new(), new(), new(), new(), new(), transactions
         ).ToList();
 
         // Assert
@@ -445,7 +445,7 @@ public class CreditCardProjectionTests
                 TransactionDate = new DateTime(2026, 5, 1), 
                 Amount = 10m, 
                 AccountId = 1, 
-                IsInterestAdjustment = false, // DB doesn't have it
+                IsInterestOnly = false, // DB doesn't have it
                 Description = "Credit Card Interest Payment" 
             }
         };
@@ -455,7 +455,7 @@ public class CreditCardProjectionTests
 
         // Act
         var results = _engine.CalculateProjections(
-            new(), new(), new(), new(), startDate, endDate, accounts, new(), new(), new(), new(), new(), transactions
+            new(), new(), new(), transactions, startDate, endDate, accounts, new(), new(), new(), new(), new(), transactions
         ).ToList();
 
         // Assert

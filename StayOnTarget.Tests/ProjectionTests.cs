@@ -286,7 +286,9 @@ namespace StayOnTarget.Tests
             // Arrange
             var today = DateTime.Today;
             var startOfMonth = new DateTime(today.Year, today.Month, 5);
-            if (startOfMonth < today) startOfMonth = startOfMonth.AddMonths(1);
+            if (startOfMonth < today) {
+                startOfMonth = startOfMonth.AddMonths(1);
+            }
 
             // 0 balance on 2/5/2026.
             // Transaction of $14.40 on 3/4/2026.
@@ -338,7 +340,14 @@ namespace StayOnTarget.Tests
                 transactions.Where(x=>x.BillId.HasValue).ToList(),
                 transactions.Where(x=>x.BucketId.HasValue).ToList(),
                 transactions,
-                startDate, endDate, accounts, new List<Paycheck>(), new List<Bill>(), new List<BudgetBucket>(), new List<PeriodBill>(), new List<PeriodBucket>(), transactions).ToList();
+                startDate, 
+                endDate, 
+                accounts, 
+                new List<Paycheck>(), 
+                new List<Bill>(), 
+                new List<BudgetBucket>(), 
+                new List<PeriodBill>(), 
+                new List<PeriodBucket>(), transactions).ToList();
 
             // Assert
             // startOfMonth statement: balance 0. PaidInFull = true.
@@ -363,7 +372,7 @@ namespace StayOnTarget.Tests
             // So interest would show up on startOfMonth + 3 months.
             
             var mayStatement = results.FirstOrDefault(r => r.Description.Contains("Credit Card Interest") && r.TransactionDate == startOfMonth.AddMonths(3));
-            Assert.IsNotNull(mayStatement, "May statement (startOfMonth + 3 months) should exist");
+            Assert.IsNotNull(mayStatement, "Statement (startOfMonth + 3 months) should exist");
             // In the simulation, interest is a negative value for debts (increases balance)
             Assert.IsTrue(mayStatement.Amount < 0, $"Interest (startOfMonth + 3 months) should be < 0, but was {mayStatement.Amount}");
             Assert.IsTrue(Math.Abs(mayStatement.AccountBalances["CreditCard"]) > 14.40m, "Balance should increase due to interest");
@@ -532,7 +541,7 @@ namespace StayOnTarget.Tests
                     TransactionDate = new DateTime(2026, 2, 10), 
                     Amount = 25, 
                     AccountId = 1, 
-                    IsInterestAdjustment = true,
+                    IsInterestOnly = true,
                     Description = "Actual Interest" 
                 }
             };
@@ -697,7 +706,7 @@ namespace StayOnTarget.Tests
                     Amount = -1000,
                     TransactionDate = startOfMonth.AddDays(9),
                     AccountId = 1,
-                    IsInterestAdjustment = true
+                    IsInterestOnly = true
                 }
             };
 
