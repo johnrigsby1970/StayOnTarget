@@ -654,11 +654,18 @@ public static class ProjectionEngineExtensions {
         //bills are just like envelopes, except there is only one. We don't want to account for bills from
         //the past in a project, or bills that have been paid.
         foreach (var bill in bills) {
-            var nextDue = bill.NextDueDate ?? current;
+            DateTime nextDue;
             if (bill.NextDueDate == null) {
+                var dueDay = Math.Max(1, bill.DueDay);
                 nextDue = new DateTime(current.Year, current.Month,
-                    Math.Min(bill.DueDay, DateTime.DaysInMonth(current.Year, current.Month)));
+                    Math.Min(dueDay, DateTime.DaysInMonth(current.Year, current.Month)));
                 if (nextDue < current) nextDue = nextDue.AddMonths(1);
+            }
+            else {
+                nextDue = bill.NextDueDate.Value;
+                while (bill.Frequency== Frequency.Yearly && nextDue < current) {
+                    nextDue = nextDue.AddYears(1);
+                }
             }
 
             while (nextDue < endDate) {

@@ -1075,24 +1075,78 @@
                                                  Text="{Binding EditingBillClone.Name, UpdateSourceTrigger=PropertyChanged}"
                                                  Margin="5" />
 
-                                        <Label Grid.Column="2" Grid.Row="0" Content="Budgeted:" />
-                                        <TextBox Grid.Column="3" Grid.Row="0"
+                                        <Label Grid.Column="2" Grid.Row="0" Content="Frequency:" />
+                                        <ComboBox Grid.Column="3" Grid.Row="0"
+                                                  ItemsSource="{Binding BillFrequencies}"
+                                                  SelectedItem="{Binding EditingBillClone.Frequency}" Margin="5" />
+                                        
+                                        <Label Grid.Column="0" Grid.Row="1" Content="Budgeted:" />
+                                        <TextBox Grid.Column="1" Grid.Row="1"
                                                  helpers:TextBoxBehavior.IsNumericOnly="True"
                                                  Text="{Binding EditingBillClone.ExpectedAmount, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.00;-0.00;''}}"
                                                  Margin="5" />
 
-                                        <Label Grid.Column="0" Grid.Row="1" Content="Due Day:" />
-                                        <TextBox Grid.Column="1" Grid.Row="1"
+                                        <Label Grid.Column="2" Grid.Row="1" Content="Due Day:">
+                                            <Label.Style>
+                                                <Style TargetType="Label">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding EditingBillClone.Frequency}" Value="Monthly">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Label.Style>
+                                        </Label>
+                                        <TextBox Grid.Column="3" Grid.Row="1"
                                                  Text="{Binding EditingBillClone.DueDay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Margin="5" />
+                                                 Margin="5">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding EditingBillClone.Frequency}" Value="Monthly">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
 
-                                        <Label Grid.Column="2" Grid.Row="1" Content="From Account:" />
-                                        <ComboBox Grid.Column="3" Grid.Row="1" ItemsSource="{Binding AccountsWithNone}"
+                                        <Label Grid.Column="2" Grid.Row="1" Content="Next Due Date:">
+                                            <Label.Style>
+                                                <Style TargetType="Label">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding EditingBillClone.Frequency}" Value="Yearly">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Label.Style>
+                                        </Label>
+                                        <DatePicker Grid.Column="3" Grid.Row="1"
+                                                    SelectedDate="{Binding EditingBillClone.NextDueDate}"
+                                                    Margin="5">
+                                            <DatePicker.Style>
+                                                <Style TargetType="DatePicker">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding EditingBillClone.Frequency}" Value="Yearly">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </DatePicker.Style>
+                                        </DatePicker>
+
+                                        <Label Grid.Column="0" Grid.Row="2" Content="From Account:" />
+                                        <ComboBox Grid.Column="1" Grid.Row="2" ItemsSource="{Binding AccountsWithNone}"
                                                   SelectedValue="{Binding EditingBillClone.AccountId}"
                                                   SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
 
-                                        <Label Grid.Column="0" Grid.Row="2" Content="To Account:" />
-                                        <ComboBox Grid.Column="1" Grid.Row="2" ItemsSource="{Binding AccountsWithNone}"
+                                        <Label Grid.Column="2" Grid.Row="2" Content="To Account:" />
+                                        <ComboBox Grid.Column="3" Grid.Row="2" ItemsSource="{Binding AccountsWithNone}"
                                                   SelectedValue="{Binding EditingBillClone.ToAccountId}"
                                                   SelectedValuePath="Id" DisplayMemberPath="Name" Margin="5" />
                                     </Grid>

@@ -520,6 +520,8 @@ public class MainViewModel : ViewModelBase {
     public bool IsNotEditingTransaction => !IsEditingTransaction;
     public bool CanEditTransaction => SelectedTransaction != null;
 
+    public IEnumerable<Frequency> BillFrequencies { get; } = new[] { Frequency.Monthly, Frequency.Yearly };
+
     public Bill? EditingBillClone {
         get => _editingBillClone;
         set => SetProperty(ref _editingBillClone, value);
@@ -821,6 +823,21 @@ public class MainViewModel : ViewModelBase {
         if (EditingBillClone == null) return;
 
         try {
+            if (EditingBillClone.Frequency == Frequency.Monthly) {
+                if (EditingBillClone.DueDay < 1 || EditingBillClone.DueDay > 31) {
+                    MessageBox.Show("Due Day must be between 1 and 31 for Monthly bills.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                EditingBillClone.NextDueDate = null;
+            }
+            else if (EditingBillClone.Frequency == Frequency.Yearly) {
+                if (EditingBillClone.NextDueDate == null) {
+                    MessageBox.Show("Next Due Date is required for Yearly bills.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                EditingBillClone.DueDay = 0;
+            }
+
             if (EditingBillClone.AccountId == 0) EditingBillClone.AccountId = null;
             if (EditingBillClone.ToAccountId == 0) EditingBillClone.ToAccountId = null;
 
@@ -848,8 +865,8 @@ public class MainViewModel : ViewModelBase {
         target.ExpectedAmount = clone.ExpectedAmount;
         target.Frequency = clone.Frequency;
         target.DueDay = clone.DueDay;
-        target.AccountId = clone.AccountId == 0 ? null : clone.AccountId;
-        target.ToAccountId = clone.ToAccountId == 0 ? null : clone.ToAccountId;
+        target.AccountId = (clone.AccountId == 0 || clone.AccountId == null) ? null : clone.AccountId;
+        target.ToAccountId = (clone.ToAccountId == 0 || clone.ToAccountId == null) ? null : clone.ToAccountId;
         target.NextDueDate = clone.NextDueDate;
         target.Category = clone.Category;
         target.IsActive = clone.IsActive;
