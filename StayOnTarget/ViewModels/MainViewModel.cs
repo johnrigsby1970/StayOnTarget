@@ -830,9 +830,9 @@ public class MainViewModel : ViewModelBase {
             }
             else {
                 _budgetService.UpsertBill(EditingBillClone);
-                LoadData();
             }
 
+            LoadData();
             IsEditingBill = false;
             EditingBillClone = null;
             CalculateProjections();
@@ -976,28 +976,7 @@ public class MainViewModel : ViewModelBase {
         target.DueDate = clone.DueDate;
         target.IsPaid = clone.IsPaid;
     }
-
-    // private void DeleteBill(Bill? b) {
-    //     if (b != null) {
-    //         MessageBoxResult messageBoxResult = MessageBox.Show(
-    //             "Are you sure you want to delete this bill?", // Message
-    //             "Delete Confirmation", // Title
-    //             MessageBoxButton.YesNo, // Buttons
-    //             MessageBoxImage.Warning // Icon
-    //         );
-    //
-    //         // Check the user's response
-    //         if (messageBoxResult == MessageBoxResult.Yes) {
-    //             // User confirmed deletion, proceed with your delete logic here
-    //             _budgetService.DeleteBill(b.Id);
-    //             IsEditingBill = false;
-    //             EditingBillClone = null;
-    //             LoadData();
-    //             CalculateProjections();
-    //         }
-    //     }
-    // }
-
+    
     private void DeleteBill() {
         if (EditingBillClone == null) return;
         var messageBoxResult = MessageBox.Show(
@@ -1070,9 +1049,9 @@ public class MainViewModel : ViewModelBase {
             }
             else {
                 _budgetService.UpsertBucket(EditingBucketClone);
-                LoadData();
             }
-
+            
+            LoadData();
             IsEditingBucket = false;
             EditingBucketClone = null;
             CalculateProjections();
@@ -1593,10 +1572,9 @@ public class MainViewModel : ViewModelBase {
                                 openingBalance.TransactionDate);
                         }
                     }
-
-                    LoadData();
                 }
 
+                LoadData();
                 IsEditingAccount = false;
                 EditingAccountClone = null;
                 CalculateProjections();
