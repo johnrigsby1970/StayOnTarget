@@ -718,7 +718,7 @@ public static class ProjectionEngineExtensions {
         List<Transaction> allPaycheckTransactions,
         DateTime current,
         DateTime endDate) {
-        var cashAccount = accounts.FirstOrDefault(a => a.Name == "Household Cash");
+        var cashAccount = accounts.FirstOrDefault(a => a.Name == "Household Cash" && a.Type==AccountType.Cash);
         foreach (var pay in paychecks) {
             var nextPay = pay.StartDate;
             var endPay = pay.StartDate;

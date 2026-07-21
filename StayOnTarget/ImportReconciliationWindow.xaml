@@ -24,6 +24,15 @@
             <Setter Property="Background" Value="White" />
             <Setter Property="GridLinesVisibility" Value="All" />
         </Style>
+
+        <Style TargetType="{x:Type DataGridRow}">
+            <Style.Resources>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#3B82F6" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#3B82F6" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White" />
+            </Style.Resources>
+        </Style>
         <Style TargetType="{x:Type DataGridColumnHeader}">
             <Setter Property="Background" Value="#E2E8F0" />
         
@@ -79,10 +88,69 @@
                               SelectionMode="Single"
                               RowDetailsVisibilityMode="Collapsed">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="100" />
-                            <DataGridTextColumn Header="Payee (Import)" Binding="{Binding Payee}" Width="*" />
-                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=C}" Width="100" />
-                            <DataGridTextColumn Header="Reconciliation Status" Binding="{Binding Status}" Width="180">
+                            <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}">
+                                <DataGridCheckBoxColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Command="{Binding DataContext.ToggleSelectionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                    </DataTemplate>
+                                </DataGridCheckBoxColumn.HeaderTemplate>
+                            </DataGridCheckBoxColumn>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="80" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Payee (Import)" Binding="{Binding Payee}" Width="*" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=C}" Width="80" IsReadOnly="True" />
+                            <DataGridComboBoxColumn Header="Bill" 
+                                                    SelectedValueBinding="{Binding BillId}"
+                                                    SelectedValuePath="Id"
+                                                    DisplayMemberPath="Name"
+                                                    Width="120">
+                                <DataGridComboBoxColumn.ElementStyle>
+                                    <Style TargetType="ComboBox">
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.BillsWithNone, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsReconciled}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridComboBoxColumn.ElementStyle>
+                                <DataGridComboBoxColumn.EditingElementStyle>
+                                    <Style TargetType="ComboBox">
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.BillsWithNone, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsReconciled}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridComboBoxColumn.EditingElementStyle>
+                            </DataGridComboBoxColumn>
+                            <DataGridComboBoxColumn Header="Bucket" 
+                                                    SelectedValueBinding="{Binding BucketId}"
+                                                    SelectedValuePath="Id"
+                                                    DisplayMemberPath="Name"
+                                                    Width="120">
+                                <DataGridComboBoxColumn.ElementStyle>
+                                    <Style TargetType="ComboBox">
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.BucketsWithNone, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsReconciled}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridComboBoxColumn.ElementStyle>
+                                <DataGridComboBoxColumn.EditingElementStyle>
+                                    <Style TargetType="ComboBox">
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.BucketsWithNone, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsReconciled}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridComboBoxColumn.EditingElementStyle>
+                            </DataGridComboBoxColumn>
+                            <DataGridTextColumn Header="Reconciliation Status" Binding="{Binding Status}" Width="150" IsReadOnly="True">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontWeight" Value="SemiBold" />
@@ -109,7 +177,7 @@
                                   CanUserAddRows="False"
                                   SelectionMode="Single">
                             <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow">
+                                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsMatched}" Value="True">
                                             <Setter Property="Background" Value="DodgerBlue"/>

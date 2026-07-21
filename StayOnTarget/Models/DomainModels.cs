@@ -29,5 +29,8 @@ public enum AccountType
     PersonalLoan,
     CreditCard,
     RealEstate,
-    AppreciatingAsset
+    AppreciatingAsset,
+    Auto,
+    CollegeFund,
+    Cash
 }

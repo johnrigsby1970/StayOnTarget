@@ -6,6 +6,8 @@ public class ManualTransactionViewModel : ViewModelBase {
     public DateTime TransactionDate { get; set; }
     public decimal Amount { get; set; }
     public string Description { get; set; } = string.Empty;
+    public int? BucketId { get; set; }
+    public int? BillId { get; set; }
         
     private bool _isMatched;
 

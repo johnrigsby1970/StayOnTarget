@@ -147,7 +147,7 @@
                         Width="Auto" Margin="0,0" />
                     
                     <StackPanel Orientation="Horizontal"
-                                Visibility="{Binding Account.Type, ConverterParameter='RealEstate|AppreciatingAsset|Investment|Brokerage|Retirement401k|CD', Converter={StaticResource AccountTypeToVisibilityConverter}}">
+                                Visibility="{Binding Account.Type, ConverterParameter='RealEstate|AppreciatingAsset|Investment|Brokerage|Retirement401k|CD|CollegeFund', Converter={StaticResource AccountTypeToVisibilityConverter}}">
                         <Label Content="Current Value:" Margin="20,0,0,0" />
                         <TextBox
                             Text="{Binding CurrentAssetValue, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
@@ -188,7 +188,7 @@
                 <!-- </StackPanel> -->
                 <StackPanel Grid.Row="3" Margin="0,5"
                             Orientation="Horizontal" 
-                            Visibility="{Binding Account.Type, ConverterParameter='CreditCard|Checking|Savings|Mortgage|PersonalLoan|Investment|CD|Retirement401k|Brokerage', Converter={StaticResource AccountTypeToVisibilityConverter}, FallbackValue=Collapsed}">
+                            Visibility="{Binding Account.Type, ConverterParameter='CreditCard|Checking|Savings|Mortgage|PersonalLoan|Investment|CD|Retirement401k|Brokerage|CollegeFund|Cash|Auto', Converter={StaticResource AccountTypeToVisibilityConverter}, FallbackValue=Collapsed}">
                     
                     <Label Content="Reconciled balance:" Margin="0,0" />
 

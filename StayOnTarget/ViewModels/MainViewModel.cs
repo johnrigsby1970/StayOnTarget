@@ -1858,11 +1858,11 @@ public class MainViewModel : ViewModelBase {
         _isLoadingData = true;
         try {
             var accounts = _budgetService.GetAllAccounts().ToList();
-            if (accounts.All(a => a.Name != "Household Cash")) {
+            if (accounts.All(a => !(a.Name == "Household Cash" && a.Type==AccountType.Cash))) {
                 Log.Information("Household Cash account not found. Creating default.");
                 var cashAccount = new Account {
                     Name = "Household Cash",
-                    Type = AccountType.Savings,
+                    Type = AccountType.Cash,
                     Balance = 0,
                     IncludeInTotal = true
                 };

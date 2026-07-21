@@ -23,5 +23,23 @@
         public string? MatchedManualFitId { get; set; }
         public DateTime? MatchedManualTransactionDate { get; set; }
         public string? MatchedManualTransactionId { get; set; }
+
+        private int? _bucketId;
+        public int? BucketId {
+            get => _bucketId;
+            set => SetProperty(ref _bucketId, value);
+        }
+
+        private int? _billId;
+        public int? BillId {
+            get => _billId;
+            set => SetProperty(ref _billId, value);
+        }
+
+        private bool _isSelected;
+        public bool IsSelected {
+            get => _isSelected;
+            set => SetProperty(ref _isSelected, value);
+        }
     }
 }

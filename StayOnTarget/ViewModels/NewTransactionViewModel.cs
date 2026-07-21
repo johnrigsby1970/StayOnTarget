@@ -137,10 +137,10 @@ public class NewTransactionViewModel : ViewModelBase {
     private void LoadPeriodData() {
         try {
             var accounts = _budgetService.GetAllAccounts().ToList();
-            if (accounts.All(a => a.Name != "Household Cash")) {
+            if (accounts.All(a => a.Name != "Household Cash" && a.Type != AccountType.Cash)) {
                 var cashAccount = new Account {
                     Name = "Household Cash",
-                    Type = AccountType.Savings,
+                    Type = AccountType.Cash,
                     Balance = 0,
                     IncludeInTotal = true
                 };

@@ -97,6 +97,10 @@ public class ImportReconciliationViewModel : ViewModelBase {
     public ICommand CancelNewTransactionCommand { get; }
     public ICommand SaveNewTransactionCommand { get; }
 
+    public ObservableCollection<Bill> BillsWithNone { get; } = new();
+    public ObservableCollection<BudgetBucket> BucketsWithNone { get; } = new();
+    public ICommand ToggleSelectionCommand { get; }
+
     public ImportReconciliationViewModel(Account account, BudgetService budgetService) {
         _account = account;
         _budgetService = budgetService;
@@ -109,15 +113,32 @@ public class ImportReconciliationViewModel : ViewModelBase {
 
         SaveCommand = new RelayCommand(param => Save());
 
+        ToggleSelectionCommand = new RelayCommand(param => {
+            bool allSelected = ImportedTransactions.All(x => x.IsSelected);
+            bool allUnselected = ImportedTransactions.All(x => !x.IsSelected);
+
+            if (allSelected) {
+                foreach (var t in ImportedTransactions) t.IsSelected = false;
+            }
+            else if (allUnselected) {
+                foreach (var t in ImportedTransactions) t.IsSelected = true;
+            }
+            else {
+                foreach (var t in ImportedTransactions) {
+                    if (!t.IsSelected) t.IsSelected = true;
+                }
+            }
+        });
+
         // Use a lambda to capture the parameter (param) and call your method
         LinkTransactionsCommand = new RelayCommand(
             param => LinkTransactions(),
-            param => SelectedImported != null && SelectedManual != null
+            param => SelectedImported != null && !SelectedImported.IsReconciled && SelectedManual != null && !SelectedManual.IsMatched
         );
 
         ImportAsNewCommand = new RelayCommand(
             param => ImportAsNew(),
-            param => SelectedImported != null
+            param => SelectedImported != null && !SelectedImported.IsReconciled
         );
 
         ClearMatchCommand = new RelayCommand(
@@ -136,6 +157,8 @@ public class ImportReconciliationViewModel : ViewModelBase {
         var fixDate = false;
 
         var differencesInDates = ImportedTransactions.Where(x =>
+            x.IsSelected &&
+            x.IsReconciled &&
             x.MatchedManualTransactionDate != null &&
             DateOnly.FromDateTime(x.MatchedManualTransactionDate.Value.Date) != DateOnly.FromDateTime(x.Date.Value));
 
@@ -152,7 +175,9 @@ public class ImportReconciliationViewModel : ViewModelBase {
         // 2. Create a list to track all your running database tasks
         var saveTasks = new List<Task>();
 
+        // Handled matched transactions
         foreach (var match in ImportedTransactions.Where(x =>
+                     x.IsSelected &&
                      x.IsReconciled && !string.IsNullOrEmpty(x.MatchedManualTransactionId) &&
                      x.MatchedManualTransactionDate != null && !string.IsNullOrEmpty(x.MatchedManualFitId))) {
             // Track each background database call
@@ -166,6 +191,20 @@ public class ImportReconciliationViewModel : ViewModelBase {
             );
 
             saveTasks.Add(task);
+        }
+
+        // Handle new transactions that are checked but not matched
+        foreach (var newItem in ImportedTransactions.Where(x => x.IsSelected && !x.IsReconciled)) {
+            var t = new Transaction {
+                AccountId = _account.Id,
+                Amount = newItem.Amount,
+                TransactionDate = newItem.Date ?? DateTime.Now,
+                Description = newItem.Payee,
+                FitId = newItem.BankId,
+                BillId = newItem.BillId == 0 ? null : newItem.BillId,
+                BucketId = newItem.BucketId == 0 ? null : newItem.BucketId
+            };
+            saveTasks.Add(_budgetService.UpsertTransactionAsync(t));
         }
 
         // 3. Pause execution here until ALL database operations are 100% complete
@@ -405,6 +444,9 @@ public class ImportReconciliationViewModel : ViewModelBase {
                 imported.MatchedManualFitId = closeMatch.FitId;
                 imported.MatchedManualTransactionDate = closeMatch.TransactionDate;
                 imported.MatchedManualTransactionId = closeMatch.TransactionId;
+                imported.BillId = closeMatch.BillId;
+                imported.BucketId = closeMatch.BucketId;
+                imported.IsSelected = true;
 
                 closeMatch.IsMatched = true;
                 // Set selection defaults to help the user review
@@ -431,6 +473,9 @@ public class ImportReconciliationViewModel : ViewModelBase {
                 imported.MatchedManualFitId = match.FitId;
                 imported.MatchedManualTransactionDate = match.TransactionDate;
                 imported.MatchedManualTransactionId = match.TransactionId;
+                imported.BillId = match.BillId;
+                imported.BucketId = match.BucketId;
+                imported.IsSelected = true;
 
                 match.IsMatched = true;
                 // Set selection defaults to help the user review
@@ -459,6 +504,9 @@ public class ImportReconciliationViewModel : ViewModelBase {
         SelectedImported.MatchedManualFitId = SelectedManual.FitId;
         SelectedImported.MatchedManualTransactionDate = SelectedManual.TransactionDate;
         SelectedImported.MatchedManualTransactionId = SelectedManual.TransactionId;
+        SelectedImported.BillId = SelectedManual.BillId;
+        SelectedImported.BucketId = SelectedManual.BucketId;
+        SelectedImported.IsSelected = true;
 
         SelectedManual.IsMatched = true;
         OnPropertyChanged(nameof(SelectedManual));
@@ -478,6 +526,9 @@ public class ImportReconciliationViewModel : ViewModelBase {
             SelectedImported.MatchedManualFitId = null;
             SelectedImported.MatchedManualTransactionDate = null;
             SelectedImported.MatchedManualTransactionId = null;
+            SelectedImported.BillId = null;
+            SelectedImported.BucketId = null;
+            SelectedImported.IsSelected = false;
 
             manual.IsMatched = false;
         }
@@ -515,8 +566,22 @@ public class ImportReconciliationViewModel : ViewModelBase {
             UnreconciledManualTransactions.Add(new ManualTransactionViewModel {
                 FitId = transaction.FitId, TransactionDate = transaction.TransactionDate,
                 Amount = transaction.Amount,
-                Description = transaction.Description, TransactionId = transaction.TransactionId.ToString()
+                Description = transaction.Description, TransactionId = transaction.TransactionId.ToString(),
+                BillId = transaction.BillId,
+                BucketId = transaction.BucketId
             });
+        }
+
+        BillsWithNone.Clear();
+        BillsWithNone.Add(new Bill { Id = 0, Name = "None" });
+        foreach (var bill in _budgetService.GetAllBills()) {
+            BillsWithNone.Add(bill);
+        }
+
+        BucketsWithNone.Clear();
+        BucketsWithNone.Add(new BudgetBucket { Id = 0, Name = "None" });
+        foreach (var bucket in _budgetService.GetAllBuckets()) {
+            BucketsWithNone.Add(bucket);
         }
     }
 }
