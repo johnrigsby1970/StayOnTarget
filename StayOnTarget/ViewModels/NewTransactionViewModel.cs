@@ -158,14 +158,7 @@ public class NewTransactionViewModel : ViewModelBase {
         get => _currentPeriodBills;
         set => SetProperty(ref _currentPeriodBills, value);
     }
-
-    private ObservableCollection<PeriodBucket> _currentPeriodBuckets = new();
-
-    public ObservableCollection<PeriodBucket> CurrentPeriodBuckets {
-        get => _currentPeriodBuckets;
-        set => SetProperty(ref _currentPeriodBuckets, value);
-    }
-
+    
     public DateTime CurrentPeriodDate {
         get => _currentPeriodDate;
         set {
@@ -262,7 +255,6 @@ public class NewTransactionViewModel : ViewModelBase {
         }
 
         await LoadPeriodBillsAsync();
-        await LoadPeriodBucketsAsync();
         await LoadPeriodTransactionsAsync();
     }
 
@@ -279,19 +271,7 @@ public class NewTransactionViewModel : ViewModelBase {
             
         }
     }
-
-    private async Task LoadPeriodBucketsAsync() {
-        try {
-            var pBuckets = (await _budgetService.GetPeriodBucketsIncludingMonthlyAsync(CurrentPeriodDate)).ToList();
-            CurrentPeriodBuckets = new ObservableCollection<PeriodBucket>(pBuckets);
-            OnPropertyChanged(nameof(CurrentPeriodBuckets));
-        }
-        catch (Exception ex) {
-            Log.Error(ex, "Error loading period buckets in NewTransactionViewModel.");
-            
-        }
-    }
-
+    
     private DateTime GetNextPeriodDate(DateTime currentPeriodStart) {
         try {
             var allPaycheckDates = new List<DateTime>();

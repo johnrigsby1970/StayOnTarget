@@ -557,20 +557,68 @@ public class DatabaseContext {
             // Seed Default Categories
             CategorySeeder.SeedDefaultCategories(connection);
 
-            connection.Execute(@"
-                CREATE INDEX IF NOT EXISTS IX_Transactions_AccountId ON Transactions(AccountId);
-                CREATE INDEX IF NOT EXISTS IX_Transactions_TransactionDate ON Transactions(TransactionDate);
-                CREATE INDEX IF NOT EXISTS IX_Transactions_BucketId ON Transactions(BucketId);
-                CREATE INDEX IF NOT EXISTS IX_Transactions_SubCategoryId ON Transactions(SubCategoryId);
-                CREATE INDEX IF NOT EXISTS IX_Transactions_BillId ON Transactions(BillId);
-                CREATE INDEX IF NOT EXISTS IX_Bills_AccountId ON Bills(AccountId);
-                CREATE INDEX IF NOT EXISTS IX_Bills_BucketId ON Bills(BucketId);
-                CREATE INDEX IF NOT EXISTS IX_Subcategories_CategoryId ON Subcategories(CategoryId);
-                CREATE INDEX IF NOT EXISTS IX_Buckets_AccountId ON Buckets(AccountId);
-                CREATE UNIQUE INDEX IF NOT EXISTS UX_AccountReconciliations_AccountId_AsOfDate 
-                ON AccountReconciliations(AccountId, ReconciledAsOfDate) 
-                WHERE IsInvalidated = 0;
-            ");
+//             connection.Execute(@"
+//                 CREATE INDEX IF NOT EXISTS IX_Transactions_AccountId ON Transactions(AccountId);
+//                 CREATE INDEX IF NOT EXISTS IX_Transactions_TransactionDate ON Transactions(TransactionDate);
+//                 CREATE INDEX IF NOT EXISTS IX_Transactions_BucketId ON Transactions(BucketId);
+//                 CREATE INDEX IF NOT EXISTS IX_Transactions_SubCategoryId ON Transactions(SubCategoryId);
+//                 CREATE INDEX IF NOT EXISTS IX_Transactions_BillId ON Transactions(BillId);
+//                 CREATE INDEX IF NOT EXISTS IX_Bills_AccountId ON Bills(AccountId);
+//                 CREATE INDEX IF NOT EXISTS IX_Bills_BucketId ON Bills(BucketId);
+//                 CREATE INDEX IF NOT EXISTS IX_Subcategories_CategoryId ON Subcategories(CategoryId);
+//                 CREATE INDEX IF NOT EXISTS IX_Buckets_AccountId ON Buckets(AccountId);
+//
+//                 CREATE UNIQUE INDEX IF NOT EXISTS UX_AccountReconciliations_AccountId_AsOfDate 
+//                 ON AccountReconciliations(AccountId, ReconciledAsOfDate) 
+//                 WHERE IsInvalidated = 0;
+//
+//                 CREATE INDEX IF NOT EXISTS IX_Transactions_NormalizedDescription 
+//                 ON Transactions(NormalizedDescription);
+//
+// CREATE INDEX IF NOT EXISTS IX_Transactions_Analytics_Payee 
+// ON Transactions(NormalizedDescription, TransactionDate) 
+// WHERE Amount < 0;
+//
+// CREATE INDEX IF NOT EXISTS IX_Transactions_Analytics_SubCategory 
+// ON Transactions(SubCategoryId, TransactionDate) 
+// WHERE Amount < 0;
+//
+// CREATE INDEX IF NOT EXISTS IX_Transactions_Analytics_Bucket 
+// ON Transactions(BucketId, TransactionDate) 
+// WHERE Amount < 0;
+//
+//             ");
+
+
+//             connection.Execute(@"
+//     CREATE TABLE IF NOT EXISTS BucketTargetHistory (
+//         Id INTEGER PRIMARY KEY AUTOINCREMENT,
+//         BucketId INTEGER NOT NULL,
+//         EffectiveStartDate TEXT NOT NULL,
+//         ExpectedAmount DECIMAL NOT NULL,
+//         FOREIGN KEY(BucketId) REFERENCES Buckets(Id) ON DELETE CASCADE
+//     );
+//
+//     CREATE INDEX IF NOT EXISTS IX_BucketTargetHistory_BucketId_Date 
+//     ON BucketTargetHistory(BucketId, EffectiveStartDate);
+//
+//
+// CREATE TABLE IF NOT EXISTS BillTargetHistory (
+//     Id INTEGER PRIMARY KEY AUTOINCREMENT,
+//     BillId INTEGER NOT NULL,
+//     PeriodDate TEXT NOT NULL, -- e.g., '2026-09-01' representing the monthly period
+//     ExpectedAmount DECIMAL NOT NULL,
+//     HasOverride INTEGER NOT NULL DEFAULT 0,
+//     FOREIGN KEY(BillId) REFERENCES Bills(Id) ON DELETE CASCADE,
+//     CONSTRAINT UX_BillTargetHistory_Bill_Period UNIQUE (BillId, PeriodDate)
+// );
+//
+// CREATE INDEX IF NOT EXISTS IX_BillTargetHistory_BillId_Date 
+// ON BillTargetHistory(BillId, PeriodDate);
+//
+// ");
+//             
+            
             // Turn foreign key enforcement back ON
             connection.Execute("PRAGMA foreign_keys = ON;");
 
@@ -588,6 +636,7 @@ public class DatabaseContext {
         EnsureColumnExists(connection, "Buckets", "TargetBalance", "NUMERIC NOT NULL DEFAULT 0");
         EnsureColumnExists(connection, "Buckets", "CurrentBalance", "NUMERIC NOT NULL DEFAULT 0");
         EnsureColumnExists(connection, "Buckets", "InitialBalance", "NUMERIC NOT NULL DEFAULT 0");
+        EnsureColumnExists(connection, "Buckets", "EffectiveStartDate", "TEXT NOT NULL DEFAULT '2000-01-01'");
     }
 
     private static void EnsureColumnExists(IDbConnection connection, string tableName, string columnName,

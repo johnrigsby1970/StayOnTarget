@@ -807,6 +807,40 @@ public partial class BudgetService {
             try {
                 var bucketsToRecalculate = new HashSet<int>();
 
+                if ((t.BillId.HasValue && t.BillId.Value > 0) || (t.BucketId.HasValue && t.BucketId.Value > 0)) {
+                    var payChecks = await conn.QueryAsync<Paycheck>(
+                        "SELECT * FROM Paychecks WHERE EndDate IS NULL OR EndDate >= @TransactionDate",
+                        new { TransactionDate = t.TransactionDate.ToString("yyyy-MM-dd") }, tx);
+
+                    // Ensure PeriodBill and PeriodBucket snapshots exist for any linked Bill or Bucket
+                    //We want to preserve what the expected amount state was at the time of the transaction. 
+                    //Whether its the specific amount or an override, this should capture it.
+                    //In this way we can say if a bill or envelope exceeded the expected amount as it was at the
+                    //time of the transaction. This allows future projections to be governed by a new expected amount.
+                    if (t.BillId.HasValue && t.BillId.Value > 0) {
+                        foreach (var payCheck in payChecks) {
+                            var periodDate = HelperMethods.GetCurrentPeriodStart(payCheck.StartDate, t.TransactionDate,
+                                payCheck.Frequency);
+                            await EnsurePeriodBillSnapshotAsync(conn, tx, t.BillId.Value, periodDate);
+                        }
+
+                        var monthStart = new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1);
+                        await EnsurePeriodBillSnapshotAsync(conn, tx, t.BillId.Value, monthStart);
+                    }
+
+                    if (t.BucketId.HasValue && t.BucketId.Value > 0) {
+                        foreach (var payCheck in payChecks) {
+                            var periodDate = HelperMethods.GetCurrentPeriodStart(payCheck.StartDate, t.TransactionDate,
+                                payCheck.Frequency);
+
+                            await EnsurePeriodBucketSnapshotAsync(conn, tx, t.BucketId.Value, periodDate);
+                        }
+
+                        var monthStart = new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1);
+                        await EnsurePeriodBucketSnapshotAsync(conn, tx, t.BucketId.Value, monthStart);
+                    }
+                }
+
                 // Step 1: Capture historical Bucket IDs linked to this TransactionId prior to saving
                 if (t.TransactionId != Guid.Empty) {
                     var oldRows = (await conn.QueryAsync<dynamic>(
@@ -1092,6 +1126,83 @@ public partial class BudgetService {
             throw;
         }
     }
+
+    #region Dealign with snapshots of expectedamount
+
+    //Call these both for the first of that month and for the period of each paycheck that exists at the time.
+    private async Task EnsurePeriodBillSnapshotAsync(IDbConnection conn, IDbTransaction tx, long billId,
+    DateTime transactionDate) {
+    string targetPeriodDate = transactionDate.ToString("yyyy-MM-dd");
+
+    const string checkSql = @"
+    SELECT COUNT(1) 
+    FROM PeriodBills 
+    WHERE BillId = @billId AND PeriodDate = @targetPeriodDate;";
+
+    int exists = await conn.ExecuteScalarAsync<int>(checkSql, new { billId, targetPeriodDate }, tx);
+
+    if (exists == 0) {
+        const string snapshotSql = @"
+        INSERT INTO PeriodBills (BillId, PeriodDate, DueDate, ActualAmount, IsPaid, FitId)
+        SELECT 
+            b.Id,
+            @targetPeriodDate,
+            date(@targetPeriodDate, '+' || (b.DueDay - 1) || ' days'),
+            COALESCE(
+                json_extract(b.Overrides, '$.' || strftime('%m', @targetPeriodDate)), 
+                b.ExpectedAmount
+            ) AS ActualAmount,
+            0 AS IsPaid,
+            @fitId AS FitId
+        FROM Bills b
+        WHERE b.Id = @billId;";
+
+        await conn.ExecuteAsync(snapshotSql, new { 
+            billId, 
+            targetPeriodDate, 
+            fitId = Guid.NewGuid().ToString() 
+        }, tx);
+    }
+}
+
+private async Task EnsurePeriodBucketSnapshotAsync(IDbConnection conn, IDbTransaction tx, long bucketId,
+    DateTime transactionDate) {
+    string targetPeriodDate = transactionDate.ToString("yyyy-MM-dd");
+
+    const string checkSql = @"
+    SELECT 
+        (SELECT COUNT(1) FROM PeriodBuckets WHERE BucketId = @bucketId AND PeriodDate = @targetPeriodDate) AS RecordCount,
+        Type
+    FROM Buckets 
+    WHERE Id = @bucketId;";
+
+    var result = await conn.QueryFirstOrDefaultAsync<dynamic>(checkSql, new { bucketId, targetPeriodDate }, tx);
+
+    if (result != null && result!.Type == 0 && result!.RecordCount == 0) {
+        const string snapshotSql = @"
+        INSERT INTO PeriodBuckets (BucketId, PeriodDate, ActualAmount, IsPaid, FitId)
+        SELECT 
+            b.Id,
+            @targetPeriodDate,
+            COALESCE(
+                json_extract(b.Overrides, '$.' || strftime('%m', @targetPeriodDate)), 
+                b.ExpectedAmount
+            ) AS ActualAmount,
+            0 AS IsPaid,
+            @fitId AS FitId
+        FROM Buckets b
+        WHERE b.Id = @bucketId;";
+
+        await conn.ExecuteAsync(snapshotSql, new { 
+            bucketId, 
+            targetPeriodDate, 
+            fitId = Guid.NewGuid().ToString() 
+        }, tx);
+    }
+}
+
+    #endregion
+
 
     #region Private Service Helpers (Mapping Engine)
 

@@ -142,4 +142,14 @@
     <SolidColorBrush x:Key="SplitterLineBrush" Color="#CBD5E1" />          <!-- Slate 300 -->
     <SolidColorBrush x:Key="SplitterGripBrush" Color="#94A3B8" />          <!-- Slate 400 -->
     <SolidColorBrush x:Key="SplitterHoverBrush" Color="#3B82F6" />         <!-- Accent Blue -->
+    
+    <!-- Tooltip Brushes (Light Theme - Elevated Dark Floating Surface) -->
+    <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#1E293B" />
+    <SolidColorBrush x:Key="TooltipBorderBrush" Color="#475569" />
+    <SolidColorBrush x:Key="TooltipTextBrush" Color="#F8FAFC" />
+    <SolidColorBrush x:Key="TooltipSecondaryTextBrush" Color="#94A3B8" />
+    <SolidColorBrush x:Key="TooltipHeaderBrush" Color="#38BDF8" />
+    <SolidColorBrush x:Key="TooltipBadgeBackgroundBrush" Color="#334155" />
+    <SolidColorBrush x:Key="TooltipBadgeBorderBrush" Color="#64748B" />
+    <SolidColorBrush x:Key="TooltipBadgeTextBrush" Color="#E2E8F0" />
 </ResourceDictionary>

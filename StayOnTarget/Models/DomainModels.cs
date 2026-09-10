@@ -18,7 +18,13 @@ public enum Frequency
     [Display(Name = "Bi-Weekly")]
     BiWeekly,
     Weekly,
-    Once
+    Once,
+    [Display(Name = "Semi-Monthly")]
+    SemiMonthly,
+    Quarterly,
+    Annual,
+    [Display(Name = "Every Four Weeks")]
+    EveryFourWeeks
 }
 
 public enum AccountType

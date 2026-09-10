@@ -53,7 +53,7 @@
                 <scm:SortDescription PropertyName="TransactionDate" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
-        
+
         <ObjectDataProvider x:Key="EnumSurplusAllocationTarget"
                             MethodName="GetValues"
                             ObjectType="{x:Type sys:Enum}">
@@ -522,14 +522,15 @@
                                                         <DockPanel Margin="0,0,0,12">
 
                                                             <!-- Strategy Pill Badge (Docked Right) -->
-                                                            <Border Background="{DynamicResource StrategyBadgeBackgroundBrush}"
-                                                                    BorderBrush="{DynamicResource StrategyBadgeBorderBrush}"
-                                                                    BorderThickness="1"
-                                                                    CornerRadius="12"
-                                                                    Padding="8,3"
-                                                                    DockPanel.Dock="Right"
-                                                                    HorizontalAlignment="Right"
-                                                                    VerticalAlignment="Center">
+                                                            <Border
+                                                                Background="{DynamicResource StrategyBadgeBackgroundBrush}"
+                                                                BorderBrush="{DynamicResource StrategyBadgeBorderBrush}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="12"
+                                                                Padding="8,3"
+                                                                DockPanel.Dock="Right"
+                                                                HorizontalAlignment="Right"
+                                                                VerticalAlignment="Center">
                                                                 <TextBlock
                                                                     Text="{Binding StrategyDisplayName, TargetNullValue='Snowball Strategy'}"
                                                                     FontSize="10"
@@ -771,6 +772,7 @@
                                                                         <RowDefinition Height="*" />
                                                                         <RowDefinition Height="Auto" />
                                                                     </Grid.RowDefinitions>
+
                                                                     <DataGrid Grid.Row="0"
                                                                               ItemsSource="{Binding Source={StaticResource SortedCurrentPeriodTransactions}}"
                                                                               SelectedItem="{Binding SelectedTransaction}"
@@ -778,6 +780,182 @@
                                                                               HorizontalScrollBarVisibility="Auto"
                                                                               CanUserAddRows="False"
                                                                               IsReadOnly="True">
+
+                                                                        <DataGrid.RowStyle>
+                                                                            <Style TargetType="DataGridRow"
+                                                                                    BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                                                                <!-- 1. Pass the DataGrid DataContext (MainViewModel) to the row's Tag property -->
+                                                                                <Setter Property="Tag"
+                                                                                    Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+
+                                                                                <Setter Property="ToolTip">
+                                                                                    <Setter.Value>
+                                                                                        <!-- 2. Bind OpenCommand via PlacementTarget.Tag -->
+                                                                                        <!-- Note: Background, BorderBrush, BorderThickness, and Padding are now handled automatically by the implicit ToolTip style -->
+                                                                                        <ToolTip x:Name="RowToolTip"
+                                                                                            helpers1:ToolTipBehavior.OpenCommand="{Binding PlacementTarget.Tag.OnTransactionRowHoveredCommand, RelativeSource={RelativeSource Self}}"
+                                                                                            helpers1:ToolTipBehavior.OpenCommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                                                            <StackPanel Width="260">
+                                                                                                <!-- Header / Payee Name -->
+                                                                                                <TextBlock
+                                                                                                    Text="{Binding Description}"
+                                                                                                    Style="{StaticResource TooltipHeaderTextBlockStyle}"
+                                                                                                    Margin="0,0,0,6" />
+
+                                                                                                <Separator
+                                                                                                    Style="{StaticResource TooltipSeparatorStyle}" />
+
+                                                                                                <!-- Analytics Summary -->
+                                                                                                <Grid
+                                                                                                    TextBlock.Foreground="{DynamicResource TooltipSecondaryTextBrush}">
+                                                                                                    <Grid.ColumnDefinitions>
+                                                                                                        <ColumnDefinition
+                                                                                                            Width="*" />
+                                                                                                        <ColumnDefinition
+                                                                                                            Width="Auto" />
+                                                                                                    </Grid.ColumnDefinitions>
+                                                                                                    <Grid.RowDefinitions>
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                    </Grid.RowDefinitions>
+
+                                                                                                    <!-- 24-Mo Avg -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="0"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="24-Mo Avg Spend:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="0"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.AverageSpend, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="1"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="24-Mo Avg Biweekly Spend:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="1"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.AverageBiweeklySpend, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Suggested Budget Target -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="2"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Rec. Target / Mo:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="2"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.SuggestedBudget, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipHeaderBrush}" />
+
+                                                                                                    <!-- Suggested Budget Target -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="3"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Rec. Target / Biweekly:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="3"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.SuggestedBiweeklyBudget, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipHeaderBrush}" />
+
+                                                                                                    <!-- Annual Trend -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="4"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Annual Inflation:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="4"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.AnnualizedInflationPercentage, FallbackValue='0.0%', StringFormat='{}{0:+0.0%;-0.0%;0.0%}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Suggested Budget Target -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="5"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Average / Purchase:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="5"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.AveragePerPurchase, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipHeaderBrush}" />
+
+                                                                                                    <!-- Suggested Budget Target -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="6"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Average Purchases / Month:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="6"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.AveragePurchasesPerMonth, FallbackValue='0.00', StringFormat='{}{0:0.00}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipHeaderBrush}" />
+                                                                                                </Grid>
+
+                                                                                                <!-- Tip Callout -->
+                                                                                                <TextBlock
+                                                                                                    FontSize="10.5"
+                                                                                                    Margin="0,8,0,4"
+                                                                                                    Foreground="{DynamicResource TooltipSecondaryTextBrush}"
+                                                                                                    FontStyle="Italic"
+                                                                                                    TextWrapping="Wrap">
+                                                                                                    <Run
+                                                                                                        Text="Tip: To reduce spending, keep purchases at or below " />
+                                                                                                    <Run
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.AveragePurchasesPerMonth, Mode=OneWay, StringFormat='{}{0:0.0}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+                                                                                                    <Run
+                                                                                                        Text=" / mo while keeping each checkout under " />
+                                                                                                    <Run
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.AveragePerPurchase, Mode=OneWay, StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+                                                                                                    <Run
+                                                                                                        Text=". That is your target." />
+                                                                                                </TextBlock>
+
+                                                                                                <!-- Seasonality Surge Banner -->
+                                                                                                <Border
+                                                                                                    Style="{StaticResource TooltipBadgeBorderStyle}"
+                                                                                                    Margin="0,6,0,0"
+                                                                                                    Visibility="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.IsSeasonal, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                                                    <TextBlock
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredPayeeMetrics.PeakSeasonSummary}"
+                                                                                                        Style="{StaticResource TooltipBadgeTextBlockStyle}"
+                                                                                                        Foreground="{DynamicResource WarningNumericHighlightBrush}"
+                                                                                                        TextWrapping="Wrap" />
+                                                                                                </Border>
+                                                                                            </StackPanel>
+                                                                                        </ToolTip>
+                                                                                    </Setter.Value>
+                                                                                </Setter>
+                                                                            </Style>
+                                                                        </DataGrid.RowStyle>
+
                                                                         <DataGrid.InputBindings>
                                                                             <MouseBinding
                                                                                 MouseAction="LeftDoubleClick"
@@ -903,46 +1081,165 @@
                                                                               SelectedItem="{Binding SelectedPeriodBill}"
                                                                               AutoGenerateColumns="False"
                                                                               CanUserAddRows="False">
-                                                                        <DataGrid.CellStyle>
-                                                                            <Style TargetType="DataGridCell">
-                                                                                <Setter Property="Foreground" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=Foreground}" />
-                                                                                <Setter Property="Background" Value="Transparent" />
-                                                                                <Setter Property="BorderThickness" Value="0" />
-                                                                            </Style>
-                                                                        </DataGrid.CellStyle>
                                                                         <DataGrid.RowStyle>
-                                                                            <Style
-                                                                                TargetType="{x:Type DataGridRow}">
+                                                                            <Style TargetType="{x:Type DataGridRow}"
+                                                                                    BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                                                                <!-- Pass MainViewModel to row Tag property -->
+                                                                                <Setter Property="Tag"
+                                                                                    Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+
+                                                                                <Setter Property="ToolTip">
+                                                                                    <Setter.Value>
+                                                                                        <!-- Note: Background, BorderBrush, BorderThickness, and Padding are now handled automatically by the implicit ToolTip style -->
+                                                                                        <ToolTip x:Name="BillToolTip"
+                                                                                            helpers1:ToolTipBehavior.OpenCommand="{Binding PlacementTarget.Tag.OnBillRowHoveredCommand, RelativeSource={RelativeSource Self}}"
+                                                                                            helpers1:ToolTipBehavior.OpenCommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                                                            <StackPanel Width="270">
+                                                                                                <!-- Header / Bill Name -->
+                                                                                                <TextBlock
+                                                                                                    Text="{Binding BillName}"
+                                                                                                    Style="{StaticResource TooltipHeaderTextBlockStyle}"
+                                                                                                    Margin="0,0,0,6" />
+
+                                                                                                <Separator
+                                                                                                    Style="{StaticResource TooltipSeparatorStyle}" />
+
+                                                                                                <!-- Analytics Summary -->
+                                                                                                <Grid
+                                                                                                    TextBlock.Foreground="{DynamicResource TooltipSecondaryTextBrush}">
+                                                                                                    <Grid.ColumnDefinitions>
+                                                                                                        <ColumnDefinition
+                                                                                                            Width="*" />
+                                                                                                        <ColumnDefinition
+                                                                                                            Width="Auto" />
+                                                                                                    </Grid.ColumnDefinitions>
+                                                                                                    <Grid.RowDefinitions>
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                    </Grid.RowDefinitions>
+
+                                                                                                    <!-- 24-Mo Avg Spend -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="0"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="24-Mo Avg Monthly:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="0"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBillMetrics.AverageSpend, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Peak Spend -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="1"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="24-Mo Peak Amount:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="1"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBillMetrics.PeakSpend, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Suggested Target -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="2"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Rec. Monthly Target:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="2"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBillMetrics.SuggestedBudget, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipHeaderBrush}" />
+
+                                                                                                    <!-- Annual Inflation -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="3"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Annual Inflation:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="3"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBillMetrics.AnnualizedInflationPercentage, FallbackValue='0.0%', StringFormat='{}{0:+0.0%;-0.0%;0.0%}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Outlier Cap -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="4"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Outlier Threshold:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="4"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBillMetrics.OutlierThreshold, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+                                                                                                </Grid>
+
+                                                                                                <!-- Seasonal Banner -->
+                                                                                                <Border
+                                                                                                    Style="{StaticResource TooltipBadgeBorderStyle}"
+                                                                                                    Margin="0,8,0,0"
+                                                                                                    Visibility="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBillMetrics.IsSeasonal, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                                                    <TextBlock
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBillMetrics.PeakSeasonSummary}"
+                                                                                                        Style="{StaticResource TooltipBadgeTextBlockStyle}"
+                                                                                                        Foreground="{DynamicResource WarningNumericHighlightBrush}"
+                                                                                                        TextWrapping="Wrap" />
+                                                                                                </Border>
+                                                                                            </StackPanel>
+                                                                                        </ToolTip>
+                                                                                    </Setter.Value>
+                                                                                </Setter>
+
                                                                                 <Style.Triggers>
                                                                                     <DataTrigger
                                                                                         Binding="{Binding HasActualAmount}"
                                                                                         Value="True">
-                                                                                        <Setter
-                                                                                            Property="Background"
+                                                                                        <Setter Property="Background"
                                                                                             Value="{DynamicResource GridStatusOptimalBackgroundBrush}" />
-                                                                                        <Setter
-                                                                                            Property="Foreground"
+                                                                                        <Setter Property="Foreground"
                                                                                             Value="{DynamicResource SecondaryTextBrush}" />
                                                                                     </DataTrigger>
                                                                                     <DataTrigger
                                                                                         Binding="{Binding BudgetExceeded}"
                                                                                         Value="True">
-                                                                                        <Setter
-                                                                                            Property="Background"
+                                                                                        <Setter Property="Background"
                                                                                             Value="{DynamicResource GridStatusDeficitBackgroundBrush}" />
-                                                                                        <Setter
-                                                                                            Property="Foreground"
+                                                                                        <Setter Property="Foreground"
                                                                                             Value="{DynamicResource SecondaryTextBrush}" />
                                                                                     </DataTrigger>
-                                                                                    
-                                                                                    <!-- Selection Trigger (Overrides Status Colors) -->
-                                                                                    <Trigger Property="IsSelected" Value="True">
-                                                                                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
-                                                                                        <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
+                                                                                    <Trigger Property="IsSelected"
+                                                                                        Value="True">
+                                                                                        <Setter Property="Background"
+                                                                                            Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
+                                                                                        <Setter Property="Foreground"
+                                                                                            Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
                                                                                     </Trigger>
                                                                                 </Style.Triggers>
                                                                             </Style>
                                                                         </DataGrid.RowStyle>
+                                                                        <DataGrid.CellStyle>
+                                                                            <Style TargetType="DataGridCell">
+                                                                                <Setter Property="Foreground"
+                                                                                    Value="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=Foreground}" />
+                                                                                <Setter Property="Background"
+                                                                                    Value="Transparent" />
+                                                                                <Setter Property="BorderThickness"
+                                                                                    Value="0" />
+                                                                            </Style>
+                                                                        </DataGrid.CellStyle>
                                                                         <DataGrid.InputBindings>
                                                                             <MouseBinding
                                                                                 MouseAction="LeftDoubleClick"
@@ -960,13 +1257,14 @@
                                                                                                 <ColumnDefinition
                                                                                                     Width="Auto" />
                                                                                             </Grid.ColumnDefinitions>
-                                                                                            <TextBlock Style="{DynamicResource StyledTextBlock}"
+                                                                                            <TextBlock
+                                                                                                Style="{DynamicResource StyledTextBlock}"
                                                                                                 Grid.Column="0"
                                                                                                 Text="{Binding BillName}"
                                                                                                 FontWeight="SemiBold"
                                                                                                 TextTrimming="CharacterEllipsis"
                                                                                                 VerticalAlignment="Center">
-                                                                                                
+
                                                                                             </TextBlock>
                                                                                             <TextBlock
                                                                                                 Style="{DynamicResource StyledTextBlock}"
@@ -1191,13 +1489,160 @@
                                                                                             Property="Background"
                                                                                             Value="#FFCCCC" />
                                                                                     </DataTrigger>
-                                                                                    
+
                                                                                     <!-- Selection Trigger (Overrides Status Colors) -->
-                                                                                    <Trigger Property="IsSelected" Value="True">
-                                                                                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
-                                                                                        <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
+                                                                                    <Trigger Property="IsSelected"
+                                                                                        Value="True">
+                                                                                        <Setter Property="Background"
+                                                                                            Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
+                                                                                        <Setter Property="Foreground"
+                                                                                            Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
                                                                                     </Trigger>
                                                                                 </Style.Triggers>
+
+                                                                                <!-- 1. Pass MainViewModel to Tag -->
+                                                                                <Setter Property="Tag"
+                                                                                    Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+
+                                                                                <!-- 2. Attach ToolTip -->
+                                                                                <Setter Property="ToolTip">
+                                                                                    <Setter.Value>
+                                                                                        <!-- Background, BorderBrush, BorderThickness, and Padding are handled by the implicit ToolTip style -->
+                                                                                        <ToolTip x:Name="BucketToolTip"
+                                                                                            helpers1:ToolTipBehavior.OpenCommand="{Binding PlacementTarget.Tag.OnBucketRowHoveredCommand, RelativeSource={RelativeSource Self}}"
+                                                                                            helpers1:ToolTipBehavior.OpenCommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                                                            <StackPanel Width="280">
+                                                                                                <!-- Header / Envelope Name -->
+                                                                                                <TextBlock
+                                                                                                    Text="{Binding BucketName}"
+                                                                                                    Style="{StaticResource TooltipHeaderTextBlockStyle}"
+                                                                                                    Margin="0,0,0,6" />
+
+                                                                                                <Separator
+                                                                                                    Style="{StaticResource TooltipSeparatorStyle}" />
+
+                                                                                                <!-- Analytics Summary Grid inside ToolTip -->
+                                                                                                <Grid
+                                                                                                    TextBlock.Foreground="{DynamicResource TooltipSecondaryTextBrush}">
+                                                                                                    <Grid.ColumnDefinitions>
+                                                                                                        <ColumnDefinition
+                                                                                                            Width="*" />
+                                                                                                        <ColumnDefinition
+                                                                                                            Width="Auto" />
+                                                                                                    </Grid.ColumnDefinitions>
+                                                                                                    <Grid.RowDefinitions>
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                        <RowDefinition
+                                                                                                            Height="Auto" />
+                                                                                                    </Grid.RowDefinitions>
+
+                                                                                                    <!-- 24-Mo Avg Monthly Spend -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="0"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="24-Mo Avg Monthly:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="0"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.AverageSpend, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Avg Monthly Trips / Charges -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="1"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Avg Purchases / Month:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="1"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.AveragePurchasesPerMonth, FallbackValue='0.0', StringFormat='{}{0:0.0} trips'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Avg Per Checkout Trip -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="2"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Avg / Purchase:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="2"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.AveragePerPurchase, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+
+                                                                                                    <!-- Median Per Checkout Trip -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="3"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Median / Purchase:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="3"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.MedianPerPurchase, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource GoodNumericHighlightBrush}" />
+
+                                                                                                    <!-- Rec. Monthly Target -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="4"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Rec. Target / Mo:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="4"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.SuggestedBudget, FallbackValue='$0.00', StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipHeaderBrush}" />
+
+                                                                                                    <!-- Annual Trend -->
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="5"
+                                                                                                        Grid.Column="0"
+                                                                                                        Text="Annual Inflation:" />
+                                                                                                    <TextBlock
+                                                                                                        Grid.Row="5"
+                                                                                                        Grid.Column="1"
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.AnnualizedInflationPercentage, FallbackValue='0.0%', StringFormat='{}{0:+0.0%;-0.0%;0.0%}'}"
+                                                                                                        FontWeight="SemiBold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+                                                                                                </Grid>
+
+                                                                                                <!-- Dynamic Tip with Inlines -->
+                                                                                                <TextBlock
+                                                                                                    FontSize="10.5"
+                                                                                                    Margin="0,8,0,0"
+                                                                                                    Foreground="{DynamicResource TooltipSecondaryTextBrush}"
+                                                                                                    FontStyle="Italic"
+                                                                                                    TextWrapping="Wrap">
+                                                                                                    <Run
+                                                                                                        Text="Tip: To reduce spending, keep envelope transactions at or below " />
+                                                                                                    <Run
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.AveragePurchasesPerMonth, Mode=OneWay, StringFormat='{}{0:0.0}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+                                                                                                    <Run
+                                                                                                        Text=" / mo while keeping each spend under " />
+                                                                                                    <Run
+                                                                                                        Text="{Binding RelativeSource={RelativeSource AncestorType=ToolTip}, Path=PlacementTarget.Tag.HoveredBucketMetrics.AveragePerPurchase, Mode=OneWay, StringFormat='{}{0:C}'}"
+                                                                                                        FontWeight="Bold"
+                                                                                                        Foreground="{DynamicResource TooltipTextBrush}" />
+                                                                                                    <Run Text="." />
+                                                                                                </TextBlock>
+                                                                                            </StackPanel>
+                                                                                        </ToolTip>
+                                                                                    </Setter.Value>
+                                                                                </Setter>
                                                                             </Style>
                                                                         </DataGrid.RowStyle>
                                                                         <DataGrid.InputBindings>
@@ -1540,231 +1985,6 @@
                                                                 <!-- </DataGridCheckBoxColumn> -->
                                                             </DataGrid.Columns>
                                                         </DataGrid>
-                                                        <!-- <StackPanel Grid.Row="1" Margin="5" -->
-                                                        <!--             Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}"> -->
-                                                        <!--     <TextBlock Style="{DynamicResource    StyledTextBlock}" -->
-                                                        <!--                Text="Account Details" FontWeight="Bold" -->
-                                                        <!--                Margin="0,5" /> -->
-                                                        <!--     <Grid> -->
-                                                        <!--         <Grid.ColumnDefinitions> -->
-                                                        <!--             <ColumnDefinition Width="Auto" /> -->
-                                                        <!--             <ColumnDefinition Width="*" /> -->
-                                                        <!--             <ColumnDefinition Width="Auto" /> -->
-                                                        <!--             <ColumnDefinition Width="*" /> -->
-                                                        <!--         </Grid.ColumnDefinitions> -->
-                                                        <!--         <Grid.RowDefinitions> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--         </Grid.RowDefinitions> -->
-                                                        <!-- -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" Grid.Row="0" Content="Name:" /> -->
-                                                        <!--         <TextBox -->
-                                                        <!--             Grid.Column="1" -->
-                                                        <!--             Grid.Row="0" -->
-                                                        <!--             Text="{Binding EditingAccountClone.Name, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--             Margin="5" /> -->
-                                                        <!--         <CheckBox -->
-                                                        <!--             Grid.Column="2" -->
-                                                        <!--             Grid.Row="0" -->
-                                                        <!--             Content="Include In Total" -->
-                                                        <!--             IsChecked="{Binding EditingAccountClone.IncludeInTotal}" -->
-                                                        <!--             VerticalAlignment="Center" -->
-                                                        <!--             Margin="5" /> -->
-                                                        <!-- -->
-                                                        <!--         <Label Content="Bank:" -->
-                                                        <!--                Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" -->
-                                                        <!--                Grid.Row="1" /> -->
-                                                        <!--         <TextBox -->
-                                                        <!--             Grid.Column="1" -->
-                                                        <!--             Grid.Row="1" -->
-                                                        <!--             Text="{Binding EditingAccountClone.BankName, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--             Margin="5" /> -->
-                                                        <!-- -->
-                                                        <!--         <Label Content="Type:" -->
-                                                        <!--                Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="2" -->
-                                                        <!--                Grid.Row="1" /> -->
-                                                        <!--         <StackPanel -->
-                                                        <!--             Grid.Column="3" -->
-                                                        <!--             Grid.Row="1" -->
-                                                        <!--             Orientation="Horizontal"> -->
-                                                        <!--             <ComboBox ItemsSource="{Binding AccountTypes}" -->
-                                                        <!--                       Style="{DynamicResource    StyledEnumComboBox}" -->
-                                                        <!--                       SelectedItem="{Binding EditingAccountClone.Type}" -->
-                                                        <!--                       Margin="5" /> -->
-                                                        <!--             <CheckBox Content="Primary" -->
-                                                        <!--                       Foreground="{DynamicResource SecondaryTextBrush}" -->
-                                                        <!--                       IsChecked="{Binding EditingAccountClone.IsPrimary}" -->
-                                                        <!--                       VerticalAlignment="Center" -->
-                                                        <!--                       Margin="0,0,10,0" -->
-                                                        <!--                       Visibility="{Binding EditingAccountClone.Type, ConverterParameter='Checking|Savings', Converter={StaticResource AccountTypeToVisibilityConverter}, FallbackValue=Collapsed}" /> -->
-                                                        <!--         </StackPanel> -->
-                                                        <!-- -->
-                                                        <!--         <Label Content="Balance:" -->
-                                                        <!--                Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" -->
-                                                        <!--                Grid.Row="2" /> -->
-                                                        <!--         <TextBox Grid.Column="1" Grid.Row="2" -->
-                                                        <!--                  Text="{Binding EditingAccountClone.Balance, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" -->
-                                                        <!--                  Margin="5" /> -->
-                                                        <!--         <Label Content="As Of:" -->
-                                                        <!--                Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="2" -->
-                                                        <!--                Grid.Row="2" /> -->
-                                                        <!--         <DatePicker -->
-                                                        <!--             Grid.Column="3" -->
-                                                        <!--             Grid.Row="2" -->
-                                                        <!--             SelectedDate="{Binding EditingAccountClone.BalanceAsOf}" -->
-                                                        <!--             Margin="5" /> -->
-                                                        <!-- -->
-                                                        <!--         <Label Content="Growth %:" -->
-                                                        <!--                Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" -->
-                                                        <!--                Grid.Row="3" /> -->
-                                                        <!--         <TextBox -->
-                                                        <!--             Grid.Column="1" -->
-                                                        <!--             Grid.Row="3" -->
-                                                        <!--             Text="{Binding EditingAccountClone.AnnualGrowthRate, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--             Margin="5" /> -->
-                                                        <!--         <Label Content="Color (Hex):" -->
-                                                        <!--                Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="2" -->
-                                                        <!--                Grid.Row="3" /> -->
-                                                        <!--         <TextBox Grid.Column="3" Grid.Row="3" -->
-                                                        <!--                  Text="{Binding EditingAccountClone.HexColor, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                  Margin="5" /> -->
-                                                        <!-- -->
-                                                        <!--         ~1~ Mortgage Details @1@ -->
-                                                        <!--         <StackPanel Grid.Column="0" Grid.Row="4" -->
-                                                        <!--                     Grid.ColumnSpan="4" Orientation="Vertical" -->
-                                                        <!--                     Visibility="{Binding EditingAccountClone.Type, ConverterParameter=Mortgage, Converter={StaticResource AccountTypeToVisibilityConverter}}"> -->
-                                                        <!--             <TextBlock -->
-                                                        <!--                 Style="{DynamicResource    StyledTextBlock}" -->
-                                                        <!--                 Text="Mortgage Details" FontSize="12" -->
-                                                        <!--                 FontWeight="Bold" Margin="0,5,0,5" /> -->
-                                                        <!--             <Grid> -->
-                                                        <!--                 <Grid.ColumnDefinitions> -->
-                                                        <!--                     <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                     <ColumnDefinition Width="*" /> -->
-                                                        <!--                     <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                     <ColumnDefinition Width="*" /> -->
-                                                        <!--                 </Grid.ColumnDefinitions> -->
-                                                        <!--                 <Grid.RowDefinitions> -->
-                                                        <!--                     <RowDefinition Height="Auto" /> -->
-                                                        <!--                     <RowDefinition Height="Auto" /> -->
-                                                        <!--                     <RowDefinition Height="Auto" /> -->
-                                                        <!--                 </Grid.RowDefinitions> -->
-                                                        <!--                 <Label -->
-                                                        <!--                     Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                     Grid.Row="0" Grid.Column="0" -->
-                                                        <!--                     Content="Rate %:" /> -->
-                                                        <!--                 <TextBox Grid.Row="0" Grid.Column="1" -->
-                                                        <!--                         Text="{Binding EditingAccountClone.MortgageDetails.InterestRate, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                         Margin="5" /> -->
-                                                        <!--                 <Label -->
-                                                        <!--                     Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                     Grid.Row="0" Grid.Column="2" -->
-                                                        <!--                     Content="Escrow:" /> -->
-                                                        <!--                 <TextBox Grid.Row="0" Grid.Column="3" -->
-                                                        <!--                         Text="{Binding EditingAccountClone.MortgageDetails.Escrow, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                         Margin="5" /> -->
-                                                        <!--                 <Label Content="Insurance:" -->
-                                                        <!--                        Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                        Grid.Row="1" -->
-                                                        <!--                        Grid.Column="0" /> -->
-                                                        <!--                 <TextBox -->
-                                                        <!--                     Grid.Row="1" -->
-                                                        <!--                     Grid.Column="1" -->
-                                                        <!--                     Text="{Binding EditingAccountClone.MortgageDetails.MortgageInsurance, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                     Margin="5" /> -->
-                                                        <!--                 <Label Content="Payment:" -->
-                                                        <!--                        Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                        Grid.Row="2" -->
-                                                        <!--                        Grid.Column="0" /> -->
-                                                        <!--                 <TextBox -->
-                                                        <!--                     Grid.Row="2" -->
-                                                        <!--                     Grid.Column="1" -->
-                                                        <!--                     Text="{Binding EditingAccountClone.MortgageDetails.LoanPayment, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                     Margin="5" /> -->
-                                                        <!--                 <Label Content="Statement date:" -->
-                                                        <!--                        Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                        Grid.Row="2" -->
-                                                        <!--                        Grid.Column="2" /> -->
-                                                        <!--                 <DatePicker -->
-                                                        <!--                     Grid.Row="2" -->
-                                                        <!--                     Grid.Column="3" -->
-                                                        <!--                     SelectedDate="{Binding EditingAccountClone.MortgageDetails.PaymentDate, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                     MinWidth="90" -->
-                                                        <!--                     Margin="5" /> -->
-                                                        <!--             </Grid> -->
-                                                        <!--         </StackPanel> -->
-                                                        <!-- -->
-                                                        <!--         ~1~ Credit Card Details @1@ -->
-                                                        <!--         <StackPanel -->
-                                                        <!--             Grid.Column="0" -->
-                                                        <!--             Grid.Row="4" -->
-                                                        <!--             Grid.ColumnSpan="4" -->
-                                                        <!--             Orientation="Vertical" -->
-                                                        <!--             Visibility="{Binding EditingAccountClone.Type, ConverterParameter=CreditCard, Converter={StaticResource AccountTypeToVisibilityConverter}}"> -->
-                                                        <!--             <TextBlock Text="Credit Card Details" -->
-                                                        <!--                        Style="{DynamicResource    StyledTextBlock}" -->
-                                                        <!--                        FontSize="12" -->
-                                                        <!--                        FontWeight="Bold" -->
-                                                        <!--                        Margin="0,5,0,5" /> -->
-                                                        <!--             <Grid> -->
-                                                        <!--                 <Grid.ColumnDefinitions> -->
-                                                        <!--                     <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                     <ColumnDefinition Width="*" /> -->
-                                                        <!--                     <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                     <ColumnDefinition Width="*" /> -->
-                                                        <!--                 </Grid.ColumnDefinitions> -->
-                                                        <!--                 <Grid.RowDefinitions> -->
-                                                        <!--                     <RowDefinition Height="Auto" /> -->
-                                                        <!--                     <RowDefinition Height="Auto" /> -->
-                                                        <!--                     <RowDefinition Height="Auto" /> -->
-                                                        <!--                 </Grid.RowDefinitions> -->
-                                                        <!--                 <Label -->
-                                                        <!--                     Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                     Grid.Row="0" Grid.Column="0" -->
-                                                        <!--                     Content="Statement Day:" /> -->
-                                                        <!--                 <TextBox Grid.Row="0" Grid.Column="1" -->
-                                                        <!--                         Text="{Binding EditingAccountClone.CreditCardDetails.StatementDay, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                         Margin="5" /> -->
-                                                        <!--                 <Label -->
-                                                        <!--                     Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                     Grid.Row="0" Grid.Column="2" -->
-                                                        <!--                     Content="Due Date Offset:" /> -->
-                                                        <!--                 <TextBox Grid.Row="0" Grid.Column="3" -->
-                                                        <!--                         Text="{Binding EditingAccountClone.CreditCardDetails.DueDateOffset, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                         Margin="5" /> -->
-                                                        <!--                 <Label -->
-                                                        <!--                     Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                     Grid.Row="1" Grid.Column="0" -->
-                                                        <!--                     Content="Minimum payment:" /> -->
-                                                        <!--                 <TextBox Grid.Row="1" Grid.Column="1" -->
-                                                        <!--                         Text="{Binding EditingAccountClone.CreditCardDetails.MinPayFloor, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                         Margin="5" /> -->
-                                                        <!--                 <CheckBox Grid.Row="1" Grid.Column="2" -->
-                                                        <!--                         Content="Grace Period" -->
-                                                        <!--                         Foreground="{DynamicResource SecondaryTextBrush}" -->
-                                                        <!--                         IsChecked="{Binding EditingAccountClone.CreditCardDetails.PayPreviousMonthBalanceInFull, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                         VerticalAlignment="Center" -->
-                                                        <!--                         Margin="5" -->
-                                                        <!--                         ToolTip="Interest is not charged if previous month's balance is paid in full" /> -->
-                                                        <!--                 <Button Grid.Row="2" Grid.Column="0" -->
-                                                        <!--                         Content="Manage Interest Rates" -->
-                                                        <!--                         Command="{Binding DataContext.SetAccountAprRatesCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                        <!--                         Margin="0,0,0,0" Width="150" -->
-                                                        <!--                         CommandParameter="{Binding}" /> -->
-                                                        <!--             </Grid> -->
-                                                        <!--         </StackPanel> -->
-                                                        <!--     </Grid> -->
-                                                        <!-- </StackPanel> -->
                                                     </Grid>
                                                 </DockPanel>
                                             </Setter.Value>
@@ -2068,262 +2288,6 @@
                                                                         Binding="{Binding DueDay}" Width="60" />
                                                             </DataGrid.Columns>
                                                         </DataGrid>
-                                                        <!-- <StackPanel Grid.Row="1" Margin="10" -->
-                                                        <!--             Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}"> -->
-                                                        <!--     <TextBlock Style="{DynamicResource    StyledTextBlock}" -->
-                                                        <!--                Text="Edit Bill" FontWeight="Bold" -->
-                                                        <!--                Margin="0,0,0,5" /> -->
-                                                        <!--     <Grid> -->
-                                                        <!--         <Grid.ColumnDefinitions> -->
-                                                        <!--             <ColumnDefinition Width="Auto" /> -->
-                                                        <!--             <ColumnDefinition Width="*" /> -->
-                                                        <!--             <ColumnDefinition Width="Auto" /> -->
-                                                        <!--             <ColumnDefinition Width="*" /> -->
-                                                        <!--         </Grid.ColumnDefinitions> -->
-                                                        <!--         <Grid.RowDefinitions> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--             <RowDefinition Height="Auto" /> -->
-                                                        <!--         </Grid.RowDefinitions> -->
-                                                        <!-- -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" Grid.Row="0" Content="Name:" /> -->
-                                                        <!--         <TextBox Grid.Column="1" Grid.Row="0" -->
-                                                        <!--                  Text="{Binding EditingBillClone.Name, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                  Margin="5" /> -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="2" Grid.Row="0" -->
-                                                        <!--                Content="Frequency:" /> -->
-                                                        <!--         <ComboBox Grid.Column="3" Grid.Row="0" -->
-                                                        <!--                   Style="{DynamicResource    StyledEnumComboBox}" -->
-                                                        <!--                   ItemsSource="{Binding BillFrequencies}" -->
-                                                        <!--                   SelectedItem="{Binding EditingBillClone.Frequency}" -->
-                                                        <!--                   Margin="5" /> -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" Grid.Row="1" -->
-                                                        <!--                Content="Budgeted:" /> -->
-                                                        <!--         <controls:NumericTextBox Grid.Column="1" -->
-                                                        <!--                 Grid.Row="1" -->
-                                                        <!--                 Text="{Binding EditingBillClone.ExpectedAmount, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                 Margin="5" /> -->
-                                                        <!-- -->
-                                                        <!--         <Label Grid.Column="2" Grid.Row="1" -->
-                                                        <!--                Content="Due Day:"> -->
-                                                        <!--             <Label.Style> -->
-                                                        <!--                 <Style TargetType="Label" -->
-                                                        <!--                        BasedOn="{StaticResource StyledLabel}"> -->
-                                                        <!--                     <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                     <Style.Triggers> -->
-                                                        <!--                         <DataTrigger -->
-                                                        <!--                             Binding="{Binding EditingBillClone.Frequency}" -->
-                                                        <!--                             Value="Monthly"> -->
-                                                        <!--                             <Setter Property="Visibility" -->
-                                                        <!--                                 Value="Visible" /> -->
-                                                        <!--                         </DataTrigger> -->
-                                                        <!--                     </Style.Triggers> -->
-                                                        <!--                 </Style> -->
-                                                        <!--             </Label.Style> -->
-                                                        <!--         </Label> -->
-                                                        <!--         <TextBox Grid.Column="3" Grid.Row="1" -->
-                                                        <!--                  Text="{Binding EditingBillClone.DueDay, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                  Margin="5"> -->
-                                                        <!--             <TextBox.Style> -->
-                                                        <!--                 <Style TargetType="TextBox"> -->
-                                                        <!--                     <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                     <Style.Triggers> -->
-                                                        <!--                         <DataTrigger -->
-                                                        <!--                             Binding="{Binding EditingBillClone.Frequency}" -->
-                                                        <!--                             Value="Monthly"> -->
-                                                        <!--                             <Setter Property="Visibility" -->
-                                                        <!--                                 Value="Visible" /> -->
-                                                        <!--                         </DataTrigger> -->
-                                                        <!--                     </Style.Triggers> -->
-                                                        <!--                 </Style> -->
-                                                        <!--             </TextBox.Style> -->
-                                                        <!--         </TextBox> -->
-                                                        <!-- -->
-                                                        <!--         <Label Grid.Column="2" Grid.Row="1" -->
-                                                        <!--                Content="Next Due Date:"> -->
-                                                        <!--             <Label.Style> -->
-                                                        <!--                 <Style TargetType="Label" -->
-                                                        <!--                        BasedOn="{StaticResource StyledLabel}"> -->
-                                                        <!--                     <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                     <Style.Triggers> -->
-                                                        <!--                         <DataTrigger -->
-                                                        <!--                             Binding="{Binding EditingBillClone.Frequency}" -->
-                                                        <!--                             Value="Yearly"> -->
-                                                        <!--                             <Setter Property="Visibility" -->
-                                                        <!--                                 Value="Visible" /> -->
-                                                        <!--                         </DataTrigger> -->
-                                                        <!--                     </Style.Triggers> -->
-                                                        <!--                 </Style> -->
-                                                        <!--             </Label.Style> -->
-                                                        <!--         </Label> -->
-                                                        <!--         <DatePicker Grid.Column="3" Grid.Row="1" -->
-                                                        <!--                     SelectedDate="{Binding EditingBillClone.NextDueDate}" -->
-                                                        <!--                     Margin="5"> -->
-                                                        <!--             <DatePicker.Style> -->
-                                                        <!--                 <Style TargetType="DatePicker"> -->
-                                                        <!--                     <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                     <Style.Triggers> -->
-                                                        <!--                         <DataTrigger -->
-                                                        <!--                             Binding="{Binding EditingBillClone.Frequency}" -->
-                                                        <!--                             Value="Yearly"> -->
-                                                        <!--                             <Setter Property="Visibility" -->
-                                                        <!--                                 Value="Visible" /> -->
-                                                        <!--                         </DataTrigger> -->
-                                                        <!--                     </Style.Triggers> -->
-                                                        <!--                 </Style> -->
-                                                        <!--             </DatePicker.Style> -->
-                                                        <!--         </DatePicker> -->
-                                                        <!-- -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" Grid.Row="2" -->
-                                                        <!--                Content="Paid From:" /> -->
-                                                        <!--         <ComboBox Grid.Column="1" Grid.Row="2" -->
-                                                        <!--                   ItemsSource="{Binding ActiveAccountsWithNone}" -->
-                                                        <!--                   x:Name="BillAccountComboBox" -->
-                                                        <!--                   SelectedValue="{Binding EditingBillClone.AccountId}" -->
-                                                        <!--                   SelectedValuePath="Id" -->
-                                                        <!--                   DisplayMemberPath="Name" Margin="5" /> -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="2" Grid.Row="2" -->
-                                                        <!--                Content="Paid To:" /> -->
-                                                        <!--         <ComboBox Grid.Column="3" Grid.Row="2" -->
-                                                        <!--                   ItemsSource="{Binding ActiveAccountsWithNone}" -->
-                                                        <!--                   x:Name="BillToAccountComboBox" -->
-                                                        <!--                   SelectedValue="{Binding EditingBillClone.ToAccountId}" -->
-                                                        <!--                   SelectedValuePath="Id" -->
-                                                        <!--                   DisplayMemberPath="Name" Margin="5" /> -->
-                                                        <!-- -->
-                                                        <!--         <StackPanel Grid.Column="0" Grid.Row="3" -->
-                                                        <!--                     Grid.ColumnSpan="4" -->
-                                                        <!--                     Orientation="Horizontal" Margin="5"> -->
-                                                        <!--             <CheckBox -->
-                                                        <!--                 Foreground="{DynamicResource SecondaryTextBrush}" -->
-                                                        <!--                 Content="Principal Only (Mortgage/Loan Extra)" -->
-                                                        <!--                 IsChecked="{Binding EditingBillClone.IsPrincipalOnly}" -->
-                                                        <!--                 VerticalAlignment="Center" -->
-                                                        <!--                 Margin="0,0,10,0"> -->
-                                                        <!--                 <CheckBox.Visibility> -->
-                                                        <!--                     <MultiBinding -->
-                                                        <!--                         Converter="{StaticResource VisibleForMortgageTypeConverter}"> -->
-                                                        <!--                         ~1~ Binding 1: The integer ID of the To Account @1@ -->
-                                                        <!--                         <Binding -->
-                                                        <!--                             Path="EditingBillClone.ToAccountId" /> -->
-                                                        <!--                         ~1~ Binding 2: The full list of accounts to look up the type @1@ -->
-                                                        <!--                         <Binding Path="Accounts" /> -->
-                                                        <!--                     </MultiBinding> -->
-                                                        <!--                 </CheckBox.Visibility> -->
-                                                        <!--             </CheckBox> -->
-                                                        <!--         </StackPanel> -->
-                                                        <!-- -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="0" Grid.Row="4" -->
-                                                        <!--                Content="Sub Category:" /> -->
-                                                        <!--         <ComboBox Grid.Column="1" Grid.Row="4" -->
-                                                        <!--                   x:Name="BillSubCategoryComboBox" -->
-                                                        <!--                   ItemsSource="{Binding SubCategoriesWithNone}" -->
-                                                        <!--                   SelectedValue="{Binding EditingBillClone.SubCategoryId}" -->
-                                                        <!--                   SelectedValuePath="Id" -->
-                                                        <!--                   DisplayMemberPath="Name" Margin="5" /> -->
-                                                        <!--         <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                Grid.Column="2" Grid.Row="4" -->
-                                                        <!--                Content="Envelope:" /> -->
-                                                        <!--         <ComboBox Grid.Column="3" Grid.Row="4" -->
-                                                        <!--                   x:Name="BillBucketComboBox" -->
-                                                        <!--                   ItemsSource="{Binding BucketsWithNone}" -->
-                                                        <!--                   SelectedValue="{Binding EditingBillClone.BucketId}" -->
-                                                        <!--                   SelectedValuePath="Id" -->
-                                                        <!--                   DisplayMemberPath="Name" Margin="5" /> -->
-                                                        <!-- -->
-                                                        <!--         ~1~ Monthly / Seasonal Overrides Section @1@ -->
-                                                        <!--         <StackPanel Grid.Row="5" Grid.Column="0" -->
-                                                        <!--                     Grid.ColumnSpan="4" Margin="5" -->
-                                                        <!--                     Visibility="{Binding EditingBillClone.Frequency, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Monthly}"> -->
-                                                        <!-- -->
-                                                        <!--             <DockPanel Margin="0,5,0,4"> -->
-                                                        <!--                 <TextBlock Text="Monthly / Seasonal Overrides" -->
-                                                        <!--                         Style="{DynamicResource StyledTextBlock}" -->
-                                                        <!--                         FontWeight="Bold" -->
-                                                        <!--                         VerticalAlignment="Center" /> -->
-                                                        <!-- -->
-                                                        <!--                 ~1~ Add Override Button @1@ -->
-                                                        <!--                 <Button Content="+ Add Month" -->
-                                                        <!--                         Command="{Binding AddBillOverrideCommand}" -->
-                                                        <!--                         Style="{DynamicResource SecondaryButtonStyle}" -->
-                                                        <!--                         DockPanel.Dock="Right" -->
-                                                        <!--                         HorizontalAlignment="Right" -->
-                                                        <!--                         Padding="8,2" -->
-                                                        <!--                         FontSize="11" /> -->
-                                                        <!--             </DockPanel> -->
-                                                        <!-- -->
-                                                        <!--             <TextBlock -->
-                                                        <!--                 Text="Set explicit override amounts for specific months (e.g. higher utility costs in summer)." -->
-                                                        <!--                 Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                 FontSize="11" Margin="0,0,0,6" /> -->
-                                                        <!-- -->
-                                                        <!--             <DataGrid -->
-                                                        <!--                 ItemsSource="{Binding EditingBillOverrides}" -->
-                                                        <!--                 AutoGenerateColumns="False" -->
-                                                        <!--                 CanUserAddRows="False" -->
-                                                        <!--                 CanUserDeleteRows="False" -->
-                                                        <!--                 MaxHeight="160" -->
-                                                        <!--                 Margin="0,0,0,5"> -->
-                                                        <!--                 <DataGrid.Columns> -->
-                                                        <!--                     ~1~ Month Selector @1@ -->
-                                                        <!--                     <DataGridTemplateColumn Header="Month" -->
-                                                        <!--                             Width="140"> -->
-                                                        <!--                         <DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                             <DataTemplate> -->
-                                                        <!--                                 <ComboBox -->
-                                                        <!--                                     ItemsSource="{Binding DataContext.MonthOptions, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                        <!--                                     SelectedValuePath="Key" -->
-                                                        <!--                                     DisplayMemberPath="Name" -->
-                                                        <!--                                     SelectedValue="{Binding MonthKey, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                                     Margin="2" /> -->
-                                                        <!--                             </DataTemplate> -->
-                                                        <!--                         </DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                     </DataGridTemplateColumn> -->
-                                                        <!-- -->
-                                                        <!--                     ~1~ Override Amount @1@ -->
-                                                        <!--                     <DataGridTemplateColumn -->
-                                                        <!--                         Header="Override Amount" Width="140"> -->
-                                                        <!--                         <DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                             <DataTemplate> -->
-                                                        <!--                                 <controls:NumericTextBox -->
-                                                        <!--                                     Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" -->
-                                                        <!--                                     Margin="2" /> -->
-                                                        <!--                             </DataTemplate> -->
-                                                        <!--                         </DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                     </DataGridTemplateColumn> -->
-                                                        <!-- -->
-                                                        <!--                     ~1~ Delete Row Button @1@ -->
-                                                        <!--                     <DataGridTemplateColumn Width="60"> -->
-                                                        <!--                         <DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                             <DataTemplate> -->
-                                                        <!--                                 <Button Content="✕" -->
-                                                        <!--                                     Command="{Binding DataContext.RemoveBillOverrideCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                        <!--                                     CommandParameter="{Binding}" -->
-                                                        <!--                                     Style="{DynamicResource DangerButtonStyle}" -->
-                                                        <!--                                     Padding="4,1" -->
-                                                        <!--                                     Margin="2" -->
-                                                        <!--                                     ToolTip="Remove this override" /> -->
-                                                        <!--                             </DataTemplate> -->
-                                                        <!--                         </DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                     </DataGridTemplateColumn> -->
-                                                        <!--                 </DataGrid.Columns> -->
-                                                        <!--             </DataGrid> -->
-                                                        <!--         </StackPanel> -->
-                                                        <!--     </Grid> -->
-                                                        <!-- </StackPanel> -->
                                                     </Grid>
                                                 </DockPanel>
                                             </Setter.Value>
@@ -2428,9 +2392,33 @@
                                                                 <DataGridTextColumn Header="Target Cadence"
                                                                         Binding="{Binding TargetFrequency, Converter={StaticResource EnumToDisplayNameConverter}}"
                                                                         Width="120" />
-                                                                <DataGridTextColumn Header="Target Amount"
-                                                                        Binding="{Binding TargetAmount, StringFormat=C}"
-                                                                        Width="110" />
+                                                                <DataGridTemplateColumn Header="Target Amount"
+                                                                        Width="110">
+                                                                    <DataGridTemplateColumn.CellTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock HorizontalAlignment="Right"
+                                                                                    Padding="0,0,8,0">
+                                                                                <TextBlock.Style>
+                                                                                    <Style TargetType="TextBlock"
+                                                                                        BasedOn="{StaticResource StyledTextBlock}">
+                                                                                        <!-- Default value for AccumulatingDrawdown / UpfrontFloor -->
+                                                                                        <Setter Property="Text"
+                                                                                            Value="{Binding TargetAmount, StringFormat=C}" />
+                                                                                        <Style.Triggers>
+                                                                                            <!-- Standard Envelopes display ExpectedAmount -->
+                                                                                            <DataTrigger
+                                                                                                Binding="{Binding Type}"
+                                                                                                Value="Standard">
+                                                                                                <Setter Property="Text"
+                                                                                                    Value="{Binding ExpectedAmount, StringFormat=C}" />
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </TextBlock.Style>
+                                                                            </TextBlock>
+                                                                        </DataTemplate>
+                                                                    </DataGridTemplateColumn.CellTemplate>
+                                                                </DataGridTemplateColumn>
                                                                 <DataGridTextColumn Header="Target Floor"
                                                                         Binding="{Binding TargetBalance, StringFormat=C}"
                                                                         Width="100" />
@@ -2439,444 +2427,6 @@
                                                                         Width="110" />
                                                             </DataGrid.Columns>
                                                         </DataGrid>
-
-                                                        <!-- EDIT FORM SECTION -->
-                                                        <!-- <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" -->
-                                                        <!--               MaxHeight="450"> -->
-                                                        <!--     <StackPanel Margin="10" -->
-                                                        <!--                 Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}"> -->
-                                                        <!--         <TextBlock -->
-                                                        <!--             Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--             Text="Edit Envelope Configuration" -->
-                                                        <!--             FontWeight="Bold" -->
-                                                        <!--             Margin="0,0,0,5" /> -->
-                                                        <!-- -->
-                                                        <!--         ~1~ Row 1: Name, Type, Paid From @1@ -->
-                                                        <!--         <Grid> -->
-                                                        <!--             <Grid.ColumnDefinitions> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--             </Grid.ColumnDefinitions> -->
-                                                        <!--             <Grid.RowDefinitions> -->
-                                                        <!--                 <RowDefinition Height="*" /> -->
-                                                        <!--                 <RowDefinition Height="Auto" /> -->
-                                                        <!--             </Grid.RowDefinitions> -->
-                                                        <!--             <Label Grid.Row="0" -->
-                                                        <!--                    Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                    Grid.Column="0" Content="Name:" -->
-                                                        <!--                    VerticalAlignment="Center" /> -->
-                                                        <!--             <TextBox Grid.Row="0" Grid.Column="1" -->
-                                                        <!--                      Text="{Binding EditingBucketClone.Name, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                      Margin="5" VerticalAlignment="Center" /> -->
-                                                        <!--          -->
-                                                        <!--             <Label Grid.Row="0" -->
-                                                        <!--                    Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                    Grid.Column="2" Content="Envelope Type:" -->
-                                                        <!--                    VerticalAlignment="Center" /> -->
-                                                        <!--             <ComboBox Grid.Row="0" Grid.Column="3" -->
-                                                        <!--                       ItemsSource="{Binding BucketTypes}" -->
-                                                        <!--                       Style="{DynamicResource    StyledEnumComboBox}" -->
-                                                        <!--                       SelectedItem="{Binding EditingBucketClone.Type, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                       Margin="5" VerticalAlignment="Center" /> -->
-                                                        <!--          -->
-                                                        <!--             <Label Grid.Row="0" -->
-                                                        <!--                    Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                    Grid.Column="4" Content="Paid From:" -->
-                                                        <!--                    VerticalAlignment="Center" /> -->
-                                                        <!--             <ComboBox Grid.Row="0" Grid.Column="5" -->
-                                                        <!--                       ItemsSource="{Binding ActiveAccountsWithNone}" -->
-                                                        <!--                       SelectedValue="{Binding EditingBucketClone.AccountId}" -->
-                                                        <!--                       SelectedValuePath="Id" -->
-                                                        <!--                       DisplayMemberPath="Name" Margin="5" -->
-                                                        <!--                       VerticalAlignment="Center" /> -->
-                                                        <!--          -->
-                                                        <!--             ~1~ Monthly / Seasonal Overrides Section @1@ -->
-                                                        <!--             <StackPanel Grid.Row="1" Grid.Column="0" -->
-                                                        <!--                     Grid.ColumnSpan="6" Margin="5" -->
-                                                        <!--                     Visibility="{Binding EditingBucketClone.TargetFrequency, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Monthly}"> -->
-                                                        <!--          -->
-                                                        <!--                 <DockPanel Margin="0,5,0,4"> -->
-                                                        <!--                     <TextBlock -->
-                                                        <!--                         Text="Monthly / Seasonal Overrides" -->
-                                                        <!--                         Style="{DynamicResource StyledTextBlock}" -->
-                                                        <!--                         FontWeight="Bold" -->
-                                                        <!--                         VerticalAlignment="Center" /> -->
-                                                        <!--          -->
-                                                        <!--                     ~1~ Add Override Button @1@ -->
-                                                        <!--                     <Button Content="+ Add Month" -->
-                                                        <!--                             Command="{Binding AddBucketOverrideCommand}" -->
-                                                        <!--                             Style="{DynamicResource SecondaryButtonStyle}" -->
-                                                        <!--                             DockPanel.Dock="Right" -->
-                                                        <!--                             HorizontalAlignment="Right" -->
-                                                        <!--                             Padding="8,2" -->
-                                                        <!--                             FontSize="11" /> -->
-                                                        <!--                 </DockPanel> -->
-                                                        <!--          -->
-                                                        <!--                 <TextBlock -->
-                                                        <!--                     Text="Set explicit override amounts for specific months (e.g. higher expenses in Summer)." -->
-                                                        <!--                     Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                     FontSize="11" Margin="0,0,0,6" /> -->
-                                                        <!--          -->
-                                                        <!--                 <DataGrid -->
-                                                        <!--                     ItemsSource="{Binding EditingBucketOverrides}" -->
-                                                        <!--                     AutoGenerateColumns="False" -->
-                                                        <!--                     CanUserAddRows="False" -->
-                                                        <!--                     CanUserDeleteRows="False" -->
-                                                        <!--                     MaxHeight="160" -->
-                                                        <!--                     Margin="0,0,0,5"> -->
-                                                        <!--                     <DataGrid.Columns> -->
-                                                        <!--                         ~1~ Month Selector @1@ -->
-                                                        <!--                         <DataGridTemplateColumn Header="Month" -->
-                                                        <!--                             Width="140"> -->
-                                                        <!--                             <DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                                 <DataTemplate> -->
-                                                        <!--                                     <ComboBox -->
-                                                        <!--                                         ItemsSource="{Binding DataContext.MonthOptions, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                        <!--                                         SelectedValuePath="Key" -->
-                                                        <!--                                         DisplayMemberPath="Name" -->
-                                                        <!--                                         SelectedValue="{Binding MonthKey, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                                         Margin="2" /> -->
-                                                        <!--                                 </DataTemplate> -->
-                                                        <!--                             </DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                         </DataGridTemplateColumn> -->
-                                                        <!--          -->
-                                                        <!--                         ~1~ Override Amount @1@ -->
-                                                        <!--                         <DataGridTemplateColumn -->
-                                                        <!--                             Header="Override Amount" -->
-                                                        <!--                             Width="140"> -->
-                                                        <!--                             <DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                                 <DataTemplate> -->
-                                                        <!--                                     <controls:NumericTextBox -->
-                                                        <!--                                         Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" -->
-                                                        <!--                                         Margin="2" /> -->
-                                                        <!--                                 </DataTemplate> -->
-                                                        <!--                             </DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                         </DataGridTemplateColumn> -->
-                                                        <!--          -->
-                                                        <!--                         ~1~ Delete Row Button @1@ -->
-                                                        <!--                         <DataGridTemplateColumn Width="60"> -->
-                                                        <!--                             <DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                                 <DataTemplate> -->
-                                                        <!--                                     <Button Content="✕" -->
-                                                        <!--                                         Command="{Binding DataContext.RemoveBucketOverrideCommand, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                        <!--                                         CommandParameter="{Binding}" -->
-                                                        <!--                                         Style="{DynamicResource DangerButtonStyle}" -->
-                                                        <!--                                         Padding="4,1" -->
-                                                        <!--                                         Margin="2" -->
-                                                        <!--                                         ToolTip="Remove this override" /> -->
-                                                        <!--                                 </DataTemplate> -->
-                                                        <!--                             </DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                         </DataGridTemplateColumn> -->
-                                                        <!--                     </DataGrid.Columns> -->
-                                                        <!--                 </DataGrid> -->
-                                                        <!--             </StackPanel> -->
-                                                        <!--          -->
-                                                        <!--         </Grid> -->
-                                                        <!--          -->
-                                                        <!--         ~1~ Row 2: Target Projection Cadence Fields (HIDDEN for UpfrontFloor) @1@ -->
-                                                        <!--         <Grid Margin="0,5"> -->
-                                                        <!--             <Grid.Style> -->
-                                                        <!--                 <Style TargetType="Grid"> -->
-                                                        <!--                     <Setter Property="Visibility" -->
-                                                        <!--                             Value="Visible" /> -->
-                                                        <!--                     <Style.Triggers> -->
-                                                        <!--                         ~1~ Hide Cadence row completely when UpfrontFloor @1@ -->
-                                                        <!--                         <DataTrigger -->
-                                                        <!--                             Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                             Value="UpfrontFloor"> -->
-                                                        <!--                             <Setter Property="Visibility" -->
-                                                        <!--                                 Value="Collapsed" /> -->
-                                                        <!--                         </DataTrigger> -->
-                                                        <!--                     </Style.Triggers> -->
-                                                        <!--                 </Style> -->
-                                                        <!--             </Grid.Style> -->
-                                                        <!--          -->
-                                                        <!--             <Grid.ColumnDefinitions> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--             </Grid.ColumnDefinitions> -->
-                                                        <!--          -->
-                                                        <!--             ~1~ Target Frequency @1@ -->
-                                                        <!--             <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                    Grid.Column="0" Content="Target Frequency:" -->
-                                                        <!--                    VerticalAlignment="Center" /> -->
-                                                        <!--             <ComboBox Grid.Column="1" -->
-                                                        <!--                       Style="{DynamicResource    StyledEnumComboBox}" -->
-                                                        <!--                       ItemsSource="{Binding TargetFrequencyTypes}" -->
-                                                        <!--                       SelectedItem="{Binding EditingBucketClone.TargetFrequency, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                       Margin="5" VerticalAlignment="Center" /> -->
-                                                        <!--          -->
-                                                        <!--             ~1~ Target Amount @1@ -->
-                                                        <!--             <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                    Grid.Column="2" Content="Target Amount:" -->
-                                                        <!--                    VerticalAlignment="Center" /> -->
-                                                        <!--             <controls:NumericTextBox Grid.Column="3" -->
-                                                        <!--                     Text="{Binding EditingBucketClone.TargetAmount, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                     Margin="5" VerticalAlignment="Center" /> -->
-                                                        <!--          -->
-                                                        <!--             ~1~ Next Due Date @1@ -->
-                                                        <!--             <Label Style="{DynamicResource    StyledLabel}" -->
-                                                        <!--                    Grid.Column="4" Content="Next Due Date:" -->
-                                                        <!--                    VerticalAlignment="Center" /> -->
-                                                        <!--             <DatePicker Grid.Column="5" -->
-                                                        <!--                     SelectedDate="{Binding EditingBucketClone.NextDueDate, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                     Margin="5" VerticalAlignment="Center" /> -->
-                                                        <!--         </Grid> -->
-                                                        <!--          -->
-                                                        <!--         ~1~ Row 3: Reserve & Floor Balances @1@ -->
-                                                        <!--         <Grid Margin="0,5"> -->
-                                                        <!--             <Grid.ColumnDefinitions> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--                 <ColumnDefinition Width="Auto" /> -->
-                                                        <!--                 <ColumnDefinition Width="*" /> -->
-                                                        <!--             </Grid.ColumnDefinitions> -->
-                                                        <!--          -->
-                                                        <!--             ~1~ Target Floor Balance (ONLY Visible for UpfrontFloor) @1@ -->
-                                                        <!--             <Label Grid.Column="0" Content="Target Floor:" -->
-                                                        <!--                    VerticalAlignment="Center"> -->
-                                                        <!--                 <Label.Style> -->
-                                                        <!--                     <Style TargetType="Label" -->
-                                                        <!--                             BasedOn="{StaticResource StyledLabel}"> -->
-                                                        <!--                         <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                         <Style.Triggers> -->
-                                                        <!--                             <DataTrigger -->
-                                                        <!--                                 Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                                 Value="UpfrontFloor"> -->
-                                                        <!--                                 <Setter Property="Visibility" -->
-                                                        <!--                                     Value="Visible" /> -->
-                                                        <!--                             </DataTrigger> -->
-                                                        <!--                         </Style.Triggers> -->
-                                                        <!--                     </Style> -->
-                                                        <!--                 </Label.Style> -->
-                                                        <!--             </Label> -->
-                                                        <!--             <controls:NumericTextBox Grid.Column="1" -->
-                                                        <!--                     Text="{Binding EditingBucketClone.TargetBalance, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                     Margin="5" VerticalAlignment="Center"> -->
-                                                        <!--                 <controls:NumericTextBox.Style> -->
-                                                        <!--                     <Style TargetType="controls:NumericTextBox" -->
-                                                        <!--                             BasedOn="{StaticResource {x:Type controls:NumericTextBox}}"> -->
-                                                        <!--                         <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                         <Style.Triggers> -->
-                                                        <!--                             <DataTrigger -->
-                                                        <!--                                 Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                                 Value="UpfrontFloor"> -->
-                                                        <!--                                 <Setter Property="Visibility" -->
-                                                        <!--                                     Value="Visible" /> -->
-                                                        <!--                             </DataTrigger> -->
-                                                        <!--                         </Style.Triggers> -->
-                                                        <!--                     </Style> -->
-                                                        <!--                 </controls:NumericTextBox.Style> -->
-                                                        <!--             </controls:NumericTextBox> -->
-                                                        <!--          -->
-                                                        <!--             ~1~ Current Balance (ONLY Visible for AccumulatingDrawdown) @1@ -->
-                                                        <!--             <Label Grid.Column="2" Content="Current Balance:" -->
-                                                        <!--                    VerticalAlignment="Center"> -->
-                                                        <!--                 <Label.Style> -->
-                                                        <!--                     <Style TargetType="Label" -->
-                                                        <!--                             BasedOn="{StaticResource StyledLabel}"> -->
-                                                        <!--                         <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                         <Style.Triggers> -->
-                                                        <!--                             <DataTrigger -->
-                                                        <!--                                 Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                                 Value="AccumulatingDrawdown"> -->
-                                                        <!--                                 <Setter Property="Visibility" -->
-                                                        <!--                                     Value="Visible" /> -->
-                                                        <!--                             </DataTrigger> -->
-                                                        <!--                         </Style.Triggers> -->
-                                                        <!--                     </Style> -->
-                                                        <!--                 </Label.Style> -->
-                                                        <!--             </Label> -->
-                                                        <!--             <controls:NumericTextBox Grid.Column="3" -->
-                                                        <!--                     Text="{Binding EditingBucketClone.CurrentBalance, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                     Margin="5" VerticalAlignment="Center"> -->
-                                                        <!--                 <controls:NumericTextBox.Style> -->
-                                                        <!--                     <Style TargetType="controls:NumericTextBox" -->
-                                                        <!--                             BasedOn="{StaticResource {x:Type controls:NumericTextBox}}"> -->
-                                                        <!--                         <Setter Property="Visibility" -->
-                                                        <!--                             Value="Collapsed" /> -->
-                                                        <!--                         <Style.Triggers> -->
-                                                        <!--                             <DataTrigger -->
-                                                        <!--                                 Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                                 Value="AccumulatingDrawdown"> -->
-                                                        <!--                                 <Setter Property="Visibility" -->
-                                                        <!--                                     Value="Visible" /> -->
-                                                        <!--                             </DataTrigger> -->
-                                                        <!--                         </Style.Triggers> -->
-                                                        <!--                     </Style> -->
-                                                        <!--                 </controls:NumericTextBox.Style> -->
-                                                        <!--             </controls:NumericTextBox> -->
-                                                        <!--         </Grid> -->
-                                                        <!--          -->
-                                                        <!--         ~1~ Paycheck Allocations Section (Hidden for UpfrontFloor) @1@ -->
-                                                        <!--         <StackPanel Margin="0,10,0,5"> -->
-                                                        <!--             <StackPanel.Style> -->
-                                                        <!--                 <Style TargetType="StackPanel"> -->
-                                                        <!--                     <Setter Property="Visibility" -->
-                                                        <!--                             Value="Visible" /> -->
-                                                        <!--                     <Style.Triggers> -->
-                                                        <!--                         <DataTrigger -->
-                                                        <!--                             Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                             Value="UpfrontFloor"> -->
-                                                        <!--                             <Setter Property="Visibility" -->
-                                                        <!--                                 Value="Collapsed" /> -->
-                                                        <!--                         </DataTrigger> -->
-                                                        <!--                     </Style.Triggers> -->
-                                                        <!--                 </Style> -->
-                                                        <!--             </StackPanel.Style> -->
-                                                        <!--          -->
-                                                        <!--             <TextBlock -->
-                                                        <!--                 Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                 Text="Linked Paycheck Allocations:" -->
-                                                        <!--                 FontWeight="SemiBold" -->
-                                                        <!--                 Margin="0,0,0,5" /> -->
-                                                        <!--             <Border BorderBrush="Gray" BorderThickness="1" -->
-                                                        <!--                     CornerRadius="3" -->
-                                                        <!--                     Height="100"> -->
-                                                        <!--                 <DataGrid -->
-                                                        <!--                     ItemsSource="{Binding EditableAllocations}" -->
-                                                        <!--                     AutoGenerateColumns="False" -->
-                                                        <!--                     CanUserAddRows="True"> -->
-                                                        <!--                     <DataGrid.Columns> -->
-                                                        <!--                         <DataGridTemplateColumn -->
-                                                        <!--                             Header="Paycheck" Width="*"> -->
-                                                        <!--                             <DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                                 <DataTemplate> -->
-                                                        <!--                                     <TextBlock -->
-                                                        <!--                                         Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                                         Text="{Binding PaycheckName}" -->
-                                                        <!--                                         VerticalAlignment="Center" -->
-                                                        <!--                                         Margin="4,0" /> -->
-                                                        <!--                                 </DataTemplate> -->
-                                                        <!--                             </DataGridTemplateColumn.CellTemplate> -->
-                                                        <!--                             <DataGridTemplateColumn.CellEditingTemplate> -->
-                                                        <!--                                 <DataTemplate> -->
-                                                        <!--                                     <ComboBox -->
-                                                        <!--                                         ItemsSource="{Binding DataContext.Paychecks, RelativeSource={RelativeSource AncestorType=Window}}" -->
-                                                        <!--                                         SelectedValue="{Binding PaycheckId, UpdateSourceTrigger=PropertyChanged}" -->
-                                                        <!--                                         SelectedValuePath="Id" -->
-                                                        <!--                                         DisplayMemberPath="Name" -->
-                                                        <!--                                         IsDropDownOpen="True" /> -->
-                                                        <!--                                 </DataTemplate> -->
-                                                        <!--                             </DataGridTemplateColumn.CellEditingTemplate> -->
-                                                        <!--                         </DataGridTemplateColumn> -->
-                                                        <!--                         <DataGridTextColumn -->
-                                                        <!--                             Header="Allocation Value" -->
-                                                        <!--                             Binding="{Binding AllocationValue, StringFormat=N2}" -->
-                                                        <!--                             Width="120" /> -->
-                                                        <!--                         <DataGridCheckBoxColumn Header="Active" -->
-                                                        <!--                             Binding="{Binding IsActive}" -->
-                                                        <!--                             Width="60" /> -->
-                                                        <!--                     </DataGrid.Columns> -->
-                                                        <!--                 </DataGrid> -->
-                                                        <!--             </Border> -->
-                                                        <!--         </StackPanel> -->
-                                                        <!--          -->
-                                                        <!--         ~1~ Dynamic Purpose Description Banner @1@ -->
-                                                        <!--         <Border Background="{DynamicResource DescriptionBannerBackgroundBrush}" BorderBrush="#CBD5E1" -->
-                                                        <!--                 BorderThickness="1" CornerRadius="4" -->
-                                                        <!--                 Padding="8,6" Margin="0,0,0,8"> -->
-                                                        <!--             <TextBlock x:Name="BucketPurposeText" -->
-                                                        <!--                        TextWrapping="Wrap" FontSize="11" -->
-                                                        <!--                        Foreground="#334155" LineHeight="15"> -->
-                                                        <!--                 <TextBlock.Style> -->
-                                                        <!--                     <Style TargetType="TextBlock"> -->
-                                                        <!--                         ~1~ Default Standard Envelope Description @1@ -->
-                                                        <!--                         <Setter Property="Text" -->
-                                                        <!--                             Value="💡 Think of this as a temporary allowance for a period. Spending comes out of this envelope first. If you spend less, the leftover cash goes back to your main account. If you spend more, it automatically pulls from your extra reserves." /> -->
-                                                        <!--                         <Style.Triggers> -->
-                                                        <!--                             ~1~ UpfrontFloor Description @1@ -->
-                                                        <!--                             <DataTrigger -->
-                                                        <!--                                 Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                                 Value="UpfrontFloor"> -->
-                                                        <!--                                 <Setter Property="Text" -->
-                                                        <!--                                     Value="💡 Sets a minimum balance cushion in your account. Make sure your account actually holds these funds—projections will alert you whenever your balance falls below this required floor at any point in the projected timeline." /> -->
-                                                        <!--                             </DataTrigger> -->
-                                                        <!--                             ~1~ AccumulatingDrawdown Description @1@ -->
-                                                        <!--                             <DataTrigger -->
-                                                        <!--                                 Binding="{Binding EditingBucketClone.Type}" -->
-                                                        <!--                                 Value="AccumulatingDrawdown"> -->
-                                                        <!--                                 <Setter Property="Text" -->
-                                                        <!--                                     Value="💡 Builds up cash over time from paychecks toward a goal. Ensure your account actually holds these saved funds, as projections will alert you if your balance drops below your accumulated target and offers actions to take to indicate money has been set aside as available for this savings goal." /> -->
-                                                        <!--                             </DataTrigger> -->
-                                                        <!--                         </Style.Triggers> -->
-                                                        <!--                     </Style> -->
-                                                        <!--                 </TextBlock.Style> -->
-                                                        <!--             </TextBlock> -->
-                                                        <!--         </Border> -->
-                                                        <!--          -->
-                                                        <!--         ~1~ SubCategory Association Section (KEPT VISIBLE FOR ALL TYPES) @1@ -->
-                                                        <!--         <TextBlock -->
-                                                        <!--             Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--             Text="Associated Subcategories:" Margin="0,10,0,5" -->
-                                                        <!--             FontWeight="SemiBold" /> -->
-                                                        <!--         <Border BorderBrush="Gray" BorderThickness="1" -->
-                                                        <!--                 CornerRadius="3" Height="100"> -->
-                                                        <!--             <ListBox -->
-                                                        <!--                 ItemsSource="{Binding EditableSubCategories}" -->
-                                                        <!--                 ScrollViewer.VerticalScrollBarVisibility="Auto"> -->
-                                                        <!--                 <ListBox.ItemTemplate> -->
-                                                        <!--                     <DataTemplate> -->
-                                                        <!--                         <StackPanel Orientation="Horizontal" -->
-                                                        <!--                             Margin="2"> -->
-                                                        <!--                             <CheckBox -->
-                                                        <!--                                 IsChecked="{Binding IsSelected}" -->
-                                                        <!--                                 VerticalAlignment="Center"> -->
-                                                        <!--                                 <StackPanel -->
-                                                        <!--                                     Orientation="Horizontal"> -->
-                                                        <!--                                     <TextBlock -->
-                                                        <!--                                         Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                                         Text="{Binding CategoryName}" -->
-                                                        <!--                                         FontWeight="Bold" -->
-                                                        <!--                                         Margin="0,0,5,0" /> -->
-                                                        <!--                                     <TextBlock -->
-                                                        <!--                                         Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                                         Text=">" -->
-                                                        <!--                                         Margin="0,0,5,0" -->
-                                                        <!--                                         Foreground="Gray" /> -->
-                                                        <!--                                     <TextBlock -->
-                                                        <!--                                         Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                                         Text="{Binding Name}" /> -->
-                                                        <!--                                 </StackPanel> -->
-                                                        <!--                             </CheckBox> -->
-                                                        <!--                             <TextBlock -->
-                                                        <!--                                 Style="{DynamicResource StyledSecondaryTextBlock}" -->
-                                                        <!--                                 x:Name="StatusText" -->
-                                                        <!--                                 Text="{Binding AssignmentStatusText}" -->
-                                                        <!--                                 Margin="10,0,0,0" -->
-                                                        <!--                                 VerticalAlignment="Center" -->
-                                                        <!--                                 FontStyle="Italic" -->
-                                                        <!--                                 Foreground="Gray" /> -->
-                                                        <!--                         </StackPanel> -->
-                                                        <!--                         <DataTemplate.Triggers> -->
-                                                        <!--                             <DataTrigger -->
-                                                        <!--                                 Binding="{Binding IsReassigned}" -->
-                                                        <!--                                 Value="True"> -->
-                                                        <!--                                 <Setter TargetName="StatusText" -->
-                                                        <!--                                     Property="Foreground" -->
-                                                        <!--                                     Value="DarkOrange" /> -->
-                                                        <!--                                 <Setter TargetName="StatusText" -->
-                                                        <!--                                     Property="FontWeight" -->
-                                                        <!--                                     Value="SemiBold" /> -->
-                                                        <!--                             </DataTrigger> -->
-                                                        <!--                         </DataTemplate.Triggers> -->
-                                                        <!--                     </DataTemplate> -->
-                                                        <!--                 </ListBox.ItemTemplate> -->
-                                                        <!--             </ListBox> -->
-                                                        <!--         </Border> -->
-                                                        <!--     </StackPanel> -->
-                                                        <!-- </ScrollViewer> -->
                                                     </Grid>
                                                 </DockPanel>
                                             </Setter.Value>
@@ -3119,10 +2669,10 @@
                                                                     <DataGridTextColumn Header="Category"
                                                                             Binding="{Binding CategoryName}"
                                                                             Width="Auto"
-                                                                            MinWidth="140"/>
+                                                                            MinWidth="140" />
                                                                     <DataGridTextColumn Header="Subcategory"
-                                                                            Binding="{Binding Name}" 
-                                                                            Width="*" 
+                                                                            Binding="{Binding Name}"
+                                                                            Width="*"
                                                                             MinWidth="140" />
                                                                     <DataGridTextColumn Header="Default Envelope"
                                                                             Binding="{Binding DefaultBucketName}"
@@ -3144,7 +2694,7 @@
                                                                         <ColumnDefinition Width="Auto" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                            
+
                                                                     <Label Style="{DynamicResource    StyledLabel}"
                                                                            Grid.Column="0" Content="Category:" />
                                                                     <ComboBox Grid.Column="1"
@@ -3152,14 +2702,14 @@
                                                                               SelectedValue="{Binding EditingSubCategoryClone.CategoryId}"
                                                                               SelectedValuePath="Id"
                                                                               DisplayMemberPath="Name" Margin="2" />
-                                                            
+
                                                                     <Label Style="{DynamicResource    StyledLabel}"
                                                                            Grid.Column="2" Content="Name:" />
                                                                     <TextBox Grid.Column="3"
                                                                              Text="{Binding EditingSubCategoryClone.Name, UpdateSourceTrigger=PropertyChanged}"
                                                                              Margin="2" />
                                                                 </Grid>
-                                                            
+
                                                                 <Grid Margin="0,5">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="Auto" />
@@ -3167,7 +2717,7 @@
                                                                         <ColumnDefinition Width="Auto" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                            
+
                                                                     <Label Style="{DynamicResource    StyledLabel}"
                                                                            Grid.Column="0" Content="Default Envelope:" />
                                                                     <ComboBox Grid.Column="1"
@@ -3175,7 +2725,7 @@
                                                                               SelectedValue="{Binding EditingSubCategoryClone.DefaultBucketId}"
                                                                               SelectedValuePath="Id"
                                                                               DisplayMemberPath="Name" Margin="2" />
-                                                            
+
                                                                     <Label Style="{DynamicResource    StyledLabel}"
                                                                            Grid.Column="2" Content="Sort Order:" />
                                                                     <controls:NumericTextBox Grid.Column="3"
@@ -3526,6 +3076,7 @@
 
                                     <DataGrid x:Name="ProjectionGrid" Grid.Row="0"
                                               ItemsSource="{Binding Projections}"
+                                              helpers1:DynamicAccountColumnsBehavior.Accounts="{Binding VisibleAccounts}"
                                               AutoGenerateColumns="False"
                                               CanUserAddRows="False"
                                               EnableRowVirtualization="True"
@@ -3533,7 +3084,8 @@
                                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                               ScrollViewer.VerticalScrollBarVisibility="Auto">
                                         <DataGrid.RowStyle>
-                                            <Style TargetType="{x:Type DataGridRow}">
+                                            <Style TargetType="{x:Type DataGridRow}"
+                                                   BasedOn="{StaticResource ProjectionRowStyle}">
                                                 <Setter Property="BorderThickness" Value="0,0,0,1" />
                                                 <Setter Property="BorderBrush" Value="LightGray" />
                                                 <Style.Triggers>
@@ -3927,12 +3479,14 @@
                                             </ScrollViewer>
                                             <DataGrid x:Name="SnowballGrid" Grid.Row="1"
                                                       ItemsSource="{Binding SnowballProjections}"
+                                                      helpers1:DynamicAccountColumnsBehavior.Accounts="{Binding VisibleAccounts}"
                                                       Visibility="{Binding SnowballOptions.EnableSnowball, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                       AutoGenerateColumns="False"
                                                       EnableRowVirtualization="True"
                                                       CanUserAddRows="False">
                                                 <DataGrid.RowStyle>
-                                                    <Style TargetType="{x:Type DataGridRow}">
+                                                    <Style TargetType="{x:Type DataGridRow}"
+                                                           BasedOn="{StaticResource ProjectionRowStyle}">
                                                         <Setter Property="BorderThickness" Value="0,0,0,1" />
                                                         <Setter Property="BorderBrush" Value="LightGray" />
                                                         <Style.Triggers>
@@ -4152,12 +3706,13 @@
                                                                                 TextTrimming="CharacterEllipsis" />
                                                                         </StackPanel>
 
-                                                                        <Border Background="{DynamicResource StrategyBadgeBackgroundBrush}"
-                                                                                BorderBrush="{DynamicResource StrategyBadgeBorderBrush}"
-                                                                                BorderThickness="1" CornerRadius="10"
-                                                                                Padding="8,3" DockPanel.Dock="Right"
-                                                                                HorizontalAlignment="Right"
-                                                                                VerticalAlignment="Center">
+                                                                        <Border
+                                                                            Background="{DynamicResource StrategyBadgeBackgroundBrush}"
+                                                                            BorderBrush="{DynamicResource StrategyBadgeBorderBrush}"
+                                                                            BorderThickness="1" CornerRadius="10"
+                                                                            Padding="8,3" DockPanel.Dock="Right"
+                                                                            HorizontalAlignment="Right"
+                                                                            VerticalAlignment="Center">
                                                                             <TextBlock Text="Wealth Strategy"
                                                                                     FontSize="10" FontWeight="Bold"
                                                                                     Foreground="{DynamicResource StrategyBadgeTextBrush}" />
@@ -4367,13 +3922,14 @@
                                                                                 FontWeight="SemiBold" />
                                                                         </StackPanel>
 
-                                                                        <Border Background="{DynamicResource DebtRecoveryBadgeBackgroundBrush}"
-                                                                                BorderBrush="{DynamicResource DebtRecoveryBadgeBorderBrush}"
-                                                                                BorderThickness="1"
-                                                                                CornerRadius="10"
-                                                                                Padding="8,3"
-                                                                                HorizontalAlignment="Right"
-                                                                                DockPanel.Dock="Right">
+                                                                        <Border
+                                                                            Background="{DynamicResource DebtRecoveryBadgeBackgroundBrush}"
+                                                                            BorderBrush="{DynamicResource DebtRecoveryBadgeBorderBrush}"
+                                                                            BorderThickness="1"
+                                                                            CornerRadius="10"
+                                                                            Padding="8,3"
+                                                                            HorizontalAlignment="Right"
+                                                                            DockPanel.Dock="Right">
                                                                             <TextBlock Text="Debt Recovery"
                                                                                     FontSize="10"
                                                                                     FontWeight="Bold"
@@ -4568,11 +4124,12 @@
                                                             </Border>
 
                                                             <!-- Unified Call-To-Action Footer -->
-                                                            <Border Background="{DynamicResource StrategyBadgeBackgroundBrush}"
-                                                                    BorderBrush="{DynamicResource StrategyBadgeBorderBrush}"
-                                                                    BorderThickness="1"
-                                                                    CornerRadius="6"
-                                                                    Padding="10,8">
+                                                            <Border
+                                                                Background="{DynamicResource StrategyBadgeBackgroundBrush}"
+                                                                BorderBrush="{DynamicResource StrategyBadgeBorderBrush}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Padding="10,8">
                                                                 <DockPanel>
                                                                     <TextBlock Text="👉 Enable Strategy:"
                                                                                FontWeight="Bold"
@@ -5425,35 +4982,35 @@
                 </Grid>
             </Border>
         </Grid>
-        
+
         <!-- Accounts Overlay -->
         <userControls:EditAccountsUserControl Grid.Row="0" Grid.RowSpan="3"
-                                           Panel.ZIndex="2000"
-                                           Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
-        
+                                              Panel.ZIndex="2000"
+                                              Visibility="{Binding IsEditingAccount, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
         <!-- Bills Overlay -->
         <userControls:EditBillsUserControl Grid.Row="0" Grid.RowSpan="3"
-                                                  Panel.ZIndex="2000"
-                                                  Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                           Panel.ZIndex="2000"
+                                           Visibility="{Binding IsEditingBill, Converter={StaticResource BooleanToVisibilityConverter}}" />
         <!-- Buckets Overlay -->
         <userControls:EditBucketsUserControl Grid.Row="0" Grid.RowSpan="3"
-                                           Panel.ZIndex="2000"
-                                           Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                             Panel.ZIndex="2000"
+                                             Visibility="{Binding IsEditingBucket, Converter={StaticResource BooleanToVisibilityConverter}}" />
         <!-- Categories Overlay -->
         <userControls:EditCategoriesUserControl Grid.Row="0" Grid.RowSpan="3"
-                                              Panel.ZIndex="2000"
-                                              Visibility="{Binding IsEditingCategory, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                Panel.ZIndex="2000"
+                                                Visibility="{Binding IsEditingCategory, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <!-- Paychecks Overlay -->
         <userControls:EditPaychecksUserControl Grid.Row="0" Grid.RowSpan="3"
-                                           Panel.ZIndex="2000"
-                                           Visibility="{Binding IsEditingPaycheck, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                               Panel.ZIndex="2000"
+                                               Visibility="{Binding IsEditingPaycheck, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-        
+
         <!-- Transactions Overlay -->
         <userControls:EditTransactionsUserControl Grid.Row="0" Grid.RowSpan="3"
-                                        Panel.ZIndex="2000"
-                                        Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                  Panel.ZIndex="2000"
+                                                  Visibility="{Binding IsEditingTransaction, Converter={StaticResource BooleanToVisibilityConverter}}" />
     </Grid>
 
 </Window>

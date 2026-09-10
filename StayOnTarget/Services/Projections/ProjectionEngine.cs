@@ -74,7 +74,6 @@ public class ProjectionEngine : IProjectionEngine {
         bool useAutoSweep = false,
         SnowballStrategyOptions? snowballOptions = null,
         DateTime? referenceDate = null) {
-        
         try {
             var today = referenceDate ?? DateTime.Today;
             var bucketBalances = buckets.ToDictionary(b => b.Id, b => b.CurrentBalance);
@@ -143,7 +142,7 @@ public class ProjectionEngine : IProjectionEngine {
             var ccGraceActive = accounts.Where(a => a.Type == AccountType.CreditCard)
                 .ToDictionary(a => a.Id, a => a.CreditCardDetails?.GraceActive ?? true);
             var ccUnpaidStatementBalance = accounts.Where(a => a.Type == AccountType.CreditCard)
-                .ToDictionary(a => a.Id, a => a.Balance <= 0.01m ? a.Balance: 0m);
+                .ToDictionary(a => a.Id, a => a.Balance <= 0.01m ? a.Balance : 0m);
             var ccPaidThisCycle = accounts.Where(a => a.Type == AccountType.CreditCard)
                 .ToDictionary(a => a.Id, a => 0m);
 
@@ -166,7 +165,8 @@ public class ProjectionEngine : IProjectionEngine {
 
             current = startDate;
 
-            var runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id)).Sum(a => accountBalances[a.Id]);
+            var runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
+                .Sum(a => accountBalances[a.Id]);
 
             var primaryCheckingId = accounts.FirstOrDefault(a => a.Type == AccountType.Checking && a.IsPrimary)?.Id;
 
@@ -267,7 +267,8 @@ public class ProjectionEngine : IProjectionEngine {
                     while (e.Date >= nextPaycheckDate && nextPaycheckDate != DateTime.MaxValue) {
                         var sweepDate = nextPaycheckDate.AddDays(-1);
 
-                        if (sweepDate >= today && sweepDate >= startDate.Date.AddDays(-1) && nextPaycheckDate >= startDate.Date) {
+                        if (sweepDate >= today && sweepDate >= startDate.Date.AddDays(-1) &&
+                            nextPaycheckDate >= startDate.Date) {
                             if (primaryChecking.HasValue) {
                                 var ccPeriodNewDebt = new Dictionary<int, decimal>();
 
@@ -325,7 +326,8 @@ public class ProjectionEngine : IProjectionEngine {
                                                 Amount = Math.Abs(actualSweepAmount),
                                                 Balance = runningBalance,
                                                 IsSynthetic = true,
-                                                AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key],
+                                                AccountBalances = accountBalances.ToDictionary(
+                                                    kv => accountNames[kv.Key],
                                                     kv => kv.Value),
                                                 InOrOutOfMoneyAccount = true
                                             };
@@ -393,6 +395,54 @@ public class ProjectionEngine : IProjectionEngine {
                         ccPreviousMonthPaidInFull,
                         includedTotalAccounts)) continue;
 
+                #region min payment sweep for credit cards
+                if (e.Type == ProjectionEngine.ProjectionEventType.Sweep && e.Description.StartsWith("Min-Pay Check")) {
+                    var acc = accounts.FirstOrDefault(a => a.Id == e.FromAccountId);
+                    primaryChecking =
+                        accounts.FirstOrDefault(a => a.Type == AccountType.Checking && a.IsPrimary)?.Id;
+
+                    if (acc?.CreditCardDetails != null && primaryChecking.HasValue) {
+                        var currentCcBalance = accountBalances[acc.Id];
+                        var minPaymentAmount = acc.CreditCardDetails.MinPayFloor;
+                        var paidSoFar =
+                            ccPaidThisCycle
+                                [acc.Id]; // Transactions from statement day to statement+graceperiod have already run and added to this!
+
+                        if (currentCcBalance < -0.01m && minPaymentAmount > 0 && paidSoFar < minPaymentAmount) {
+                            var remainingMin = Math.Min(-currentCcBalance, minPaymentAmount - paidSoFar);
+                            decimal spendableChecking =
+                                GetSpendableBalance(primaryChecking.Value, accountBalances, accountFloors);
+                            decimal actualSweep = Math.Min(remainingMin, spendableChecking);
+
+                            if (actualSweep > 0.01m) {
+                                accountBalances[primaryChecking.Value] -= actualSweep;
+                                accountBalances[acc.Id] += actualSweep;
+                                ccPaidThisCycle[acc.Id] += actualSweep;
+
+                                runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
+                                    .Sum(a => accountBalances[a.Id]);
+
+                                list.Add(new ProjectionItem {
+                                    Type = ProjectionEngine.ProjectionEventType.Sweep,
+                                    TransactionDate = e.Date, // Dated on the 27th!
+                                    Description = $"Min-Pay Sweep: {acc.Name}",
+                                    FromAccountId = primaryChecking,
+                                    ToAccountId = acc.Id,
+                                    Amount = actualSweep,
+                                    Balance = runningBalance,
+                                    IsSynthetic = true,
+                                    AccountBalances =
+                                        accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value),
+                                    InOrOutOfMoneyAccount = true
+                                });
+                            }
+                        }
+                    }
+
+                    continue; // Skip standard processing for this synthetic marker
+                }
+                #endregion
+
                 var currentEventAmount = e.Amount;
 
                 if (e.ToAccountId.HasValue && mortgagePaidOff.ContainsKey(e.ToAccountId.Value) &&
@@ -429,7 +479,8 @@ public class ProjectionEngine : IProjectionEngine {
                         var isDebt = toAcc.IsLiability;
                         var isPrincipalOnly = e.IsPrincipalOnly;
                         var isRebalance = e.IsRebalance;
-                        var isInterestAdjustment = (e.Type == ProjectionEventType.Transaction && e.IsInterestAdjustment);
+                        var isInterestAdjustment =
+                            (e.Type == ProjectionEventType.Transaction && e.IsInterestAdjustment);
                         var isInterestOrRebalance = isDebt && (isRebalance || isInterestAdjustment);
 
                         if (isInterestOrRebalance) {
@@ -454,7 +505,8 @@ public class ProjectionEngine : IProjectionEngine {
                         else if (isDebt) {
                             accountBalances[e.ToAccountId.Value] += amountChange;
 
-                            if (toAcc.Type == AccountType.CreditCard && ccPaidThisCycle.ContainsKey(e.ToAccountId.Value)) {
+                            if (toAcc.Type == AccountType.CreditCard &&
+                                ccPaidThisCycle.ContainsKey(e.ToAccountId.Value)) {
                                 ccPaidThisCycle[e.ToAccountId.Value] += amountChange;
                             }
                         }
@@ -465,7 +517,8 @@ public class ProjectionEngine : IProjectionEngine {
                 }
 
                 var effectiveFromAccountId = e.FromAccountId ??
-                                             ((e.Type == ProjectionEventType.Bill || e.Type == ProjectionEventType.Bucket ||
+                                             ((e.Type == ProjectionEventType.Bill ||
+                                               e.Type == ProjectionEventType.Bucket ||
                                                e.Type == ProjectionEventType.AccumulatingDrawdown ||
                                                e.Type == ProjectionEventType.Transfer)
                                                  ? primaryChecking
@@ -476,7 +529,8 @@ public class ProjectionEngine : IProjectionEngine {
                     accountBalances[effectiveFromAccountId.Value] -= amountChange;
                 }
 
-                runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id)).Sum(a => accountBalances[a.Id]);
+                runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
+                    .Sum(a => accountBalances[a.Id]);
 
                 var item = new ProjectionItem {
                     Type = e.Type,
@@ -550,10 +604,10 @@ public class ProjectionEngine : IProjectionEngine {
 
                             foreach (var ccId in creditCardAccountIds) {
                                 var currentDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
-        
-                                var cardTransactions = futureEvents.Where(ev => 
-                                    ev.Date > paycheckDates[Math.Max(0, nextPaycheckIndex - 1)] && 
-                                    ev.Date <= sweepDate && 
+
+                                var cardTransactions = futureEvents.Where(ev =>
+                                    ev.Date > paycheckDates[Math.Max(0, nextPaycheckIndex - 1)] &&
+                                    ev.Date <= sweepDate &&
                                     (ev.FromAccountId == ccId || ev.ToAccountId == ccId));
 
                                 decimal netFlow = 0m;
@@ -561,6 +615,7 @@ public class ProjectionEngine : IProjectionEngine {
                                     if (tx.ToAccountId == ccId) {
                                         netFlow -= tx.Amount;
                                     }
+
                                     if (tx.FromAccountId == ccId) {
                                         netFlow += tx.Amount;
                                     }
@@ -577,7 +632,8 @@ public class ProjectionEngine : IProjectionEngine {
                                 var targetSweepAmount = Math.Min(netNewDebt, totalBalanceDeficit);
 
                                 if (targetSweepAmount > 0.01m) {
-                                    decimal spendableChecking = GetSpendableBalance(primaryChecking.Value, accountBalances,
+                                    decimal spendableChecking = GetSpendableBalance(primaryChecking.Value,
+                                        accountBalances,
                                         accountFloors);
                                     decimal pctSafetyThreshold = Math.Max(0m,
                                         thresholdPct * accountBalances[primaryChecking.Value]);
@@ -655,7 +711,8 @@ public class ProjectionEngine : IProjectionEngine {
 
                         decimal spendableChecking =
                             GetSpendableBalance(primaryChecking.Value, accountBalances, accountFloors);
-                        decimal pctSafetyThreshold = Math.Max(0m, thresholdPct * accountBalances[primaryChecking.Value]);
+                        decimal pctSafetyThreshold =
+                            Math.Max(0m, thresholdPct * accountBalances[primaryChecking.Value]);
 
                         decimal availableToSweep = spendableChecking - pctSafetyThreshold;
 
@@ -677,7 +734,8 @@ public class ProjectionEngine : IProjectionEngine {
                                 Amount = Math.Abs(actualSweepAmount),
                                 Balance = runningBalance,
                                 IsSynthetic = true,
-                                AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value),
+                                AccountBalances =
+                                    accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value),
                                 InOrOutOfMoneyAccount = true
                             };
 
@@ -716,7 +774,7 @@ public class ProjectionEngine : IProjectionEngine {
         }
         catch (Exception ex) {
             Log.Error(ex, "Error calculating projections in ProjectionEngine.");
-            
+
             return new List<ProjectionItem>();
         }
     }
@@ -733,7 +791,7 @@ public class ProjectionEngine : IProjectionEngine {
         }
         catch (Exception ex) {
             Log.Error(ex, "Error getting spendable balance in ProjectionEngine.");
-            
+
             return 0m;
         }
     }

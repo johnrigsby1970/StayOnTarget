@@ -7,11 +7,9 @@ using Serilog;
 
 namespace StayOnTarget.Services;
 
-public partial class BudgetService 
-{
+public partial class BudgetService {
     // Bucket Operations
-    public async Task<IEnumerable<BudgetBucket>> GetAllBucketsAsync(bool includeArchived = false) 
-    {
+    public async Task<IEnumerable<BudgetBucket>> GetAllBucketsAsync(bool includeArchived = false) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
@@ -29,17 +27,14 @@ public partial class BudgetService
         }
     }
 
-    public async Task UpsertBucketAsync(BudgetBucket bucket, List<int>? subCategoryIds) 
-    {
+    public async Task UpsertBucketAsync(BudgetBucket bucket, List<int>? subCategoryIds) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
             using var tx = conn.BeginTransaction();
 
-            try
-            {
-                if (bucket.Id == 0) 
-                {
+            try {
+                if (bucket.Id == 0) {
                     bucket.Id = await conn.ExecuteScalarAsync<int>(@"
                         INSERT INTO Buckets (
                             Name, ExpectedAmount, AccountId, Type, 
@@ -51,7 +46,7 @@ public partial class BudgetService
                             @TargetBalance, @CurrentBalance, @InitialBalance,
                             @TargetFrequency, @TargetAmount, @NextDueDate, @Overrides
                         );
-                        SELECT last_insert_rowid();", 
+                        SELECT last_insert_rowid();",
                         new {
                             bucket.Name,
                             bucket.ExpectedAmount,
@@ -60,14 +55,15 @@ public partial class BudgetService
                             bucket.TargetBalance,
                             bucket.CurrentBalance,
                             bucket.InitialBalance,
-                            TargetFrequency = bucket.TargetFrequency.HasValue ? (int?)bucket.TargetFrequency.Value : null,
+                            TargetFrequency = bucket.TargetFrequency.HasValue
+                                ? (int?)bucket.TargetFrequency.Value
+                                : null,
                             bucket.TargetAmount,
                             NextDueDate = bucket.NextDueDate?.ToString("yyyy-MM-dd"),
                             Overrides = bucket.Overrides
                         }, tx);
                 }
-                else 
-                {
+                else {
                     await conn.ExecuteAsync(@"
                         UPDATE Buckets 
                         SET Name = @Name, 
@@ -81,7 +77,7 @@ public partial class BudgetService
                             TargetAmount = @TargetAmount,
                             NextDueDate = @NextDueDate,
                             Overrides = @Overrides
-                        WHERE Id = @Id", 
+                        WHERE Id = @Id",
                         new {
                             bucket.Id,
                             bucket.Name,
@@ -91,21 +87,22 @@ public partial class BudgetService
                             bucket.TargetBalance,
                             bucket.CurrentBalance,
                             bucket.InitialBalance,
-                            TargetFrequency = bucket.TargetFrequency.HasValue ? (int?)bucket.TargetFrequency.Value : null,
+                            TargetFrequency = bucket.TargetFrequency.HasValue
+                                ? (int?)bucket.TargetFrequency.Value
+                                : null,
                             bucket.TargetAmount,
                             NextDueDate = bucket.NextDueDate?.ToString("yyyy-MM-dd"),
                             Overrides = bucket.Overrides
                         }, tx);
                 }
 
-                if (subCategoryIds != null) 
-                {
+
+                if (subCategoryIds != null) {
                     await conn.ExecuteAsync(
                         "UPDATE SubCategories SET DefaultBucketId = NULL WHERE DefaultBucketId = @BucketId",
                         new { BucketId = bucket.Id }, tx);
 
-                    if (subCategoryIds.Any()) 
-                    {
+                    if (subCategoryIds.Any()) {
                         await conn.ExecuteAsync(
                             "UPDATE SubCategories SET DefaultBucketId = @BucketId WHERE Id IN @Ids",
                             new { BucketId = bucket.Id, Ids = subCategoryIds }, tx);
@@ -114,8 +111,7 @@ public partial class BudgetService
 
                 tx.Commit();
             }
-            catch
-            {
+            catch {
                 tx.Rollback();
                 throw;
             }
@@ -127,28 +123,27 @@ public partial class BudgetService
     }
 
     // Bucket Paycheck Allocation Operations
-    public async Task SaveBucketPaycheckAllocationsAsync(int bucketId, BucketType bucketType, IEnumerable<BucketPaycheckAllocation> allocations)
-    {
+    public async Task SaveBucketPaycheckAllocationsAsync(int bucketId, BucketType bucketType,
+        IEnumerable<BucketPaycheckAllocation> allocations) {
         try {
-            if (bucketType == BucketType.UpfrontFloor)
-            {
-                throw new InvalidOperationException("UpfrontFloor buckets represent static reserve balances and cannot be linked to paycheck allocations[cite: 19].");
+            if (bucketType == BucketType.UpfrontFloor) {
+                throw new InvalidOperationException(
+                    "UpfrontFloor buckets represent static reserve balances and cannot be linked to paycheck allocations[cite: 19].");
             }
 
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
             await using var tx = await conn.BeginTransactionAsync();
 
-            try
-            {
-                await conn.ExecuteAsync("DELETE FROM BucketPaycheckAllocations WHERE BucketId = @bucketId", new { bucketId }, tx);
+            try {
+                await conn.ExecuteAsync("DELETE FROM BucketPaycheckAllocations WHERE BucketId = @bucketId",
+                    new { bucketId }, tx);
 
                 const string sql = @"
                     INSERT INTO BucketPaycheckAllocations (BucketId, PaycheckId, AllocationType, AllocationValue, SortOrder, IsActive)
                     VALUES (@BucketId, @PaycheckId, @AllocationType, @AllocationValue, @SortOrder, @IsActive);";
 
-                foreach (var alloc in allocations)
-                {
+                foreach (var alloc in allocations.Where(x=>x.AllocationValue>0)) {
                     await conn.ExecuteAsync(sql, new {
                         BucketId = bucketId,
                         alloc.PaycheckId,
@@ -161,8 +156,7 @@ public partial class BudgetService
 
                 await tx.CommitAsync();
             }
-            catch
-            {
+            catch {
                 await tx.RollbackAsync();
                 throw;
             }
@@ -173,8 +167,7 @@ public partial class BudgetService
         }
     }
 
-    public async Task<IEnumerable<BucketPaycheckAllocation>> GetAllAllocationsAsync()
-    {
+    public async Task<IEnumerable<BucketPaycheckAllocation>> GetAllAllocationsAsync() {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
@@ -189,9 +182,8 @@ public partial class BudgetService
             return Enumerable.Empty<BucketPaycheckAllocation>();
         }
     }
-    
-    public async Task<IEnumerable<BucketPaycheckAllocation>> GetAllocationsForBucketAsync(int bucketId)
-    {
+
+    public async Task<IEnumerable<BucketPaycheckAllocation>> GetAllocationsForBucketAsync(int bucketId) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
@@ -210,42 +202,33 @@ public partial class BudgetService
         }
     }
 
-    public async Task ApplyDrawdownAsync(int bucketId, decimal amount, IDbTransaction? tx = null)
-    {
+    public async Task ApplyDrawdownAsync(int bucketId, decimal amount, IDbTransaction? tx = null) {
         try {
             var conn = tx?.Connection ?? _db.GetConnection();
             bool isLocalConn = tx == null;
 
-            try
-            {
-                if (isLocalConn && conn is DbConnection dbConn)
-                {
-                    if (dbConn.State != ConnectionState.Open)
-                    {
+            try {
+                if (isLocalConn && conn is DbConnection dbConn) {
+                    if (dbConn.State != ConnectionState.Open) {
                         await dbConn.OpenAsync();
                     }
                 }
-                else if (isLocalConn && conn.State != ConnectionState.Open)
-                {
+                else if (isLocalConn && conn.State != ConnectionState.Open) {
                     conn.Open();
                 }
 
                 await conn.ExecuteAsync(@"
                 UPDATE Buckets 
                 SET CurrentBalance = CurrentBalance - @amount 
-                WHERE Id = @bucketId AND Type = 2", 
+                WHERE Id = @bucketId AND Type = 2",
                     new { bucketId, amount }, tx);
             }
-            finally
-            {
-                if (isLocalConn)
-                {
-                    if (conn is IAsyncDisposable asyncDisposable)
-                    {
+            finally {
+                if (isLocalConn) {
+                    if (conn is IAsyncDisposable asyncDisposable) {
                         await asyncDisposable.DisposeAsync();
                     }
-                    else
-                    {
+                    else {
                         conn.Dispose();
                     }
                 }
@@ -256,8 +239,7 @@ public partial class BudgetService
         }
     }
 
-    public async Task ArchiveBucketAsync(int id) 
-    {
+    public async Task ArchiveBucketAsync(int id) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
@@ -269,8 +251,7 @@ public partial class BudgetService
         }
     }
 
-    public async Task UnArchiveBucketAsync(int id) 
-    {
+    public async Task UnArchiveBucketAsync(int id) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
@@ -282,8 +263,7 @@ public partial class BudgetService
         }
     }
 
-    public async Task SetBucketInactiveAsync(int id) 
-    {
+    public async Task SetBucketInactiveAsync(int id) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
@@ -295,29 +275,25 @@ public partial class BudgetService
         }
     }
 
-    public async Task DeleteBucketAsync(int id) 
-    {
+    public async Task DeleteBucketAsync(int id) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
             await using var tx = conn.BeginTransaction();
 
-            try 
-            {
-                if (await IsBucketInUseAsync(id, conn, tx)) 
-                {
+            try {
+                if (await IsBucketInUseAsync(id, conn, tx)) {
                     await conn.ExecuteAsync("UPDATE Buckets SET IsArchived = 1 WHERE Id = @id", new { id }, tx);
                 }
-                else 
-                {
-                    await conn.ExecuteAsync("DELETE FROM BucketPaycheckAllocations WHERE BucketId = @id", new { id }, tx);
+                else {
+                    await conn.ExecuteAsync("DELETE FROM BucketPaycheckAllocations WHERE BucketId = @id", new { id },
+                        tx);
                     await conn.ExecuteAsync("DELETE FROM Buckets WHERE Id = @id", new { id }, tx);
                 }
 
                 await tx.CommitAsync();
             }
-            catch 
-            {
+            catch {
                 await tx.RollbackAsync();
                 throw;
             }
@@ -328,17 +304,14 @@ public partial class BudgetService
         }
     }
 
-    public async Task<bool> IsBucketInUseAsync(int bucketId, SqliteConnection? cn = null, IDbTransaction? tx = null) 
-    {
+    public async Task<bool> IsBucketInUseAsync(int bucketId, SqliteConnection? cn = null, IDbTransaction? tx = null) {
         try {
             cn ??= tx?.Connection as SqliteConnection;
             bool isLocalConn = cn == null;
             var conn = cn ?? _db.GetConnection();
 
-            try 
-            {
-                if (isLocalConn && conn.State != ConnectionState.Open) 
-                {
+            try {
+                if (isLocalConn && conn.State != ConnectionState.Open) {
                     await conn.OpenAsync();
                 }
 
@@ -354,10 +327,8 @@ public partial class BudgetService
 
                 return false;
             }
-            finally 
-            {
-                if (isLocalConn) 
-                {
+            finally {
+                if (isLocalConn) {
                     await conn.DisposeAsync();
                 }
             }
@@ -367,16 +338,14 @@ public partial class BudgetService
             return false;
         }
     }
-    
-    public async Task FundPeriodBucketAsync(int bucketId, DateTime periodDate, decimal amount)
-    {
+
+    public async Task FundPeriodBucketAsync(int bucketId, DateTime periodDate, decimal amount) {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
             await using var tx = await conn.BeginTransactionAsync();
 
-            try
-            {
+            try {
                 await conn.ExecuteAsync(@"
                 INSERT INTO PeriodBuckets (BucketId, PeriodDate, ActualAmount, IsPaid)
                 VALUES (@bucketId, @periodDate, @amount, 1)
@@ -389,8 +358,7 @@ public partial class BudgetService
 
                 await tx.CommitAsync();
             }
-            catch
-            {
+            catch {
                 await tx.RollbackAsync();
                 throw;
             }

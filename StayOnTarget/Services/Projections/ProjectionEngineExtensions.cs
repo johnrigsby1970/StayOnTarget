@@ -397,57 +397,57 @@ public static class ProjectionEngineExtensions {
 // 4. Update grace status for NEXT cycle
                     ccGraceActive[acc.Id] = willMaintainGraceNextCycle;
 
-                    // 5. Min-Pay Sweep Handling
-                    var primaryChecking =
-                        accounts.FirstOrDefault(a => a.Type == AccountType.Checking && a.IsPrimary)?.Id;
-                    if (primaryChecking.HasValue && e.Date >= startDate) {
-                        var currentCcBalance = accountBalances[acc.Id];
-                        var minPaymentAmount = acc.CreditCardDetails.MinPayFloor;
-                        var amountPaidSoFar = ccPaidThisCycle[acc.Id];
-
-                        if (currentCcBalance < 0 && minPaymentAmount > 0 && amountPaidSoFar < minPaymentAmount) {
-                            var remainingMinPayment = Math.Min(-currentCcBalance, minPaymentAmount - amountPaidSoFar);
-
-                            if (remainingMinPayment > 0) {
-                                decimal checkingBalance = accountBalances[primaryChecking.Value];
-
-                                decimal checkingFloor = (accountFloors != null &&
-                                                         accountFloors.TryGetValue(primaryChecking.Value, out var fl))
-                                    ? fl
-                                    : 0m;
-                                decimal spendableChecking = Math.Max(0m, checkingBalance - checkingFloor);
-
-                                decimal actualSweepAmount = Math.Min(remainingMinPayment, spendableChecking);
-
-                                if (actualSweepAmount > 0) {
-                                    accountBalances[primaryChecking.Value] -= actualSweepAmount;
-                                    accountBalances[acc.Id] += actualSweepAmount;
-                                    ccPaidThisCycle[acc.Id] += actualSweepAmount;
-
-                                    if (includedTotalAccounts.Contains(acc.Id)) {
-                                        runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
-                                            .Sum(a => accountBalances[a.Id]);
-                                    }
-
-                                    var sweepItem = new ProjectionItem {
-                                        Type = e.Type,
-                                        TransactionDate = e.Date,
-                                        Description = $"Min-Pay Sweep: {acc.Name}",
-                                        FromAccountId = primaryChecking,
-                                        ToAccountId = acc.Id,
-                                        Amount = Math.Abs(actualSweepAmount),
-                                        Balance = runningBalance,
-                                        IsSynthetic = true,
-                                        AccountBalances =
-                                            accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value),
-                                        InOrOutOfMoneyAccount = true
-                                    };
-
-                                    list.Add(sweepItem);
-                                }
-                            }
-                        }
-                    }
+                    // // 5. Min-Pay Sweep Handling
+                    // var primaryChecking =
+                    //     accounts.FirstOrDefault(a => a.Type == AccountType.Checking && a.IsPrimary)?.Id;
+                    // if (primaryChecking.HasValue && e.Date >= startDate) {
+                    //     var currentCcBalance = accountBalances[acc.Id];
+                    //     var minPaymentAmount = acc.CreditCardDetails.MinPayFloor;
+                    //     var amountPaidSoFar = ccPaidThisCycle[acc.Id];
+                    //
+                    //     if (currentCcBalance < 0 && minPaymentAmount > 0 && amountPaidSoFar < minPaymentAmount) {
+                    //         var remainingMinPayment = Math.Min(-currentCcBalance, minPaymentAmount - amountPaidSoFar);
+                    //
+                    //         if (remainingMinPayment > 0) {
+                    //             decimal checkingBalance = accountBalances[primaryChecking.Value];
+                    //
+                    //             decimal checkingFloor = (accountFloors != null &&
+                    //                                      accountFloors.TryGetValue(primaryChecking.Value, out var fl))
+                    //                 ? fl
+                    //                 : 0m;
+                    //             decimal spendableChecking = Math.Max(0m, checkingBalance - checkingFloor);
+                    //
+                    //             decimal actualSweepAmount = Math.Min(remainingMinPayment, spendableChecking);
+                    //
+                    //             if (actualSweepAmount > 0) {
+                    //                 accountBalances[primaryChecking.Value] -= actualSweepAmount;
+                    //                 accountBalances[acc.Id] += actualSweepAmount;
+                    //                 ccPaidThisCycle[acc.Id] += actualSweepAmount;
+                    //
+                    //                 if (includedTotalAccounts.Contains(acc.Id)) {
+                    //                     runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
+                    //                         .Sum(a => accountBalances[a.Id]);
+                    //                 }
+                    //
+                    //                 var sweepItem = new ProjectionItem {
+                    //                     Type = e.Type,
+                    //                     TransactionDate = e.Date,
+                    //                     Description = $"Min-Pay Sweep: {acc.Name}",
+                    //                     FromAccountId = primaryChecking,
+                    //                     ToAccountId = acc.Id,
+                    //                     Amount = Math.Abs(actualSweepAmount),
+                    //                     Balance = runningBalance,
+                    //                     IsSynthetic = true,
+                    //                     AccountBalances =
+                    //                         accountBalances.ToDictionary(kv => accountNames[kv.Key], kv => kv.Value),
+                    //                     InOrOutOfMoneyAccount = true
+                    //                 };
+                    //
+                    //                 list.Add(sweepItem);
+                    //             }
+                    //         }
+                    //     }
+                    // }
 
                     // 6. Reset tracking state for next cycle
                     ccUnpaidStatementBalance[acc.Id] = accountBalances[acc.Id];
@@ -559,15 +559,54 @@ public static class ProjectionEngineExtensions {
                              t.Description.Contains("Interest", StringComparison.OrdinalIgnoreCase)));
 
                         if (!hasInterestAdjustment) {
+                            // 1. Statement / Interest Event on StatementDay (e.g. 6th)
                             events.Add(new ProjectionGridItem(nextStatement, 0, $"Credit Card Interest: {acc.Name}",
-                                acc.Id,
-                                null, null, null, null,
+                                acc.Id, null, null, null, null,
                                 ProjectionEngine.ProjectionEventType.Interest, false, false, false, false));
+
+                            // 2. Minimum Payment Due Event on Due Date (e.g. 6th + 21 days = 27th)
+                            var dueDate = nextStatement.AddDays(acc.CreditCardDetails.DueDateOffset);
+                            if (dueDate <= endDate) {
+                                events.Add(new ProjectionGridItem(dueDate, 0, $"Min-Pay Check: {acc.Name}",
+                                    acc.Id, null, null, null, null,
+                                    ProjectionEngine.ProjectionEventType.Sweep, false, false, false, false));
+                            }
                         }
 
                         nextStatement = nextStatement.AddMonths(1);
                     }
                 }
+                
+                // if (acc.Type == AccountType.CreditCard && acc.CreditCardDetails != null) {
+                //     var nextStatement = new DateTime(startDate.Year, startDate.Month,
+                //         Math.Min(acc.CreditCardDetails.StatementDay,
+                //             DateTime.DaysInMonth(startDate.Year, startDate.Month)));
+                //     if (nextStatement <= startDate) nextStatement = nextStatement.AddMonths(1);
+                //
+                //     while (nextStatement <= endDate) {
+                //         if (nextStatement.Day != acc.CreditCardDetails.StatementDay) {
+                //             nextStatement = new DateTime(nextStatement.Year, nextStatement.Month,
+                //                 Math.Min(acc.CreditCardDetails.StatementDay,
+                //                     DateTime.DaysInMonth(nextStatement.Year, nextStatement.Month)));
+                //         }
+                //
+                //         var periodStart = nextStatement.AddMonths(-1);
+                //         var hasInterestAdjustment = transactions.Any(t =>
+                //             (t.AccountId == acc.Id) &&
+                //             t.TransactionDate > periodStart && t.TransactionDate <= nextStatement &&
+                //             (t.IsInterestOnly ||
+                //              t.Description.Contains("Interest", StringComparison.OrdinalIgnoreCase)));
+                //
+                //         if (!hasInterestAdjustment) {
+                //             events.Add(new ProjectionGridItem(nextStatement, 0, $"Credit Card Interest: {acc.Name}",
+                //                 acc.Id,
+                //                 null, null, null, null,
+                //                 ProjectionEngine.ProjectionEventType.Interest, false, false, false, false));
+                //         }
+                //
+                //         nextStatement = nextStatement.AddMonths(1);
+                //     }
+                // }
             }
         }
         catch (Exception ex) {
@@ -625,6 +664,21 @@ public static class ProjectionEngineExtensions {
                 if (bucket.Type == BucketType.UpfrontFloor) continue;
 
                 var bucketAllocations = allAllocations.Where(a => a.BucketId == bucket.Id && a.IsActive).ToList();
+
+                //The allocation setting is hidden when there is only one check
+                //its also possible for things to change, for there now to only be one paycheck
+                //or for bad data to have crept in
+                if (bucket.Type == BucketType.Standard &&
+                    paychecks.Count(x => x.EndDate == null || x.EndDate > today) == 1) {
+                    //} && bucketAllocations.Count == 0) {
+                    bucketAllocations.Clear();
+                    bucketAllocations.Add(new BucketPaycheckAllocation() {
+                        PaycheckId = paychecks.First().Id,
+                        BucketId = bucket.Id,
+                        AllocationType = "Percentage",
+                        AllocationValue = 100
+                    });
+                }
 
                 if (bucketAllocations.Any()) {
                     foreach (var alloc in bucketAllocations) {
@@ -701,6 +755,12 @@ public static class ProjectionEngineExtensions {
                 }
                 else {
                     DateTime nextDue = bucket.NextDueDate ?? current;
+
+                    if (bucket.TargetFrequency == TargetFrequencyType.Monthly && bucket.NextDueDate == null) {
+                        nextDue = new DateTime(current.Year, current.Month,
+                            DateTime.DaysInMonth(current.Year, current.Month));
+                    }
+
                     if (nextDue < current) nextDue = current;
 
                     while (nextDue < endDate) {
@@ -741,15 +801,29 @@ public static class ProjectionEngineExtensions {
                             }
                         }
 
-                        nextDue = bucket.TargetFrequency switch {
-                            TargetFrequencyType.Weekly => nextDue.AddDays(7),
-                            TargetFrequencyType.BiWeekly => nextDue.AddDays(14),
-                            TargetFrequencyType.SemiMonthly => nextDue.AddDays(15),
-                            TargetFrequencyType.Monthly => nextDue.AddMonths(1),
-                            TargetFrequencyType.Quarterly => nextDue.AddMonths(3),
-                            TargetFrequencyType.Annual => nextDue.AddYears(1),
-                            _ => nextDue.AddMonths(1)
-                        };
+                        if (bucket.TargetFrequency == TargetFrequencyType.Monthly && bucket.NextDueDate == null) {
+                            // 1. Advance to the next month
+                            var nextMonth = nextDue.AddMonths(1);
+
+                            // 2. Snap to the last day of that new month
+                            nextDue = new DateTime(
+                                nextMonth.Year,
+                                nextMonth.Month,
+                                DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month)
+                            );
+                        }
+                        else {
+                            // Standard cadence progression
+                            nextDue = bucket.TargetFrequency switch {
+                                TargetFrequencyType.Weekly => nextDue.AddDays(7),
+                                TargetFrequencyType.BiWeekly => nextDue.AddDays(14),
+                                TargetFrequencyType.SemiMonthly => nextDue.AddDays(15),
+                                TargetFrequencyType.Monthly => nextDue.AddMonths(1),
+                                TargetFrequencyType.Quarterly => nextDue.AddMonths(3),
+                                TargetFrequencyType.Annual => nextDue.AddYears(1),
+                                _ => nextDue.AddMonths(1)
+                            };
+                        }
                     }
                 }
             }

@@ -11,7 +11,7 @@ public partial class BudgetService
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
-
+    
             return await conn.QueryAsync<PeriodBucket>(@"
             SELECT 
                 pb.*, 
@@ -28,12 +28,13 @@ public partial class BudgetService
         }
     }
     
+    
     public async Task<IEnumerable<PeriodBucket>> GetPeriodBucketsIncludingMonthlyAsync(DateTime periodDate)
     {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
-
+    
             var month = new DateTime(periodDate.Year, periodDate.Month, 1);
             return await conn.QueryAsync<PeriodBucket>(@"
                 SELECT pb.*, b.Name as BucketName , 
@@ -48,13 +49,14 @@ public partial class BudgetService
             return Enumerable.Empty<PeriodBucket>();
         }
     }
-
+    
+    
     public async Task<IEnumerable<PeriodBucket>> GetAllPeriodBucketsAsync()
     {
         try {
             await using var conn = _db.GetConnection();
             await conn.OpenAsync();
-
+    
             return await conn.QueryAsync<PeriodBucket>(@"
                 SELECT pb.*, b.Name as BucketName , 
                 b.Type AS BucketType 
@@ -66,6 +68,45 @@ public partial class BudgetService
             return Enumerable.Empty<PeriodBucket>();
         }
     }
+    
+    // public async Task<IEnumerable<PeriodBucket>> GetAllPeriodBucketsAsync()
+    // {
+    //     try {
+    //         await using var conn = _db.GetConnection();
+    //         await conn.OpenAsync();
+    //
+    //         const string sql = @"
+    //         SELECT 
+    //             pb.Id,
+    //             pb.BucketId,
+    //             b.Name AS BucketName,
+    //             b.Type AS BucketType,
+    //             pb.PeriodDate,
+    //             COALESCE(
+    //                 pb.ActualAmount,
+    //                 (
+    //                     SELECT h.ExpectedAmount 
+    //                     FROM BucketTargetHistory h 
+    //                     WHERE h.BucketId = b.Id 
+    //                       AND h.EffectiveStartDate <= date(pb.PeriodDate, '+14 days') 
+    //                     ORDER BY h.EffectiveStartDate DESC 
+    //                     LIMIT 1
+    //                 ),
+    //                 b.ExpectedAmount
+    //             ) AS ActualAmount,
+    //             pb.IsPaid,
+    //             pb.FitId
+    //         FROM PeriodBuckets pb 
+    //         JOIN Buckets b ON pb.BucketId = b.Id;";
+    //
+    //         return await conn.QueryAsync<PeriodBucket>(sql);
+    //     }
+    //     catch (Exception ex) {
+    //         Log.Error(ex, "Error getting all period buckets.");
+    //         return Enumerable.Empty<PeriodBucket>();
+    //     }
+    // }
+
 
     public async Task UpsertPeriodBucketAsync(PeriodBucket pb)
     {

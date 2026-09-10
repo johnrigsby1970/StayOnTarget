@@ -74,22 +74,36 @@
                                      Color="White" />
                 </Style.Resources>
             </Style>
-            <!-- <Style TargetType="{x:Type DataGridColumnHeader}"> -->
-            <!--     <Setter Property="Background" Value="#E2E8F0" /> -->
-            <!-- -->
-            <!--     <Setter Property="Foreground" Value="#1E293B" /> -->
-            <!--     <Setter Property="FontWeight" Value="SemiBold" /> -->
-            <!--     <Setter Property="FontSize" Value="12" /> -->
-            <!-- -->
-            <!--     <Setter Property="Padding" Value="8,6,8,6" /> -->
-            <!--     <Setter Property="HorizontalContentAlignment" Value="Left" /> -->
-            <!-- -->
-            <!--     <Setter Property="BorderBrush" Value="#CBD5E1" /> -->
-            <!--     <Setter Property="BorderThickness" Value="0,0,1,1" /> -->
-            <!-- -->
-            <!--     <Setter Property="SeparatorBrush" Value="#CBD5E1"/> -->
-            <!-- </Style> -->
 
+            <!-- Shared Amount Column Style -->
+            <Style x:Key="TransactionAmountElementStyle" TargetType="TextBlock">
+                <Setter Property="TextAlignment" Value="Right" />
+                <Setter Property="Padding" Value="0,0,8,0" />
+                <Setter Property="Foreground" Value="{Binding Amount, Converter={StaticResource AmountToBrushConverter}}" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsBucket}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource GridBucketForegroundBrush}" />
+                        <Setter Property="FontStyle" Value="Italic" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IsSweep}" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource GridSweepForegroundBrush}" />
+                        <Setter Property="FontStyle" Value="Italic" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Shared Standard Row Style -->
+            <Style x:Key="ProjectionRowStyle" TargetType="{x:Type DataGridRow}">
+                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                <Setter Property="BorderBrush" Value="LightGray" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsPaycheck}" Value="True">
+                        <Setter Property="BorderThickness" Value="0,2,0,0" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource GridPeriodBorderBrush}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            
             <Style TargetType="{x:Type DataGridColumnHeader}">
                 <Setter Property="TextBlock.TextTrimming" Value="CharacterEllipsis" />
                 <Setter Property="Background" Value="{DynamicResource DataGridHeaderBackgroundBrush}" />
@@ -735,6 +749,73 @@
                         </DataTemplate>
                     </Setter.Value>
                 </Setter>
+            </Style>
+            
+            
+            <!-- Base ToolTip Container Style -->
+            <Style TargetType="{x:Type ToolTip}">
+                <Setter Property="Background" Value="{DynamicResource TooltipBackgroundBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TooltipTextBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource TooltipBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="10,8" />
+                <Setter Property="HasDropShadow" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ToolTip}">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="12"
+                                                      ShadowDepth="3"
+                                                      Opacity="0.35"
+                                                      Color="Black" />
+                                </Border.Effect>
+                                <ContentPresenter />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Tooltip Internal Typography & Element Styles -->
+            <Style x:Key="TooltipHeaderTextBlockStyle" TargetType="{x:Type TextBlock}">
+                <Setter Property="Foreground" Value="{DynamicResource TooltipHeaderBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+
+            <Style x:Key="TooltipPrimaryTextBlockStyle" TargetType="{x:Type TextBlock}">
+                <Setter Property="Foreground" Value="{DynamicResource TooltipTextBrush}" />
+            </Style>
+
+            <Style x:Key="TooltipSecondaryTextBlockStyle" TargetType="{x:Type TextBlock}">
+                <Setter Property="Foreground" Value="{DynamicResource TooltipSecondaryTextBrush}" />
+                <Setter Property="FontSize" Value="11" />
+            </Style>
+
+            <Style x:Key="TooltipSeparatorStyle" TargetType="{x:Type Separator}">
+                <Setter Property="Background" Value="{DynamicResource TooltipBorderBrush}" />
+                <Setter Property="Margin" Value="0,6,0,6" />
+            </Style>
+
+            <!-- Tooltip Badge / Pill Container Style -->
+            <Style x:Key="TooltipBadgeBorderStyle" TargetType="{x:Type Border}">
+                <Setter Property="Background" Value="{DynamicResource TooltipBadgeBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource TooltipBadgeBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="Padding" Value="6,2" />
+            </Style>
+
+            <Style x:Key="TooltipBadgeTextBlockStyle" TargetType="{x:Type TextBlock}">
+                <Setter Property="Foreground" Value="{DynamicResource TooltipBadgeTextBrush}" />
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
             </Style>
 
         </ResourceDictionary>

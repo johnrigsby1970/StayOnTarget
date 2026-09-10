@@ -4,6 +4,7 @@ using Windows.Security.Credentials;
 using Windows.Security.Credentials.UI;
 using SkiaSharp;
 using StayOnTarget.Helpers;
+using StayOnTarget.Models;
 
 namespace StayOnTarget;
 
@@ -83,5 +84,99 @@ public static class HelperMethods {
         }
 
         return null;
+    }
+    
+    public static DateTime GetCurrentPeriodStartForFixedDays(
+        DateTime anchorStartDate, 
+        DateTime today, 
+        int frequencyDays)
+    {
+        // Ensure dates are compared purely by Date (strip time)
+        anchorStartDate = anchorStartDate.Date;
+        today = today.Date;
+
+        if (today < anchorStartDate)
+            return anchorStartDate;
+
+        // Total days elapsed since the original anchor start date
+        int totalDaysElapsed = (today - anchorStartDate).Days;
+
+        // Integer division drops the remainder, giving the number of completed periods
+        int periodsElapsed = totalDaysElapsed / frequencyDays;
+
+        // Jump directly to the current period start date
+        return anchorStartDate.AddDays(periodsElapsed * frequencyDays);
+    }
+    
+    public static DateTime GetCurrentPeriodStartMonthly(DateTime anchorStartDate, DateTime today)
+    {
+        anchorStartDate = anchorStartDate.Date;
+        today = today.Date;
+
+        if (today < anchorStartDate)
+            return anchorStartDate;
+
+        // Total elapsed months between the two years/months
+        int totalMonthsElapsed = ((today.Year - anchorStartDate.Year) * 12) + today.Month - anchorStartDate.Month;
+
+        DateTime candidate = anchorStartDate.AddMonths(totalMonthsElapsed);
+
+        // If today hasn't reached the candidate day yet in the current month, step back 1 month
+        if (today < candidate)
+        {
+            candidate = anchorStartDate.AddMonths(totalMonthsElapsed - 1);
+        }
+
+        return candidate;
+    }
+    
+    public static DateTime GetCurrentPeriodStartSemiMonthly(
+        DateTime today, 
+        int firstPayDay = 1, 
+        int secondPayDay = 15)
+    {
+        today = today.Date;
+
+        if (today.Day >= secondPayDay)
+        {
+            return new DateTime(today.Year, today.Month, secondPayDay);
+        }
+    
+        if (today.Day >= firstPayDay)
+        {
+            return new DateTime(today.Year, today.Month, firstPayDay);
+        }
+
+        // Today is before the 1st pay day of the month -> rolls back to 2nd pay day of previous month
+        DateTime prevMonth = today.AddMonths(-1);
+        return new DateTime(prevMonth.Year, prevMonth.Month, secondPayDay);
+    }
+    
+    public static DateTime GetCurrentPeriodStart(
+        DateTime anchorStartDate, 
+        DateTime today, 
+        Frequency frequency)
+    {
+        int days = frequency switch
+        {
+            Frequency.Weekly => 7,
+            Frequency.BiWeekly => 14,
+            Frequency.EveryFourWeeks => 28,
+            _ => 0
+        };
+
+        return frequency switch
+        {
+            Frequency.Weekly or Frequency.BiWeekly or Frequency.EveryFourWeeks => 
+                GetCurrentPeriodStartForFixedDays(anchorStartDate, today, days),
+
+            Frequency.Monthly => 
+                GetCurrentPeriodStartMonthly(anchorStartDate, today),
+
+            Frequency.SemiMonthly => 
+                GetCurrentPeriodStartSemiMonthly(today, anchorStartDate.Day, 15),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(frequency))
+        };
     }
 }

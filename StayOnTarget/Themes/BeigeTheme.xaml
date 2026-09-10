@@ -82,4 +82,14 @@
     <SolidColorBrush x:Key="SplitterLineBrush" Color="#C7BBAA" />
     <SolidColorBrush x:Key="SplitterGripBrush" Color="#8C7F72" />
     <SolidColorBrush x:Key="SplitterHoverBrush" Color="#C18C5D" />
+    
+    <!-- Tooltip Brushes (Warm Theme - Deep Espresso/Charcoal Surface) -->
+    <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#211C1A" />
+    <SolidColorBrush x:Key="TooltipBorderBrush" Color="#4A3E35" />
+    <SolidColorBrush x:Key="TooltipTextBrush" Color="#F4EFEA" />
+    <SolidColorBrush x:Key="TooltipSecondaryTextBrush" Color="#BDB0A3" />
+    <SolidColorBrush x:Key="TooltipHeaderBrush" Color="#EBB88B" />
+    <SolidColorBrush x:Key="TooltipBadgeBackgroundBrush" Color="#382E27" />
+    <SolidColorBrush x:Key="TooltipBadgeBorderBrush" Color="#5C4D42" />
+    <SolidColorBrush x:Key="TooltipBadgeTextBrush" Color="#EFE9E1" />
 </ResourceDictionary>

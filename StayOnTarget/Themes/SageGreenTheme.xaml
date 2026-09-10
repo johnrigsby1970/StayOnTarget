@@ -82,4 +82,14 @@
     <SolidColorBrush x:Key="SplitterLineBrush" Color="#B5C7BB" />
     <SolidColorBrush x:Key="SplitterGripBrush" Color="#7A8F82" />
     <SolidColorBrush x:Key="SplitterHoverBrush" Color="#4E876B" />
+    
+    <!-- Tooltip Brushes (Sage Theme - Deep Forest Slate Surface) -->
+    <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#1A2821" />
+    <SolidColorBrush x:Key="TooltipBorderBrush" Color="#335242" />
+    <SolidColorBrush x:Key="TooltipTextBrush" Color="#F2F5F3" />
+    <SolidColorBrush x:Key="TooltipSecondaryTextBrush" Color="#A3B5AA" />
+    <SolidColorBrush x:Key="TooltipHeaderBrush" Color="#73B08E" />
+    <SolidColorBrush x:Key="TooltipBadgeBackgroundBrush" Color="#284234" />
+    <SolidColorBrush x:Key="TooltipBadgeBorderBrush" Color="#4E876B" />
+    <SolidColorBrush x:Key="TooltipBadgeTextBrush" Color="#CCDCD2" />
 </ResourceDictionary>

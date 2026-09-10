@@ -14,5 +14,7 @@ public enum TargetFrequencyType
     Monthly = 4,
     Quarterly = 5,
     Annual = 6,
-    Custom = 7
+    Custom = 7,
+    [Display(Name = "Every Four Weeks")]
+    EveryFourWeeks = 8
 }
