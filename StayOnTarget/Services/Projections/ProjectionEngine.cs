@@ -79,6 +79,10 @@ public class ProjectionEngine : IProjectionEngine {
             var bucketBalances = buckets.ToDictionary(b => b.Id, b => b.CurrentBalance);
 
             var effectiveSnowballOptions = snowballOptions ?? new SnowballStrategyOptions();
+            if (snowballOptions == null || !effectiveSnowballOptions.EnableSnowball) {
+                effectiveSnowballOptions.SurplusSweepPercentage = 0;
+                effectiveSnowballOptions.CheckingSafetyThresholdPct = 0;
+            }
             var rothContributionsByYear =
                 new Dictionary<int, decimal>(effectiveSnowballOptions.CurrentYearRothContributions);
             var thresholdPct = effectiveSnowballOptions.CheckingSafetyThresholdPct;
