@@ -1315,6 +1315,7 @@ public class MainViewModel : ViewModelBase {
             if (IsGatheringData)
                 return;
             await LoadPeriodDataAsync();
+            RequestProjectionRecalculation();
         }
         catch (Exception ex) {
             Log.Error(ex, "Failed to load period data for month");
@@ -5452,7 +5453,18 @@ public class MainViewModel : ViewModelBase {
             SnowballAnalysisText = "Analyzing strategy...";
 
             var showReconciled = true;
-            var currentPeriodDate = CurrentPeriodDate;
+
+            DateTime currentPeriodDate = DateTime.Today;
+            
+            if (ShowByMonth) {
+                currentPeriodDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            }
+            else {
+                var result = CalculateCurrentPeriodDate(SelectedPeriodPaycheckId);
+                currentPeriodDate = result.currentPeriodDate;
+            }
+            
+            //var currentPeriodDate = CurrentPeriodDate;
             var projectionStartDate = ProjectionStartDate;
             var projectionEndDate = ProjectionEndDate;
             var useAutoSweep = UseAutoSweep;
@@ -6726,6 +6738,48 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
+    private (DateTime currentPeriodDate, DateTime nextPeriodDate) CalculateCurrentPeriodDate(int? payCheckId = null) {
+        DateTime currentPeriodDate = DateTime.MinValue;
+        DateTime nextPeriodDate = DateTime.MinValue;
+        
+        try {
+            var allPaychecks = Paychecks.ToList();
+            if (allPaychecks.Count == 0) {
+                currentPeriodDate = DateTime.Today;
+                nextPeriodDate = GetNextPeriodDate(currentPeriodDate);
+                return (currentPeriodDate, nextPeriodDate);
+            }
+
+            DateTime latestPayBeforeToday = DateTime.MinValue;
+            foreach (var pay in allPaychecks.Where(p => payCheckId == null || p.Id == payCheckId)) {
+                var nextPay = pay.StartDate;
+                while (nextPay <= DateTime.Today.AddDays(1)) {
+                    if (nextPay <= DateTime.Today && nextPay > latestPayBeforeToday)
+                        latestPayBeforeToday = nextPay;
+
+                    nextPay = pay.Frequency switch {
+                        Frequency.Weekly => nextPay.AddDays(7),
+                        Frequency.BiWeekly => nextPay.AddDays(14),
+                        Frequency.Monthly => nextPay.AddMonths(1),
+                        _ => nextPay.AddYears(100)
+                    };
+                }
+            }
+
+            if (latestPayBeforeToday != DateTime.MinValue)
+                currentPeriodDate = latestPayBeforeToday;
+            else if (allPaychecks.Any())
+                currentPeriodDate = allPaychecks.Min(p => p.StartDate);
+
+            nextPeriodDate = GetNextPeriodDate(currentPeriodDate);
+            
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error setting current period date.");
+        }
+        return (currentPeriodDate, nextPeriodDate);
+    }
+    
     private void ExportTransactions() {
         try {
             var viewModel = new ExportTransactionsViewModel(_budgetService);
