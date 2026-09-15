@@ -1131,23 +1131,23 @@ public partial class BudgetService {
 
     //Call these both for the first of that month and for the period of each paycheck that exists at the time.
     private async Task EnsurePeriodBillSnapshotAsync(IDbConnection conn, IDbTransaction tx, long billId,
-    DateTime transactionDate) {
-    string targetPeriodDate = transactionDate.ToString("yyyy-MM-dd");
+        DateTime transactionDate) {
+        string targetPeriodDate = transactionDate.ToString("yyyy-MM-dd");
 
-    const string checkSql = @"
+        const string checkSql = @"
     SELECT COUNT(1) 
     FROM PeriodBills 
     WHERE BillId = @billId AND PeriodDate = @targetPeriodDate;";
 
-    int exists = await conn.ExecuteScalarAsync<int>(checkSql, new { billId, targetPeriodDate }, tx);
+        int exists = await conn.ExecuteScalarAsync<int>(checkSql, new { billId, targetPeriodDate }, tx);
 
-    if (exists == 0) {
-        const string snapshotSql = @"
+        if (exists == 0) {
+            const string snapshotSql = @"
         INSERT INTO PeriodBills (BillId, PeriodDate, DueDate, ActualAmount, IsPaid, FitId)
         SELECT 
             b.Id,
             @targetPeriodDate,
-            date(@targetPeriodDate, '+' || (b.DueDay - 1) || ' days'),
+            date(@targetPeriodDate, '+' || (CASE WHEN COALESCE(b.DueDay, 0) <= 0 THEN 0 ELSE (b.DueDay - 1) END) || ' days'),
             COALESCE(
                 json_extract(b.Overrides, '$.' || strftime('%m', @targetPeriodDate)), 
                 b.ExpectedAmount
@@ -1157,13 +1157,13 @@ public partial class BudgetService {
         FROM Bills b
         WHERE b.Id = @billId;";
 
-        await conn.ExecuteAsync(snapshotSql, new { 
-            billId, 
-            targetPeriodDate, 
-            fitId = Guid.NewGuid().ToString() 
-        }, tx);
+            await conn.ExecuteAsync(snapshotSql, new { 
+                billId, 
+                targetPeriodDate, 
+                fitId = Guid.NewGuid().ToString() 
+            }, tx);
+        }
     }
-}
 
 private async Task EnsurePeriodBucketSnapshotAsync(IDbConnection conn, IDbTransaction tx, long bucketId,
     DateTime transactionDate) {
