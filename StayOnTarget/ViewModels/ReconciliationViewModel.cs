@@ -788,23 +788,18 @@ public partial class ReconciliationViewModel : ViewModelBase {
             newReconciledBalance = beginningBalance;
             
             foreach (var t in reconciliationTransactions!.OrderBy(b => b.TransactionDate)) {
-                // Only set IsCleared to true if the transaction occurred on or after the last reconciliation date
                 bool isPriorToLastReconcile = lastReconciledDate.HasValue && t.TransactionDate < lastReconciledDate.Value;
 
-                if (isPriorToLastReconcile) {
+                // Preserve original cleared status if it was already cleared in the DB, 
+                // otherwise enforce unchecking for uncleared prior transactions.
+                if (t.WasOriginallyCleared) {
+                    t.IsCleared = true;
+                }
+                else if (isPriorToLastReconcile) {
                     t.IsCleared = false;
                 }
                 else {
-                    if (t.AccountId == _account.Id) {
-                        if (t.FromAccountIsCleared ?? false) {
-                            t.IsCleared = true;
-                        }
-                    }
-                    else if (t.ToAccountId == _account.Id) {
-                        if (t.ToAccountIsCleared ?? false) {
-                            t.IsCleared = true;
-                        }
-                    }
+                    t.IsCleared = false;
                 }
 
                 if (t.IsCleared) {
@@ -826,6 +821,46 @@ public partial class ReconciliationViewModel : ViewModelBase {
                     }
                 }
             }
+            
+            // foreach (var t in reconciliationTransactions!.OrderBy(b => b.TransactionDate)) {
+            //     // Only set IsCleared to true if the transaction occurred on or after the last reconciliation date
+            //     bool isPriorToLastReconcile = lastReconciledDate.HasValue && t.TransactionDate < lastReconciledDate.Value;
+            //
+            //     if (isPriorToLastReconcile) {
+            //         t.IsCleared = false;
+            //     }
+            //     else {
+            //         if (t.AccountId == _account.Id) {
+            //             if (t.FromAccountIsCleared ?? false) {
+            //                 t.IsCleared = true;
+            //             }
+            //         }
+            //         else if (t.ToAccountId == _account.Id) {
+            //             if (t.ToAccountIsCleared ?? false) {
+            //                 t.IsCleared = true;
+            //             }
+            //         }
+            //     }
+            //
+            //     if (t.IsCleared) {
+            //         if (t.AccountId == _account.Id) {
+            //             if (_account.IsLiability) {
+            //                 newReconciledBalance += t.Amount;
+            //             }
+            //             else {
+            //                 newReconciledBalance -= t.Amount;
+            //             }
+            //         }
+            //         else if (t.ToAccountId == _account.Id) {
+            //             if (_account.IsLiability) {
+            //                 newReconciledBalance -= t.Amount;
+            //             }
+            //             else {
+            //                 newReconciledBalance += t.Amount;
+            //             }
+            //         }
+            //     }
+            // }
             
             NewReconciledBalance = newReconciledBalance;
             NewReconciledDate = newReconciledDate;
