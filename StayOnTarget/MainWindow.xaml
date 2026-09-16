@@ -3045,13 +3045,57 @@
                             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
                                         HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <Button Command="{Binding SetOneYearCommand}" Content="1 yr" Padding="10,4"
-                                        Style="{DynamicResource    SecondaryButtonStyle}" />
+                                        >
+                                    <Button.Style>
+                                        <Style TargetType="{x:Type Button}"
+                                               BasedOn="{StaticResource SecondaryButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding YearsProjecting}" Value="1">
+                                                    <Setter Property="IsEnabled" Value="False" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                                 <Button Command="{Binding SetFiveYearCommand}" Content="5 yr" Padding="10,4"
-                                        Style="{DynamicResource    SecondaryButtonStyle}" Margin="-1,0,0,0" />
+                                        Margin="-1,0,0,0" >
+                                    <Button.Style>
+                                        <Style TargetType="{x:Type Button}"
+                                               BasedOn="{StaticResource SecondaryButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding YearsProjecting}" Value="5">
+                                                    <Setter Property="IsEnabled" Value="False" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                                 <Button Command="{Binding SetTenYearCommand}" Content="10 yr" Padding="10,4"
-                                        Style="{DynamicResource    SecondaryButtonStyle}" Margin="-1,0,0,0" />
+                                        Margin="-1,0,0,0" >
+                                    <Button.Style>
+                                        <Style TargetType="{x:Type Button}"
+                                               BasedOn="{StaticResource SecondaryButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding YearsProjecting}" Value="10">
+                                                    <Setter Property="IsEnabled" Value="False" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                                 <Button Command="{Binding SetThirtyYearCommand}" Content="30 yr" Padding="10,4"
-                                        Style="{DynamicResource    SecondaryButtonStyle}" Margin="-1,0,0,0" />
+                                        Margin="-1,0,0,0" >
+                                    <Button.Style>
+                                        <Style TargetType="{x:Type Button}"
+                                               BasedOn="{StaticResource SecondaryButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger  Binding="{Binding YearsProjecting}" Value="30">
+                                                    <Setter Property="IsEnabled" Value="False" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
 
                             <CheckBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
