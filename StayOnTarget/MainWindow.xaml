@@ -1248,7 +1248,7 @@
                                                                         </DataGrid.InputBindings>
                                                                         <DataGrid.Columns>
                                                                             <DataGridTemplateColumn Header="Bill"
-                                                                                    Width="*">
+                                                                                    Width="Auto">
                                                                                 <DataGridTemplateColumn.CellTemplate>
                                                                                     <DataTemplate>
                                                                                         <Grid Margin="2">
@@ -1325,6 +1325,29 @@
                                                                                     </Style>
                                                                                 </DataGridTextColumn.ElementStyle>
                                                                             </DataGridTextColumn>
+                                                                            <DataGridTemplateColumn Header="Subcategory / Envelope" Width="Auto" MinWidth="150">
+                                                                                <DataGridTemplateColumn.CellTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <TextBlock Style="{DynamicResource StyledTextBlock}" VerticalAlignment="Center">
+                                                                                            <TextBlock.Text>
+                                                                                                <MultiBinding Converter="{StaticResource BillCategoryBucketNameConverter}">
+                                                                                                    <!-- 1. Pass PeriodBill (or PeriodBill.BillId) -->
+                                                                                                    <Binding Path="." />
+                        
+                                                                                                    <!-- 2. Pass Bills collection -->
+                                                                                                    <Binding Path="DataContext.Bills" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                        
+                                                                                                    <!-- 3. Pass SubCategories collection -->
+                                                                                                    <Binding Path="DataContext.SubCategories" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                        
+                                                                                                    <!-- 4. Pass Buckets collection -->
+                                                                                                    <Binding Path="DataContext.Buckets" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                                                                                </MultiBinding>
+                                                                                            </TextBlock.Text>
+                                                                                        </TextBlock>
+                                                                                    </DataTemplate>
+                                                                                </DataGridTemplateColumn.CellTemplate>
+                                                                            </DataGridTemplateColumn>
                                                                         </DataGrid.Columns>
                                                                     </DataGrid>
                                                                     <StackPanel
@@ -2281,12 +2304,35 @@
                                                             </DataGrid.InputBindings>
                                                             <DataGrid.Columns>
                                                                 <DataGridTextColumn Header="Name"
-                                                                        Binding="{Binding Name}" Width="*" />
+                                                                        Binding="{Binding Name}" Width="Auto" />
                                                                 <DataGridTextColumn Header="Budgeted"
                                                                         Binding="{Binding ExpectedAmount, StringFormat=C}"
-                                                                        Width="80" />
+                                                                        Width="90" />
                                                                 <DataGridTextColumn Header="Due Day"
                                                                         Binding="{Binding DueDay}" Width="60" />
+                                                                <DataGridTemplateColumn Header="Subcategory / Envelope" Width="Auto" MinWidth="150">
+                                                                                <DataGridTemplateColumn.CellTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <TextBlock Style="{DynamicResource StyledTextBlock}" VerticalAlignment="Center">
+                                                                                            <TextBlock.Text>
+                                                                                                <MultiBinding Converter="{StaticResource BillCategoryBucketNameConverter}">
+                                                                                                    <!-- 1. Pass PeriodBill (or Bill.Id) -->
+                                                                                                    <Binding Path="Id" />
+                        
+                                                                                                    <!-- 2. Pass Bills collection -->
+                                                                                                    <Binding Path="DataContext.Bills" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                        
+                                                                                                    <!-- 3. Pass SubCategories collection -->
+                                                                                                    <Binding Path="DataContext.SubCategories" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                        
+                                                                                                    <!-- 4. Pass Buckets collection -->
+                                                                                                    <Binding Path="DataContext.Buckets" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                                                                                </MultiBinding>
+                                                                                            </TextBlock.Text>
+                                                                                        </TextBlock>
+                                                                                    </DataTemplate>
+                                                                                </DataGridTemplateColumn.CellTemplate>
+                                                                            </DataGridTemplateColumn>
                                                             </DataGrid.Columns>
                                                         </DataGrid>
                                                     </Grid>
