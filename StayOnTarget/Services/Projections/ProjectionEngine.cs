@@ -267,76 +267,80 @@ public class ProjectionEngine : IProjectionEngine {
                 : DateTime.MaxValue;
 
             foreach (var e in futureEvents) {
-                if (useAutoSweep) {
+                if (useAutoSweep || effectiveSnowballOptions.EnableSnowball) {
                     while (e.Date >= nextPaycheckDate && nextPaycheckDate != DateTime.MaxValue) {
                         var sweepDate = nextPaycheckDate.AddDays(-1);
 
                         if (sweepDate >= today && sweepDate >= startDate.Date.AddDays(-1) &&
                             nextPaycheckDate >= startDate.Date) {
                             if (primaryChecking.HasValue) {
-                                var ccPeriodNewDebt = new Dictionary<int, decimal>();
+                                if (useAutoSweep) {
+                                    var ccPeriodNewDebt = new Dictionary<int, decimal>();
 
-                                foreach (var ccId in creditCardAccountIds) {
-                                    var currentDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
+                                    foreach (var ccId in creditCardAccountIds) {
+                                        var currentDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
 
-                                    var cardTransactions = futureEvents.Where(ev =>
-                                        ev.Date > paycheckDates[Math.Max(0, nextPaycheckIndex - 1)] &&
-                                        ev.Date <= sweepDate &&
-                                        (ev.FromAccountId == ccId || ev.ToAccountId == ccId));
+                                        var cardTransactions = futureEvents.Where(ev =>
+                                            ev.Date > paycheckDates[Math.Max(0, nextPaycheckIndex - 1)] &&
+                                            ev.Date <= sweepDate &&
+                                            (ev.FromAccountId == ccId || ev.ToAccountId == ccId));
 
-                                    decimal netFlow = 0m;
-                                    foreach (var tx in cardTransactions) {
-                                        if (tx.ToAccountId == ccId) {
-                                            netFlow -= tx.Amount;
+                                        decimal netFlow = 0m;
+                                        foreach (var tx in cardTransactions) {
+                                            if (tx.ToAccountId == ccId) {
+                                                netFlow -= tx.Amount;
+                                            }
+
+                                            if (tx.FromAccountId == ccId) {
+                                                netFlow += tx.Amount;
+                                            }
                                         }
 
-                                        if (tx.FromAccountId == ccId) {
-                                            netFlow += tx.Amount;
-                                        }
+                                        ccPeriodNewDebt[ccId] = Math.Max(0m, netFlow > 0 ? netFlow : currentDeficit);
                                     }
 
-                                    ccPeriodNewDebt[ccId] = Math.Max(0m, netFlow > 0 ? netFlow : currentDeficit);
-                                }
+                                    foreach (var ccId in creditCardAccountIds) {
+                                        var balance = accountBalances[ccId];
+                                        var netNewDebt = Math.Max(0m, ccPeriodNewDebt[ccId]);
 
-                                foreach (var ccId in creditCardAccountIds) {
-                                    var balance = accountBalances[ccId];
-                                    var netNewDebt = Math.Max(0m, ccPeriodNewDebt[ccId]);
+                                        var totalBalanceDeficit =
+                                            accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
+                                        var targetSweepAmount = Math.Min(netNewDebt, totalBalanceDeficit);
 
-                                    var totalBalanceDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
-                                    var targetSweepAmount = Math.Min(netNewDebt, totalBalanceDeficit);
+                                        if (targetSweepAmount > 0.01m) {
+                                            decimal spendableChecking = GetSpendableBalance(primaryChecking.Value,
+                                                accountBalances, accountFloors);
+                                            decimal pctSafetyThreshold = Math.Max(0m,
+                                                thresholdPct * accountBalances[primaryChecking.Value]);
 
-                                    if (targetSweepAmount > 0.01m) {
-                                        decimal spendableChecking = GetSpendableBalance(primaryChecking.Value,
-                                            accountBalances, accountFloors);
-                                        decimal pctSafetyThreshold = Math.Max(0m,
-                                            thresholdPct * accountBalances[primaryChecking.Value]);
+                                            decimal availableToSweep = spendableChecking - pctSafetyThreshold;
+                                            decimal actualSweepAmount = Math.Min(targetSweepAmount, availableToSweep);
 
-                                        decimal availableToSweep = spendableChecking - pctSafetyThreshold;
-                                        decimal actualSweepAmount = Math.Min(targetSweepAmount, availableToSweep);
+                                            if (actualSweepAmount > 0.01m) {
+                                                accountBalances[primaryChecking.Value] -= actualSweepAmount;
+                                                accountBalances[ccId] += actualSweepAmount;
 
-                                        if (actualSweepAmount > 0.01m) {
-                                            accountBalances[primaryChecking.Value] -= actualSweepAmount;
-                                            accountBalances[ccId] += actualSweepAmount;
+                                                runningBalance = accounts
+                                                    .Where(a => includedTotalAccounts.Contains(a.Id))
+                                                    .Sum(a => accountBalances[a.Id]);
 
-                                            runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
-                                                .Sum(a => accountBalances[a.Id]);
+                                                var sweepItem = new ProjectionItem {
+                                                    Type = ProjectionEngine.ProjectionEventType.Sweep,
+                                                    TransactionDate = sweepDate,
+                                                    Description = $"Auto-Sweep (New Period Debt): {accountNames[ccId]}",
+                                                    FromAccountId = primaryChecking,
+                                                    ToAccountId = ccId,
+                                                    Amount = Math.Abs(actualSweepAmount),
+                                                    Balance = runningBalance,
+                                                    IsSynthetic = true,
+                                                    AccountBalances = accountBalances.ToDictionary(
+                                                        kv => accountNames[kv.Key],
+                                                        kv => kv.Value),
+                                                    InOrOutOfMoneyAccount = true
+                                                };
 
-                                            var sweepItem = new ProjectionItem {
-                                                Type = ProjectionEngine.ProjectionEventType.Sweep,
-                                                TransactionDate = sweepDate,
-                                                Description = $"Auto-Sweep (New Period Debt): {accountNames[ccId]}",
-                                                FromAccountId = primaryChecking,
-                                                ToAccountId = ccId,
-                                                Amount = Math.Abs(actualSweepAmount),
-                                                Balance = runningBalance,
-                                                IsSynthetic = true,
-                                                AccountBalances = accountBalances.ToDictionary(
-                                                    kv => accountNames[kv.Key],
-                                                    kv => kv.Value),
-                                                InOrOutOfMoneyAccount = true
-                                            };
-
-                                            list.Add(sweepItem);
+                                                list.Add(sweepItem);
+                                            }
                                         }
                                     }
                                 }
@@ -599,74 +603,77 @@ public class ProjectionEngine : IProjectionEngine {
                 list.Add(item);
             }
 
-            if (useAutoSweep) {
+            if (useAutoSweep || effectiveSnowballOptions.EnableSnowball) {
                 while (nextPaycheckDate != DateTime.MaxValue && nextPaycheckDate <= endDate) {
                     var sweepDate = nextPaycheckDate.AddDays(-1);
                     if (sweepDate >= today) {
                         if (primaryChecking.HasValue) {
-                            var ccPeriodNewDebt = new Dictionary<int, decimal>();
+                            if (useAutoSweep) {
+                                var ccPeriodNewDebt = new Dictionary<int, decimal>();
 
-                            foreach (var ccId in creditCardAccountIds) {
-                                var currentDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
+                                foreach (var ccId in creditCardAccountIds) {
+                                    var currentDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
 
-                                var cardTransactions = futureEvents.Where(ev =>
-                                    ev.Date > paycheckDates[Math.Max(0, nextPaycheckIndex - 1)] &&
-                                    ev.Date <= sweepDate &&
-                                    (ev.FromAccountId == ccId || ev.ToAccountId == ccId));
+                                    var cardTransactions = futureEvents.Where(ev =>
+                                        ev.Date > paycheckDates[Math.Max(0, nextPaycheckIndex - 1)] &&
+                                        ev.Date <= sweepDate &&
+                                        (ev.FromAccountId == ccId || ev.ToAccountId == ccId));
 
-                                decimal netFlow = 0m;
-                                foreach (var tx in cardTransactions) {
-                                    if (tx.ToAccountId == ccId) {
-                                        netFlow -= tx.Amount;
+                                    decimal netFlow = 0m;
+                                    foreach (var tx in cardTransactions) {
+                                        if (tx.ToAccountId == ccId) {
+                                            netFlow -= tx.Amount;
+                                        }
+
+                                        if (tx.FromAccountId == ccId) {
+                                            netFlow += tx.Amount;
+                                        }
                                     }
 
-                                    if (tx.FromAccountId == ccId) {
-                                        netFlow += tx.Amount;
-                                    }
+                                    ccPeriodNewDebt[ccId] = Math.Max(0m, netFlow > 0 ? netFlow : currentDeficit);
                                 }
 
-                                ccPeriodNewDebt[ccId] = Math.Max(0m, netFlow > 0 ? netFlow : currentDeficit);
-                            }
+                                foreach (var ccId in creditCardAccountIds) {
+                                    var netNewDebt = Math.Max(0m, ccPeriodNewDebt[ccId]);
 
-                            foreach (var ccId in creditCardAccountIds) {
-                                var netNewDebt = Math.Max(0m, ccPeriodNewDebt[ccId]);
+                                    var balance = accountBalances[ccId];
+                                    var totalBalanceDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
+                                    var targetSweepAmount = Math.Min(netNewDebt, totalBalanceDeficit);
 
-                                var balance = accountBalances[ccId];
-                                var totalBalanceDeficit = accountBalances[ccId] < 0 ? -accountBalances[ccId] : 0m;
-                                var targetSweepAmount = Math.Min(netNewDebt, totalBalanceDeficit);
+                                    if (targetSweepAmount > 0.01m) {
+                                        decimal spendableChecking = GetSpendableBalance(primaryChecking.Value,
+                                            accountBalances,
+                                            accountFloors);
+                                        decimal pctSafetyThreshold = Math.Max(0m,
+                                            thresholdPct * accountBalances[primaryChecking.Value]);
 
-                                if (targetSweepAmount > 0.01m) {
-                                    decimal spendableChecking = GetSpendableBalance(primaryChecking.Value,
-                                        accountBalances,
-                                        accountFloors);
-                                    decimal pctSafetyThreshold = Math.Max(0m,
-                                        thresholdPct * accountBalances[primaryChecking.Value]);
+                                        decimal availableToSweep = spendableChecking - pctSafetyThreshold;
+                                        decimal actualSweepAmount = Math.Min(targetSweepAmount, availableToSweep);
 
-                                    decimal availableToSweep = spendableChecking - pctSafetyThreshold;
-                                    decimal actualSweepAmount = Math.Min(targetSweepAmount, availableToSweep);
+                                        if (actualSweepAmount > 0.01m) {
+                                            accountBalances[primaryChecking.Value] -= actualSweepAmount;
+                                            accountBalances[ccId] += actualSweepAmount;
 
-                                    if (actualSweepAmount > 0.01m) {
-                                        accountBalances[primaryChecking.Value] -= actualSweepAmount;
-                                        accountBalances[ccId] += actualSweepAmount;
+                                            runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
+                                                .Sum(a => accountBalances[a.Id]);
 
-                                        runningBalance = accounts.Where(a => includedTotalAccounts.Contains(a.Id))
-                                            .Sum(a => accountBalances[a.Id]);
+                                            var sweepItem = new ProjectionItem {
+                                                Type = ProjectionEngine.ProjectionEventType.Sweep,
+                                                TransactionDate = sweepDate,
+                                                Description = $"Auto-Sweep (New Period Debt): {accountNames[ccId]}",
+                                                FromAccountId = primaryChecking,
+                                                ToAccountId = ccId,
+                                                Amount = Math.Abs(actualSweepAmount),
+                                                Balance = runningBalance,
+                                                IsSynthetic = true,
+                                                AccountBalances = accountBalances.ToDictionary(
+                                                    kv => accountNames[kv.Key],
+                                                    kv => kv.Value),
+                                                InOrOutOfMoneyAccount = true
+                                            };
 
-                                        var sweepItem = new ProjectionItem {
-                                            Type = ProjectionEngine.ProjectionEventType.Sweep,
-                                            TransactionDate = sweepDate,
-                                            Description = $"Auto-Sweep (New Period Debt): {accountNames[ccId]}",
-                                            FromAccountId = primaryChecking,
-                                            ToAccountId = ccId,
-                                            Amount = Math.Abs(actualSweepAmount),
-                                            Balance = runningBalance,
-                                            IsSynthetic = true,
-                                            AccountBalances = accountBalances.ToDictionary(kv => accountNames[kv.Key],
-                                                kv => kv.Value),
-                                            InOrOutOfMoneyAccount = true
-                                        };
-
-                                        list.Add(sweepItem);
+                                            list.Add(sweepItem);
+                                        }
                                     }
                                 }
                             }
