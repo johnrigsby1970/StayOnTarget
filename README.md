@@ -55,8 +55,12 @@ John Rigsby
 
 * **v0.0.1.0** - Initial release, featuring core envelope budgeting, local SQLite database storage, and bank file importing.
 
+## Copyright
+
+© 2026 John Rigsby & Howling Wolf Labs. All rights reserved.
+
 ## License
 
-Stay On Target © 2026 by John Rigsby. All rights reserved.
+Stay On Target © 2026 John Rigsby & Howling Wolf Labs. All rights reserved.
 
 This software is proprietary commercial software. You may view the source code in this repository for educational and auditing purposes, but you are strictly prohibited from redistributing, modifying, decompiling for malicious use, or selling commercial derivatives of this software without explicit written permission from the author.
