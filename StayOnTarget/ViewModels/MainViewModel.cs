@@ -995,6 +995,8 @@ public class MainViewModel : ViewModelBase {
 
     public RangeObservableCollection<Bill> BillsWithNone { get; } = new();
 
+    public RangeObservableCollection<Bill> BillsWithNoneUnfiltered { get; } = new();
+    
     public RangeObservableCollection<BudgetBucket> BucketsWithNone { get; } = new();
 
     public RangeObservableCollection<SubCategory> SubCategories { get; } = new();
@@ -5920,9 +5922,14 @@ public class MainViewModel : ViewModelBase {
                 item.PropertyChanged -= Item_PropertyChanged;
             }
 
+            foreach (var item in BillsWithNoneUnfiltered) {
+                item.PropertyChanged -= Item_PropertyChanged;
+            }
+            
             Bills.Clear();
             BillsWithNone.Clear();
-
+            BillsWithNoneUnfiltered.Clear();
+            
             var billsList = (await _budgetService.GetAllBillsAsync(true))
                 .OrderBy(b => b.DueDay)
                 .ThenBy(b => b.Name)
@@ -5941,6 +5948,7 @@ public class MainViewModel : ViewModelBase {
 
             Bills.AddRange(billsList);
             BillsWithNone.AddRange(billsWithNoneList);
+            BillsWithNoneUnfiltered.AddRange(billsWithNoneList.ToList());
 
             Log.Information("Bill data loaded successfully. Bills: {BillCount}", Bills.Count);
         }

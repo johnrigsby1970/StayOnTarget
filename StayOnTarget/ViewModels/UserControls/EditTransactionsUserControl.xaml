@@ -156,7 +156,7 @@
                         <!-- Bill Link -->
                         <Label Style="{DynamicResource StyledLabel}" Grid.Column="2" Grid.Row="2" Content="Bill:" />
                         <ComboBox Grid.Column="3" Grid.Row="2"
-                                  ItemsSource="{Binding BillsWithNone}"
+                                  ItemsSource="{Binding BillsWithNoneUnfiltered}"
                                   SelectedValue="{Binding EditingTransactionClone.BillId}"
                                   SelectedValuePath="Id"
                                   DisplayMemberPath="Name"
