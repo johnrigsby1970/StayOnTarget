@@ -150,7 +150,7 @@ public class CreditCardProjectionTests
         // To LOSE grace, they must fail to pay the statement balance (-1000) by the next statement.
         var transactions = new List<Transaction>
         {
-            new Transaction { Id = 100, TransactionDate = baseDate.AddDays(9), Amount = -500m, ToAccountId = 1, Description = "Partial Payment" }
+            new Transaction { Id = 100, TransactionDate = baseDate.AddDays(9), Amount = 500m, ToAccountId = 1, Description = "Partial Payment" }
         };
 
         var allocations = new List<BucketPaycheckAllocation>();
@@ -182,7 +182,7 @@ public class CreditCardProjectionTests
         // -30 (Month 1: -1000 * 0.001 * 30 days) + -15 (Month 2: -500 * 0.001 * 30 days) = -45.
         
         Assert.IsTrue(secondInterest.Amount > 0, $"Second interest should be > 0 because grace was lost. Actual: {secondInterest.Amount}");
-        Assert.AreEqual(35m, secondInterest.Amount, "Interest should be $45.00 (retroactive Month 1 @ -1000 + Month 2 @ -500)");
+        Assert.AreEqual(35m, secondInterest.Amount, "Interest should be $35.00 (retroactive Month 1 @ -1000 + Month 2 @ -500)");
     }
 
     [TestMethod]
