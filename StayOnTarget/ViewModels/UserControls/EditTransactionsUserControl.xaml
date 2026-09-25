@@ -118,7 +118,6 @@
                                                       DisplayMemberPath="Name"
                                                       SelectedValuePath="Id"
                                                       IsVisibleChanged="DescriptionComboBox_IsVisibleChanged"
-                                                      SelectedValue="{Binding EditingTransactionClone.BillId}"
                                                       Text="{Binding EditingTransactionClone.Description, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                                       Margin="5" />
 
