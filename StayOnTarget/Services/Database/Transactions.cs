@@ -821,11 +821,11 @@ public partial class BudgetService {
                         foreach (var payCheck in payChecks) {
                             var periodDate = HelperMethods.GetCurrentPeriodStart(payCheck.StartDate, t.TransactionDate,
                                 payCheck.Frequency);
-                            await EnsurePeriodBillSnapshotAsync(conn, tx, t.BillId.Value, periodDate);
+                            await EnsurePeriodBillSnapshotAsync(conn, tx, t.BillId.Value, periodDate, t.Amount!=0);
                         }
 
                         var monthStart = new DateTime(t.TransactionDate.Year, t.TransactionDate.Month, 1);
-                        await EnsurePeriodBillSnapshotAsync(conn, tx, t.BillId.Value, monthStart);
+                        await EnsurePeriodBillSnapshotAsync(conn, tx, t.BillId.Value, monthStart, t.Amount!=0);
                     }
 
                     if (t.BucketId.HasValue && t.BucketId.Value > 0) {
@@ -1131,7 +1131,7 @@ public partial class BudgetService {
 
     //Call these both for the first of that month and for the period of each paycheck that exists at the time.
     private async Task EnsurePeriodBillSnapshotAsync(IDbConnection conn, IDbTransaction tx, long billId,
-        DateTime transactionDate) {
+        DateTime transactionDate, bool isPaid) {
         string targetPeriodDate = transactionDate.ToString("yyyy-MM-dd");
 
         const string checkSql = @"
@@ -1141,26 +1141,31 @@ public partial class BudgetService {
 
         int exists = await conn.ExecuteScalarAsync<int>(checkSql, new { billId, targetPeriodDate }, tx);
 
+       
         if (exists == 0) {
             const string snapshotSql = @"
         INSERT INTO PeriodBills (BillId, PeriodDate, DueDate, ActualAmount, IsPaid, FitId)
-        SELECT 
-            b.Id,
-            @targetPeriodDate,
-            date(@targetPeriodDate, '+' || (CASE WHEN COALESCE(b.DueDay, 0) <= 0 THEN 0 ELSE (b.DueDay - 1) END) || ' days'),
-            COALESCE(
-                json_extract(b.Overrides, '$.' || strftime('%m', @targetPeriodDate)), 
-                b.ExpectedAmount
-            ) AS ActualAmount,
-            0 AS IsPaid,
-            @fitId AS FitId
-        FROM Bills b
-        WHERE b.Id = @billId;";
+SELECT 
+    b.Id,
+    @targetPeriodDate,
+    CASE 
+        WHEN COALESCE(b.DueDay, 0) <= 0 THEN date(@targetPeriodDate, 'start of month')
+        ELSE date(@targetPeriodDate, 'start of month', '+' || (b.DueDay - 1) || ' days')
+    END AS DueDate,
+    COALESCE(
+        json_extract(b.Overrides, '$.' || strftime('%m', @targetPeriodDate)), 
+        b.ExpectedAmount
+    ) AS ActualAmount,
+    @isPaid AS IsPaid,
+    @fitId AS FitId
+FROM Bills b
+WHERE b.Id = @billId;";
 
             await conn.ExecuteAsync(snapshotSql, new { 
                 billId, 
                 targetPeriodDate, 
-                fitId = Guid.NewGuid().ToString() 
+                fitId = Guid.NewGuid().ToString(),
+                isPaid = isPaid ? 1: 0
             }, tx);
         }
     }

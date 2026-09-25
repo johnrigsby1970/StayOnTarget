@@ -2834,7 +2834,7 @@
                                                 Stretch="Uniform"
                                                 Margin="0,0,4,0" />
                                             <TextBlock
-                                                Text="{Binding PastDueCount, StringFormat='{}Past Due ({0})'}"
+                                                Text="{Binding PastDueCount, StringFormat='{}Alert ({0})'}"
                                                 FontSize="10"
                                                 FontWeight="Bold"
                                                 Foreground="{DynamicResource ErrorBrush}"
@@ -2867,45 +2867,7 @@
 
                                 </StackPanel>
                             </DockPanel>
-                            <!-- ~1~ HEADER & COUNTERS @1@ -->
-                            <!-- <TextBlock Style="{DynamicResource    StyledTextBlock}" Text="Alerts &amp; Action Items" -->
-                            <!--            FontWeight="SemiBold" -->
-                            <!--            FontSize="14" -->
-                            <!--            Margin="0,0,0,10" /> -->
-                            <!-- -->
-                            <!-- <UniformGrid Columns="2" Margin="0,0,0,10"> -->
-                            <!--     ~1~ Past Due @1@ -->
-                            <!--     <StackPanel Orientation="Horizontal" Margin="0,0,8,0"> -->
-                            <!--         <Viewbox Width="18" Height="18" Margin="0,0,8,0"> -->
-                            <!--             <Path Data="M3 2v18h2V12h11l1-2-1-2H5V2H3zm4 4h7.5l.5 1-.5 1H7V6z" -->
-                            <!--                   Fill="{DynamicResource ErrorBrush}" /> -->
-                            <!--         </Viewbox> -->
-                            <!--         <StackPanel> -->
-                            <!--             <TextBlock Style="{DynamicResource    StyledSecondaryTextBlock}" -->
-                            <!--                        Text="Past Due" -->
-                            <!--                        FontSize="11" -->
-                            <!--                        FontWeight="Medium" /> -->
-                            <!--             <TextBlock Style="{DynamicResource    StyledTextBlock}" -->
-                            <!--                        Text="{Binding PastDueCount}" FontSize="16" FontWeight="Bold" /> -->
-                            <!--         </StackPanel> -->
-                            <!--     </StackPanel> -->
-                            <!-- -->
-                            <!--     ~1~ Upcoming @1@ -->
-                            <!--     <StackPanel Orientation="Horizontal"> -->
-                            <!--         <Viewbox Width="18" Height="18" Margin="0,0,8,0"> -->
-                            <!--             <Path Data="M3 2v18h2V12h11l1-2-1-2H5V2H3zm4 4h7.5l.5 1-.5 1H7V6z" -->
-                            <!--                   Fill="{DynamicResource WarningBrush}" /> -->
-                            <!--         </Viewbox> -->
-                            <!--         <StackPanel> -->
-                            <!--             <TextBlock Text="Upcoming" FontSize="11" -->
-                            <!--                        Style="{DynamicResource    StyledSecondaryTextBlock}" -->
-                            <!--                        FontWeight="Medium" /> -->
-                            <!--             <TextBlock Style="{DynamicResource    StyledTextBlock}" -->
-                            <!--                        Text="{Binding UpcomingCount}" FontSize="16" FontWeight="Bold" /> -->
-                            <!--         </StackPanel> -->
-                            <!--     </StackPanel> -->
-                            <!-- </UniformGrid> -->
-
+                            
                             <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto">
 
                                 <!-- SECTION 1: BUSTED BUCKETS & OVERSPEND (Collapses if empty) -->

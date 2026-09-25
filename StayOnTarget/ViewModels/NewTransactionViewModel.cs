@@ -174,6 +174,13 @@ public class NewTransactionViewModel : ViewModelBase {
         }
     }
 
+    private DateTime _nextPeriodDate;
+
+    public DateTime NextPeriodDate {
+        get => _nextPeriodDate;
+        set => SetProperty(ref _nextPeriodDate, value);
+    }
+    
     private async void OnCurrentPeriodDateChanged()
     {
         try 
@@ -260,7 +267,8 @@ public class NewTransactionViewModel : ViewModelBase {
 
     private async Task LoadPeriodBillsAsync() {
         try {
-            var pBills = (await _budgetService.GetPeriodBillsAsync(CurrentPeriodDate)).ToList();
+            NextPeriodDate = GetNextPeriodDate(CurrentPeriodDate);
+            var pBills = (await _budgetService.GetPeriodBillsAsync(CurrentPeriodDate, NextPeriodDate)).ToList();
             pBills = pBills.OrderBy(pb => pb.DueDate).ToList();
 
             CurrentPeriodBills = new ObservableCollection<PeriodBill>(pBills);

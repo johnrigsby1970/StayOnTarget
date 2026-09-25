@@ -6,7 +6,7 @@ namespace StayOnTarget.Services;
 
 public partial class BudgetService
 {
-    public async Task<IEnumerable<PeriodBill>> GetPeriodBillsAsync(DateTime periodDate)
+    public async Task<IEnumerable<PeriodBill>> GetPeriodBillsAsync(DateTime periodDate, DateTime nextPeriodDate)
     {
         try {
             await using var conn = _db.GetConnection();
@@ -16,7 +16,7 @@ public partial class BudgetService
                 SELECT pb.*, b.Name as BillName 
                 FROM PeriodBills pb 
                 JOIN Bills b ON pb.BillId = b.Id 
-                WHERE pb.PeriodDate = @periodDate", new { periodDate = periodDate.ToString("yyyy-MM-dd") });
+                WHERE pb.PeriodDate = @periodDate OR (pb.DueDate>=@periodDate AND pb.DueDate<@nextPeriodDate)", new { periodDate = periodDate.ToString("yyyy-MM-dd") , nextPeriodDate = nextPeriodDate.ToString("yyyy-MM-dd")});
         }
         catch (Exception ex) {
             Log.Error(ex, "Error getting period bills for date {PeriodDate}.", periodDate);

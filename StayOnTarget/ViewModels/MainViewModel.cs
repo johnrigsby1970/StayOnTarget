@@ -623,8 +623,8 @@ public class MainViewModel : ViewModelBase {
             CloseManageExcludedAccountsCommand = new RelayCommand(CloseManageExcludedAccounts);
             ToggleAccountExclusionCommand = new RelayCommand<int>(ToggleAccountExclusion);
 
-            _filteredBillsView = CollectionViewSource.GetDefaultView(BillsWithNone);
-            _filteredBillsView.Filter = FilterBillItem;
+            // _filteredBillsView = CollectionViewSource.GetDefaultView(BillsWithNone);
+            // _filteredBillsView.Filter = FilterBillItem;
 
             #region Splits
 
@@ -1162,7 +1162,7 @@ public class MainViewModel : ViewModelBase {
             var upcomingLimit = today.AddDays(7);
 
             var pastDue = CurrentPeriodBills.Where(pb =>
-                    !pb.HasActualAmount && pb.DueDate < today && pb.ActualAmount != 0 && pb.TransactionAmount == 0)
+                    !pb.HasActualAmount && pb.DueDate < today && pb.ActualAmount != 0 && pb.TransactionAmount == 0 && !pb.IsPaid)
                 .ToList();
 
             var upcoming = CurrentPeriodBills.Where(pb =>
@@ -5963,24 +5963,24 @@ public class MainViewModel : ViewModelBase {
         }
     }
 
-    private bool FilterBillItem(object item) {
-        try {
-            if (item is not Bill bill) return false;
-
-            if (bill.Id == 0) return true;
-
-            string searchText = EditingTransactionClone?.Description?.Trim() ?? string.Empty;
-            if (string.IsNullOrEmpty(searchText)) return true;
-
-            //return bill.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-            return bill.Name.StartsWith(searchText, StringComparison.OrdinalIgnoreCase);
-        }
-        catch (Exception ex) {
-            Log.Error(ex, "Error filtering bill item.");
-
-            return false;
-        }
-    }
+    // private bool FilterBillItem(object item) {
+    //     try {
+    //         if (item is not Bill bill) return false;
+    //
+    //         if (bill.Id == 0) return true;
+    //
+    //         string searchText = EditingTransactionClone?.Description?.Trim() ?? string.Empty;
+    //         if (string.IsNullOrEmpty(searchText)) return true;
+    //
+    //         //return bill.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+    //         return bill.Name.StartsWith(searchText, StringComparison.OrdinalIgnoreCase);
+    //     }
+    //     catch (Exception ex) {
+    //         Log.Error(ex, "Error filtering bill item.");
+    //
+    //         return false;
+    //     }
+    // }
 
     private async Task LoadBucketDataAsync() {
         Log.Information("Loading all bucket data.");
@@ -6266,14 +6266,17 @@ public class MainViewModel : ViewModelBase {
 
     private async Task LoadPeriodBillsAsync() {
         try {
-            var pBills = (await _budgetService.GetPeriodBillsAsync(CurrentPeriodDate)).ToList();
+            var pBills = (await _budgetService.GetPeriodBillsAsync(CurrentPeriodDate, NextPeriodDate)).ToList();
             var projectedBillsForPeriod = GetProjectedBillsForPeriod(CurrentPeriodDate);
 
             var mergedBills = new List<PeriodBill>();
 
             foreach (var pb in projectedBillsForPeriod) {
                 // Find existing saved period bill record matching this underlying BillId
-                var existing = pBills.FirstOrDefault(p => p.BillId == pb.BillId);
+                var existing = pBills
+                    .Where(p => p.BillId == pb.BillId)
+                    .OrderByDescending(p => p.IsPaid)
+                    .FirstOrDefault();
 
                 if (existing != null) {
                     // Use the persisted historical snapshot amount and status
@@ -6967,17 +6970,26 @@ public class MainViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(CanSaveTransaction));
                 SaveTransactionCommand.NotifyCanExecuteChanged();
 
-                // Refresh the CollectionView filter
                 FilteredBillsView?.Refresh();
 
                 string typedText = EditingTransactionClone?.Description?.Trim() ?? string.Empty;
 
                 if (!string.IsNullOrWhiteSpace(typedText)) {
-                    // Check if there are any real matching bills other than (None)
                     bool hasMatches = FilteredBillsView?.OfType<Bill>()
                         .Any(b => b.Id != 0) ?? false;
 
                     IsBillDropDownOpen = hasMatches;
+
+                    // Only auto-assign BillId if it hasn't already been explicitly set
+                    if (EditingTransactionClone != null && 
+                        (!EditingTransactionClone.BillId.HasValue || EditingTransactionClone.BillId == 0)) {
+                        var matchingBill = Bills.FirstOrDefault(b => 
+                            b.Id != 0 && b.Name.Equals(typedText, StringComparison.OrdinalIgnoreCase));
+
+                        if (matchingBill != null) {
+                            EditingTransactionClone.BillId = matchingBill.Id;
+                        }
+                    }
                 }
                 else {
                     IsBillDropDownOpen = false;
