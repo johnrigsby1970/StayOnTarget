@@ -566,6 +566,7 @@ public class ImportReconciliationViewModel : ViewModelBase {
 
             AutoMatchTransactions();
             await AutoApplySubCategory();
+            AutoApplyBill();
 
             OnPropertyChanged(nameof(CanImport));
             SaveCommand.NotifyCanExecuteChanged();
@@ -683,6 +684,29 @@ public class ImportReconciliationViewModel : ViewModelBase {
         }
         catch (Exception ex) {
             Log.Error(ex, "Error in AutoApplySubCategory.");
+        }
+    }
+    
+    private void AutoApplyBill() {
+        try {
+            foreach (var x in ImportedTransactions.Where(x => !x.IsMatched)) {
+                // Only suggest if one hasn't been set yet and we have a Payee to search with
+                if (x.BillId == null && !string.IsNullOrWhiteSpace(x.Payee)) {
+                
+                    // Search the full list in memory (not the UI view) for a match
+                    var suggestedBill = BillsWithNone.FirstOrDefault(b => 
+                        b.Id != 0 && // Ignore the "None" placeholder
+                        b.Name.Contains(x.Payee, StringComparison.OrdinalIgnoreCase));
+                
+                    if (suggestedBill != null) {
+                        // This sets the selected item in the UI, but leaves the dropdown list full
+                        x.BillId = suggestedBill.Id;
+                    }
+                }
+            }
+        }
+        catch (Exception ex) {
+            Log.Error(ex, "Error in AutoApplyBill.");
         }
     }
 
